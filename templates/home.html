@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}MythosNote | Development Check{% endblock %}
+
+{% block content %}
+<section class="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] items-start">
+    <div class="card">
+        <span class="badge badge-success">Setup baseline aktif</span>
+        <h1 class="text-3xl font-bold text-gray-900 mt-4">MythosNote siap diuji di WSL</h1>
+        <p class="text-gray-600 mt-3">
+            Halaman ini disediakan sebagai endpoint root sederhana untuk memastikan Django template,
+            static JavaScript, dan konfigurasi URL berjalan tanpa 404.
+        </p>
+        <div class="mt-6 flex flex-wrap gap-3">
+            <a href="{% url 'admin:index' %}" class="btn-primary">Buka Django Admin</a>
+            <a href="/django-rq/" class="btn-outline">Buka Django RQ</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 class="text-xl font-semibold text-gray-900">Checklist runtime</h2>
+        <table class="table mt-4">
+            <tbody>
+                <tr>
+                    <td>Django dev server</td>
+                    <td><span class="badge badge-primary">Port 8000</span></td>
+                </tr>
+                <tr>
+                    <td>RQ worker</td>
+                    <td><span class="badge badge-warning">Butuh Redis aktif</span></td>
+                </tr>
+                <tr>
+                    <td>Redis server</td>
+                    <td><span class="badge badge-primary">Port 6379</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
