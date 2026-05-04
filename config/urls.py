@@ -16,10 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
-from django.views.generic import TemplateView
+from . import views
 
 urlpatterns = [
-    path('', TemplateView.as_view(template_name='home.html'), name='home'),
+    path('', views.home, name='home'),
+    path('signin/', views.sign_in, name='signin'),
+    path('signup/', views.sign_up, name='signup'),
+    path('forgot-password/', views.forgot_password, name='forgot_password'),
     path('admin/', admin.site.urls),
     path('django-rq/', include('django_rq.urls')),
 ]

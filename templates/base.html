@@ -38,7 +38,7 @@
 
 <body class="bg-background text-on-background antialiased">
   <!-- Navigation -->
-  <!-- Navigation -->
+  {% if not hide_nav %}
   <nav class="sticky top-0 z-40 border-b border-surface-container-high bg-background/80 backdrop-blur-md">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
 
@@ -60,7 +60,7 @@
       <!-- Auth Buttons: Desktop & Mobile -->
       <div class="flex items-center gap-4">
         <!-- Sign In (hidden on mobile) -->
-        <a class="hidden px-4 py-2 text-sm text-outline transition hover:text-primary md:block" href="#">
+        <a class="hidden px-4 py-2 text-sm text-outline transition hover:text-primary md:block" href="{% url 'signin' %}">
           Sign In
         </a>
 
@@ -73,18 +73,12 @@
 
     </div>
   </nav>
+  {% endif %}
 
   <!-- Main Content -->
   <main>{% block content %}{% endblock %}</main>
 
-  <!-- Footer -->
-  <footer class="border-t border-surface-container bg-surface-container-lowest">
-    <div class="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-12">
-      <span class="font-newsreader text-lg italic text-on-surface-variant">MythosNote</span>
-      <span class="font-grotesk text-xs text-outline-variant">&copy; {% now "Y" %} Mythos Team. All rights
-        reserved.</span>
-    </div>
-  </footer>
+
 
   <!-- Custom Scripts -->
   <script src="{% static 'js/components.js' %}"></script>
