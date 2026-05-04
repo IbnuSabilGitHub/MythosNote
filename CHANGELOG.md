@@ -2,6 +2,23 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-05-04
+
+### Added
+- Menambahkan folder `doc/` untuk dokumentasi pengembangan.
+- Menambahkan aset CSS: `static/css/theme.css` dan `static/css/typography.css` .
+
+### Changed
+- Memperbarui `package.json` dan `package-lock.json` untuk menyelaraskan dependensi frontend.
+- Memperbarui `static/css/input.css` untuk menyesuaikan tema dan utilitas CSS.
+- Memperbarui template `templates/base.html` dan `templates/home.html` (landing page) 
+- 
+### Removed
+- Menghapus `tailwind.config.js` sebagai bagian dari restrukturisasi tooling frontend.
+
+### Notes
+- Direktori `static/svg/` saat ini belum dilacak; pertimbangkan menambahkannya jika dibutuhkan oleh rilis berikutnya.
+
 ## [1.0.0] - 2026-05-01
 
 ### Added

@@ -1,40 +1,324 @@
 {% extends "base.html" %}
 
-{% block title %}MythosNote | Development Check{% endblock %}
+{% block title %}MythosNote - Change your document into structured clarity{% endblock %}
+
+{% block extra_css %}
+<!-- AOS CSS -->
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+{% endblock %}
 
 {% block content %}
-<section class="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] items-start">
-    <div class="card">
-        <span class="badge badge-success">Setup baseline aktif</span>
-        <h1 class="text-3xl font-bold text-gray-900 mt-4">MythosNote siap diuji di WSL</h1>
-        <p class="text-gray-600 mt-3">
-            Halaman ini disediakan sebagai endpoint root sederhana untuk memastikan Django template,
-            static JavaScript, dan konfigurasi URL berjalan tanpa 404.
-        </p>
-        <div class="mt-6 flex flex-wrap gap-3">
-            <a href="{% url 'admin:index' %}" class="btn-primary">Buka Django Admin</a>
-            <a href="/django-rq/" class="btn-outline">Buka Django RQ</a>
-        </div>
+<div class="min-h-screen">
+  <!-- Hero Section -->
+  <section class="relative overflow-hidden px-6 py-24 lg:min-h-screen lg:px-0 lg:py-68">
+    <!-- Background gradient effects -->
+    <div class="absolute inset-0 opacity-20">
+      <div class="absolute left-1/5 top-[12%] h-80 w-80 rounded-xl bg-primary-container/20 blur-3xl"></div>
+      <div class="absolute bottom-[18%] right-1/5 h-80 w-80 rounded-xl bg-primary/10 blur-3xl"></div>
     </div>
 
-    <div class="card">
-        <h2 class="text-xl font-semibold text-gray-900">Checklist runtime</h2>
-        <table class="table mt-4">
-            <tbody>
-                <tr>
-                    <td>Django dev server</td>
-                    <td><span class="badge badge-primary">Port 8000</span></td>
-                </tr>
-                <tr>
-                    <td>RQ worker</td>
-                    <td><span class="badge badge-warning">Butuh Redis aktif</span></td>
-                </tr>
-                <tr>
-                    <td>Redis server</td>
-                    <td><span class="badge badge-primary">Port 6379</span></td>
-                </tr>
-            </tbody>
-        </table>
+    <!-- Decorative floating cards (desktop only) -->
+    <div class="absolute inset-0 hidden lg:block">
+      <!-- AI Summary Card -->
+      <div data-aos="fade-up" data-aos-duration="1200" data-aos-delay="100" class="absolute left-45 top-43 w-79 -rotate-3">
+        <div
+          class="rounded-lg border border-outline-variant bg-surface-container-high p-5 shadow-[0px_25px_50px_-12px_rgba(0,0,0,0.35)] backdrop-blur-md">
+          <div class="flex items-center gap-3 pb-2">
+            <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-container">
+              <img class="h-3 w-3" src="https://www.figma.com/api/mcp/asset/45cd711d-d0a1-4756-bd8d-3c531bb86222"
+                alt="" />
+            </div>
+            <span class="font-grotesk text-xs font-bold uppercase tracking-wide text-outline">AI Summary</span>
+          </div>
+          <div class="h-2 w-full rounded bg-outline-variant"></div>
+          <div class="mt-2 h-2 w-49 rounded bg-outline-variant/50"></div>
+        </div>
+      </div>
+
+      <!-- Education System Card -->
+      <div data-aos="fade-up" data-aos-duration="1200" data-aos-delay="200" class="absolute right-38 top-54 w-76 rotate-5">
+        <div class="rounded-xl border border-primary/30 bg-surface-container-highest/80 px-6 py-3 backdrop-blur-md">
+          <div class="flex items-center gap-4">
+            <img class="h-6 w-6" src="https://www.figma.com/api/mcp/asset/e4faeda3-65cd-474a-9331-d7fb2517cafa"
+              alt="" />
+            <span class="font-newsreader text-lg font-bold italic text-on-surface">Modern Education System</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quote Card -->
+      <div data-aos="fade-up" data-aos-duration="1200" data-aos-delay="300" class="absolute bottom-32 left-63 w-90 rotate-2">
+        <div
+          class="flex gap-4 rounded border border-outline-variant bg-surface-container p-4 shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.2)]">
+          <div class="h-12 w-12 overflow-hidden rounded-xl opacity-80">
+            <img class="h-full w-full object-cover"
+              src="https://www.figma.com/api/mcp/asset/cec0f288-40df-428c-8606-d29ae411d2d6" alt="" />
+          </div>
+          <div class="space-y-2">
+            <p class="text-[0.5625rem] font-bold text-primary sm:text-[0.625rem]">Source: documents/chapter-3.pdf</p>
+            <p class="text-[0.75rem] font-bold text-on-surface sm:text-[0.8125rem] leading-snug">
+              "Deep understanding doesn't come from rereading, but from actively synthesizing information."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Terminal Card -->
+      <div data-aos="fade-up" data-aos-duration="1200" data-aos-delay="400" class="absolute bottom-42 right-73 w-64 -rotate-2">
+        <div
+          class="rounded-md border border-outline-variant bg-surface-container-lowest p-4 shadow-[0px_25px_50px_-12px_rgba(0,0,0,0.3)]">
+          <div class="flex gap-2">
+            <span class="h-2 w-2 rounded-full bg-error"></span>
+            <span class="h-2 w-2 rounded-full bg-primary"></span>
+            <span class="h-2 w-2 rounded-full bg-on-surface-variant"></span>
+          </div>
+          <div class="mt-3 space-y-2">
+            <div class="h-1.5 w-48 rounded bg-outline-variant/30"></div>
+            <div class="h-1.5 w-40 rounded bg-primary/20"></div>
+            <div class="h-1.5 w-44 rounded bg-outline-variant/30"></div>
+          </div>
+        </div>
+      </div>
     </div>
-</section>
+
+    <!-- Hero Content -->
+    <div class="relative mx-auto flex max-w-230 flex-col items-center gap-6 text-center">
+      <!-- Badge -->
+      <div data-aos="fade-in" data-aos-duration="800"
+        class="inline-flex items-center gap-2 rounded-xl border border-outline-variant/50 bg-surface-container-low px-3 sm:px-4 py-1 sm:py-1.5">
+        <img class="h-3 w-4" src="https://www.figma.com/api/mcp/asset/a12a7b97-157c-4458-b8e7-c68edab54416" alt="" />
+        <span class="font-grotesk text-[0.6875rem] sm:text-xs font-bold uppercase tracking-[0.0375rem] text-primary">Powered by DeepSeek
+          AI</span>
+      </div>
+
+      <!-- Main Heading -->
+      <h1 data-aos="fade-up" data-aos-duration="1000" data-aos-delay="100" class="font-newsreader text-3xl font-bold text-on-surface sm:text-4xl lg:text-5xl xl:text-[4.5rem] lg:leading-18">
+        Change your document into
+        <span class="block font-newsreader text-primary italic">structured clarity.</span>
+      </h1>
+
+      <!-- Description -->
+      <p data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200" class="max-w-180 text-sm font-bold text-on-surface-variant sm:text-base lg:text-lg leading-relaxed">
+        Upload your text, markdown, or PDF files. NotebookLLM reads them, understands them, and generates
+        summaries, mind maps, quizzes, and concept tables in seconds. All data is isolated and accessible
+        only to you.
+      </p>
+
+      <!-- CTA Buttons -->
+      <div data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300" class="flex flex-col items-center gap-3 pt-4 sm:gap-4 sm:flex-row">
+        <a class="inline-flex items-center gap-2 rounded-lg bg-primary px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-on-primary transition hover:bg-primary-container">
+          Start your first project
+          <img class="h-3 w-3" src="https://www.figma.com/api/mcp/asset/206ebc19-3467-4b7a-bd4f-e57a4e331ec6" alt="" />
+        </a>
+        <a class="rounded-lg border border-outline-variant bg-surface-container/50 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-on-surface hover:border-primary transition"
+          href="#how">
+          See how it works
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <main class="flex flex-col gap-24 pb-32">
+    <!-- Features Section -->
+    <section id="features" class="mx-auto grid max-w-screen-2xl grid-cols-1 gap-6 px-6 lg:grid-cols-12 lg:px-35">
+      <!-- Large Feature Card -->
+      <div data-aos="fade-up" data-aos-duration="1000" data-aos-delay="100"
+        class="col-span-1 flex flex-col justify-between rounded-2xl border border-outline-variant bg-surface-container-low p-10 lg:col-span-8">
+        <div class="space-y-4">
+          <h3 class="font-newsreader text-xl font-bold text-on-surface sm:text-2xl lg:text-[1.875rem]">
+            Full Context, Not Just Keywords
+          </h3>
+          <p class="max-w-lg text-sm font-bold text-on-surface-variant sm:text-base leading-relaxed">
+            AI reads your documents holistically, not just looking for keywords. With intelligent chunking,
+            each piece of text is understood in its own context before being synthesized into a coherent output.
+          </p>
+        </div>
+        <div class="mt-12 flex justify-end">
+          <img class="h-11 w-11" src="https://www.figma.com/api/mcp/asset/3c18e3ba-aab6-45ba-99c7-5f3e2bf1d4c1"
+            alt="" />
+        </div>
+      </div>
+
+      <!-- Feature Card 2 -->
+      <div data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200"
+        class="col-span-1 rounded-2xl border border-outline-variant bg-surface-container-high px-8 pb-10 pt-8 lg:col-span-4">
+        <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-surface-container-highest">
+          <img class="h-5 w-4" src="https://www.figma.com/api/mcp/asset/ac00ec54-c4d3-4711-b174-496b1412aed6" alt="" />
+        </div>
+        <h4 class="font-newsreader text-lg font-bold text-on-surface sm:text-xl">Your Data, Only Yours</h4>
+        <p class="mt-3 text-xs font-bold text-on-surface-variant sm:text-sm leading-relaxed">
+          Each account has its own isolated storage space. User A's documents cannot be accessed by user B even
+          at the database and file system levels.
+        </p>
+      </div>
+
+      <!-- Feature Card 3 -->
+      <div data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300" class="col-span-1 rounded-2xl border border-outline-variant bg-surface-container-high p-8 lg:col-span-4">
+        <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-surface-container-highest">
+          <img class="h-5 w-5" src="https://www.figma.com/api/mcp/asset/6037ab8e-dd55-4343-9c94-bd2a11a44197" alt="" />
+        </div>
+        <h4 class="font-newsreader text-lg font-bold text-on-surface sm:text-xl">Four Outputs, One Click</h4>
+        <p class="mt-3 text-xs font-bold text-on-surface-variant sm:text-sm leading-relaxed">
+          From a single document, generate narrative summaries, interactive mind maps, multiple-choice quizzes,
+          or concept tables to suit your learning needs.
+        </p>
+      </div>
+
+      <!-- Feature Card 4 - Large -->
+      <div data-aos="fade-up" data-aos-duration="1000" data-aos-delay="400"
+        class="relative col-span-1 overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-low lg:col-span-8">
+        <img class="absolute inset-0 h-full w-full object-cover opacity-10"
+          src="https://www.figma.com/api/mcp/asset/562eccdd-c844-47b5-9e1b-030ef21aaa2c" alt="" />
+        <div class="relative p-10">
+          <h3 class="font-newsreader text-xl font-bold text-on-surface sm:text-2xl lg:text-[1.875rem]">
+            From Hundreds of Pages to One Page
+          </h3>
+          <p class="mt-4 text-sm font-bold text-on-surface-variant sm:text-base leading-relaxed">
+            Upload multiple documents at once, select the relevant ones, and let AI combine the context. The
+            result isn't a raw summary, but a structured, ready-to-use synthesis.
+          </p>
+          <a class="mt-6 inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-primary-container transition sm:text-base"
+            href="#start">
+            Try it now
+            <img class="h-2.5 w-2.5" src="https://www.figma.com/api/mcp/asset/749b9af5-9fc5-4f46-ad05-417f21347e89"
+              alt="" />
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how" class="border-y border-outline-variant/30 bg-surface-container-lowest px-6 py-28">
+      <div class="mx-auto flex max-w-6xl flex-col gap-16">
+
+        <!-- Section Header -->
+        <div>
+            <p class="font-grotesk text-[0.625rem] font-bold uppercase tracking-[0.15rem] text-primary/60 sm:text-xs">
+            Vertical Timeline
+          </p>
+          <h2 class="mt-4 font-newsreader text-2xl font-bold text-on-surface sm:text-3xl lg:text-5xl">
+            How it Works
+          </h2>
+        </div>
+
+        <!-- Timeline + Image -->
+        <div class="flex flex-col gap-16 lg:flex-row">
+
+          <!-- Timeline Steps -->
+          <div class="relative flex flex-1 flex-col gap-24 py-12">
+            <!-- Vertical Line -->
+            <div class="absolute left-6 top-0 h-full w-px bg-outline-variant/30"></div>
+
+            <!-- Step 1 -->
+            <div data-aos="fade-up" data-aos-duration="1000" data-aos-delay="100" class="relative flex gap-8">
+              <div
+                class="flex size-12 items-center justify-center rounded-xl border-2 border-outline-variant bg-surface-container-high text-sm font-bold">
+                01
+              </div>
+              <div>
+                <h4 class="font-newsreader text-lg font-bold text-on-surface sm:text-2xl">
+                  Upload your documents
+                </h4>
+                <p class="mt-3 max-w-md text-sm font-bold text-on-surface-variant sm:text-base leading-relaxed">
+                  Supports .txt, .md, and .pdf files up to 5MB. Upload one or multiple files at once. Each file
+                  is parsed and automatically cut into chunks ready for AI processing.
+                </p>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200" class="relative flex gap-8">
+              <div
+                class="flex size-12 items-center justify-center rounded-xl border-2 border-outline-variant bg-surface-container-high text-sm font-bold">
+                02
+              </div>
+              <div>
+                <h4 class="font-newsreader text-lg font-bold text-on-surface sm:text-2xl">
+                  Select and Set Context
+                </h4>
+                <p class="mt-3 max-w-md text-sm font-bold text-on-surface-variant sm:text-base leading-relaxed">
+                  Check which documents you want to include in the analysis. Documents that are not checked will
+                  not be included in the AI context. You have full control.
+                </p>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300" class="relative flex gap-8">
+              <div
+                class="flex size-12 items-center justify-center rounded-xl border-2 border-outline-variant bg-surface-container-high text-sm font-bold">
+                03
+              </div>
+              <div>
+                <h4 class="font-newsreader text-lg font-bold text-on-surface sm:text-2xl">
+                  Generate and Use the Results
+                </h4>
+                <p class="mt-3 max-w-md text-sm font-bold text-on-surface-variant sm:text-base leading-relaxed">
+                  Select the output type: summary, mind map, quiz, or concept table. The AI processes the results,
+                  and the results are saved in your history. You can open, copy, or work on them at any time.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Image Section -->
+          <div data-aos="fade-left" data-aos-duration="1000" data-aos-delay="200" class="relative flex-1 overflow-hidden rounded-3xl border border-outline-variant bg-surface-container">
+            <img class="size-full object-cover"
+              src="https://www.figma.com/api/mcp/asset/27509364-8913-41b7-b610-8f05a47a49b0"
+              alt="How it works illustration" />
+
+            <!-- Gradient Overlay -->
+            <div class="absolute inset-0 bg-linear-to-t from-background/80 via-background/10 to-transparent"></div>
+
+            <!-- Floating Card -->
+            <div
+              class="absolute bottom-8 left-8 right-8 rounded-lg border border-outline-variant bg-surface-container-highest/60 p-6 backdrop-blur-md">
+              <div class="flex items-center gap-3">
+                <img class="size-3 w-4" src="https://www.figma.com/api/mcp/asset/2acbf8da-ba68-4039-ba97-4bde0103e65b"
+                  alt="" />
+                <span class="font-grotesk text-[0.5625rem] sm:text-[0.625rem] font-bold uppercase tracking-[0.0625rem] text-outline">
+                  Active Context
+                </span>
+              </div>
+              <p class="mt-3 text-xs font-bold text-on-surface sm:text-sm">
+                3 documents selected · 14 active chunks · ready to generate
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section id="start" class="relative px-6 py-32">
+      <div class="absolute right-[15%] top-[10%] h-125 w-125 rounded-xl bg-primary/5 blur-3xl"></div>
+      <div data-aos="fade-up" data-aos-duration="1000" class="relative mx-auto flex max-w-4xl flex-col items-center gap-8 text-center">
+        <h2
+          class="font-newsreader text-2xl font-bold text-on-surface sm:text-4xl lg:text-5xl xl:text-6xl leading-tight">
+          Ready to change the way you
+          <span class="block font-newsreader italic text-primary">understand documents?</span>
+        </h2>
+        <a class="inline-flex items-center gap-2 rounded-xl bg-primary px-8 sm:px-12 py-3 sm:py-5 text-base sm:text-xl font-bold text-on-primary transition hover:bg-primary-container">
+          Start Your Notebook Free
+        </a>
+      </div>
+    </section>
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- AOS JS -->
+<script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script>
+  // Initialize AOS
+  AOS.init({
+    duration: 1000,
+    easing: 'ease-in-out-quad',
+    once: true,
+    mirror: false,
+    offset: 100
+  });
+</script>
 {% endblock %}

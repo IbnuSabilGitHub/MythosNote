@@ -1,384 +1,95 @@
 {% load static %}
-<!DOCTYPE html>
-<html lang="id" class="scroll-smooth">
+<!doctype html>
+<html lang="id" class="scroll-smooth dark">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MythosNote - AI-powered note-taking application">
-    <title>{% block title %}MythosNote - AI Notes{% endblock %}</title>
-    
-    <!-- Tailwind CSS (CDN) -->
-    <script src="https://cdn.tailwindcss.com?plugins=@tailwindcss/forms"></script>
-    
-    <!-- Flowbite CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flowbite@2.3.0/dist/flowbite.min.css" />
-    
-    <!-- Marked.js (Markdown rendering) -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
-    <!-- Mermaid.js (Diagrams) -->
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-    <script>
-        mermaid.initialize({ startOnLoad: true, theme: 'default' });
-        mermaid.contentLoaded();
-    </script>
-    
-    <script type="module" src="{% static 'js/components.js' %}"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="MythosNote - AI-powered note-taking application" />
+  <title>{% block title %}MythosNote - AI Notes{% endblock %}</title>
 
-    <!-- Custom Styles (Optional: inline critical CSS) -->
-    <style>
-        /* Custom animations */
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        @keyframes slideUp {
-            from { 
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to { 
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .animate-fade-in {
-            animation: fadeIn 0.3s ease-in;
-        }
-        
-        .animate-slide-up {
-            animation: slideUp 0.3s ease-out;
-        }
-        
-        /* Custom Tailwind components via utility */
-        .btn-primary {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            background: #2563eb;
-            color: #fff;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-        
-        .btn-secondary {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            background: #e5e7eb;
-            color: #111827;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-        
-        .btn-outline {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.5rem 1rem;
-            border: 2px solid #2563eb;
-            border-radius: 0.5rem;
-            color: #2563eb;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-        
-        .btn-danger {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            background: #dc2626;
-            color: #fff;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-        
-        .btn-small {
-            padding: 0.25rem 0.75rem;
-            font-size: 0.875rem;
-        }
-        
-        .btn-large {
-            padding: 0.75rem 1.5rem;
-            font-size: 1.125rem;
-        }
-        
-        .btn-full {
-            width: 100%;
-        }
-        
-        .card {
-            background: #fff;
-            border: 1px solid #f3f4f6;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-            padding: 1.5rem;
-            transition: box-shadow 0.2s ease;
-        }
-        
-        .card:hover {
-            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
-        }
-        
-        .input-field {
-            width: 100%;
-            padding: 0.5rem 1rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            transition: all 0.2s ease;
-        }
-        
-        .input-field::placeholder {
-            color: #9ca3af;
-        }
-        
-        .textarea-field {
-            width: 100%;
-            min-height: 8rem;
-            padding: 0.5rem 1rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            resize: vertical;
-            transition: all 0.2s ease;
-        }
-        
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-        
-        .badge-primary {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-        
-        .badge-success {
-            background: #dcfce7;
-            color: #166534;
-        }
-        
-        .badge-warning {
-            background: #fef3c7;
-            color: #92400e;
-        }
-        
-        .badge-danger {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        
-        .alert {
-            padding: 1rem;
-            border: 1px solid transparent;
-            border-radius: 0.75rem;
-        }
-        
-        .alert-info {
-            background: #eff6ff;
-            border-color: #bfdbfe;
-            color: #1e40af;
-        }
-        
-        .alert-success {
-            background: #f0fdf4;
-            border-color: #bbf7d0;
-            color: #166534;
-        }
-        
-        .alert-warning {
-            background: #fffbeb;
-            border-color: #fde68a;
-            color: #92400e;
-        }
-        
-        .alert-danger {
-            background: #fef2f2;
-            border-color: #fecaca;
-            color: #991b1b;
-        }
-        
-        /* Table styling */
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .table th {
-            background: #f3f4f6;
-            padding: 0.75rem 1rem;
-            text-align: left;
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #111827;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .table td {
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .table tbody tr:hover {
-            background: #f9fafb;
-            transition: background 0.2s ease;
-        }
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&family=Newsreader:ital,wght@0,400;0,700;1,400;1,700&family=Space+Grotesk:wght@400;700&display=swap"
+    rel="stylesheet" />
 
-        .btn-primary:hover { background: #1d4ed8; }
-        .btn-secondary:hover { background: #d1d5db; }
-        .btn-outline:hover { background: #eff6ff; }
-        .btn-danger:hover { background: #b91c1c; }
-        .input-field:focus,
-        .textarea-field:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-        }
-    </style>
-    
-    {% block extra_css %}{% endblock %}
+  <!-- Compiled Tailwind CSS (v4) -->
+  <link rel="stylesheet" href="{% static 'css/output.css' %}" />
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="{% static 'css/typography.css' %}" />
+
+  <!-- Marked.js (Markdown rendering) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- Mermaid.js (Diagrams) -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: "dark" });
+    mermaid.contentLoaded();
+  </script>
+
+  <script type="module" src="{% static 'js/components.js' %}"></script>
+
+  {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-gray-50 text-gray-900">
-    <!-- Navigation -->
-    <nav class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <!-- Logo -->
-                <a href="{% url 'home' %}" class="flex items-center gap-2">
-                    <span class="text-2xl">📝</span>
-                    <span class="text-xl font-bold text-blue-600 hidden sm:inline">MythosNote</span>
-                </a>
-                
-                <!-- Navigation Links -->
-                <ul class="flex items-center gap-6">
-                    <li>
-                        <a href="#" class="text-gray-600 hover:text-blue-600 transition-colors text-sm sm:text-base">
-                            Workspaces
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="text-gray-600 hover:text-blue-600 transition-colors text-sm sm:text-base">
-                            Docs
-                        </a>
-                    </li>
-                    <li>
-                        {% if user.is_authenticated %}
-                            <div class="flex items-center gap-2">
-                                <span class="text-sm text-gray-600">{{ user.username }}</span>
-                                <a href="{% url 'admin:logout' %}" class="btn-secondary btn-small">
-                                    Logout
-                                </a>
-                            </div>
-                        {% else %}
-                            <a href="{% url 'admin:login' %}" class="btn-primary btn-small">
-                                Login
-                            </a>
-                        {% endif %}
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-    
-    <!-- Flash Messages -->
-    {% if messages %}
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            {% for message in messages %}
-                <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} animate-fade-in">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
-    
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {% block content %}{% endblock %}
-    </main>
-    
-    <!-- Footer -->
-    <footer class="bg-gray-100 border-t border-gray-200 mt-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-                <!-- Brand -->
-                <div>
-                    <h3 class="text-lg font-bold text-blue-600 mb-2">📝 MythosNote</h3>
-                    <p class="text-gray-600 text-sm">
-                        AI-powered note-taking application dengan vector search dan semantic understanding.
-                    </p>
-                </div>
-                
-                <!-- Quick Links -->
-                <div>
-                    <h4 class="font-semibold text-gray-900 mb-4">Fitur</h4>
-                    <ul class="space-y-2 text-sm text-gray-600">
-                        <li><a href="#" class="hover:text-blue-600 transition-colors">Upload Documents</a></li>
-                        <li><a href="#" class="hover:text-blue-600 transition-colors">Chat dengan AI</a></li>
-                        <li><a href="#" class="hover:text-blue-600 transition-colors">Generate Features</a></li>
-                        <li><a href="#" class="hover:text-blue-600 transition-colors">Vector Search</a></li>
-                    </ul>
-                </div>
-                
-                <!-- Legal -->
-                <div>
-                    <h4 class="font-semibold text-gray-900 mb-4">Lainnya</h4>
-                    <ul class="space-y-2 text-sm text-gray-600">
-                        <li><a href="#" class="hover:text-blue-600 transition-colors">Documentation</a></li>
-                        <li><a href="#" class="hover:text-blue-600 transition-colors">Privacy Policy</a></li>
-                        <li><a href="#" class="hover:text-blue-600 transition-colors">Terms of Service</a></li>
-                        <li><a href="#" class="hover:text-blue-600 transition-colors">Contact</a></li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="border-t border-gray-300 pt-6 text-center text-sm text-gray-600">
-                <p>&copy; {% now "Y" %} MythosNote. All rights reserved. | Built with Django + Tailwind CSS</p>
-            </div>
-        </div>
-    </footer>
-    
-    <!-- Flowbite JS (untuk interactive components) -->
-    <script src="https://cdn.jsdelivr.net/npm/flowbite@2.3.0/dist/flowbite.min.js"></script>
-    
-    <!-- Custom Component Scripts -->
-    <script src="{% static 'js/components.js' %}"></script>
-    
-    <!-- Initialize Components -->
-    <script>
-        // Auto-initialize all data-driven components
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize tabs
-            document.querySelectorAll('[data-tabs]').forEach(el => {
-                new TabsComponent(el);
-            });
-            
-            // Initialize modals
-            document.querySelectorAll('[data-modal]').forEach(el => {
-                new ModalComponent(el);
-            });
-            
-            // Initialize dropdowns
-            document.querySelectorAll('[data-dropdown]').forEach(el => {
-                new DropdownComponent(el);
-            });
-            
-            // Initialize form validators
-            document.querySelectorAll('form[data-validate]').forEach(el => {
-                new FormValidator(el);
-            });
-        });
-    </script>
-    
-    {% block extra_js %}{% endblock %}
+
+<body class="bg-background text-on-background antialiased">
+  <!-- Navigation -->
+  <!-- Navigation -->
+  <nav class="sticky top-0 z-40 border-b border-surface-container-high bg-background/80 backdrop-blur-md">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+
+      <!-- Logo -->
+      <a href="{% url 'home' %}" class="flex items-center gap-4">
+        <img src="{% static 'svg/mythosnote-logo.svg' %}" alt="MythosNote Logo" class="h-8 w-auto" />
+        <span class="font-newsreader text-2xl italic text-primary-container">
+          MythosNote
+        </span>
+      </a>
+
+      <!-- Desktop Navigation (hidden on mobile) -->
+      <div class="hidden items-center gap-6 text-sm text-outline md:flex">
+        <a class="transition hover:text-primary" href="#features">Features</a>
+        <a class="transition hover:text-primary" href="#how">How It Works</a>
+        <a class="transition hover:text-primary" href="#start">Start Free</a>
+      </div>
+
+      <!-- Auth Buttons: Desktop & Mobile -->
+      <div class="flex items-center gap-4">
+        <!-- Sign In (hidden on mobile) -->
+        <a class="hidden px-4 py-2 text-sm text-outline transition hover:text-primary md:block" href="#">
+          Sign In
+        </a>
+
+        <!-- Get Started (visible on all devices) -->
+        <a class="rounded bg-primary-container px-5 py-2 text-sm font-bold text-on-primary-container transition hover:bg-primary"
+          href="#start">
+          Get Started
+        </a>
+      </div>
+
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main>{% block content %}{% endblock %}</main>
+
+  <!-- Footer -->
+  <footer class="border-t border-surface-container bg-surface-container-lowest">
+    <div class="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-12">
+      <span class="font-newsreader text-lg italic text-on-surface-variant">MythosNote</span>
+      <span class="font-grotesk text-xs text-outline-variant">&copy; {% now "Y" %} Mythos Team. All rights
+        reserved.</span>
+    </div>
+  </footer>
+
+  <!-- Custom Scripts -->
+  <script src="{% static 'js/components.js' %}"></script>
+
+  {% block extra_js %}{% endblock %}
 </body>
+
 </html>

@@ -1,1 +1,231 @@
-@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\n/* ==========================================\n   Custom Components\n   ========================================== */\n\n@layer components {\n  /* Buttons */\n  .btn {\n    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200;\n  }\n\n  .btn-primary {\n    @apply btn bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-soft hover:shadow-medium;\n  }\n\n  .btn-secondary {\n    @apply btn bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed;\n  }\n\n  .btn-outline {\n    @apply btn border-2 border-blue-600 text-blue-600 hover:bg-blue-50 active:bg-blue-100;\n  }\n\n  .btn-danger {\n    @apply btn bg-red-600 text-white hover:bg-red-700 active:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed;\n  }\n\n  .btn-small {\n    @apply btn px-3 py-1 text-sm;\n  }\n\n  .btn-large {\n    @apply btn px-6 py-3 text-lg;\n  }\n\n  .btn-full {\n    @apply btn w-full;\n  }\n\n  /* Cards */\n  .card {\n    @apply bg-white rounded-lg shadow-soft border border-gray-100 p-6 transition-shadow duration-200;\n  }\n\n  .card:hover {\n    @apply shadow-medium;\n  }\n\n  .card-header {\n    @apply pb-4 border-b border-gray-200;\n  }\n\n  .card-body {\n    @apply py-4;\n  }\n\n  .card-footer {\n    @apply pt-4 border-t border-gray-200 flex justify-end gap-2;\n  }\n\n  /* Input Fields */\n  .input-field {\n    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200;\n  }\n\n  .input-field::placeholder {\n    @apply text-gray-400;\n  }\n\n  .input-field:disabled {\n    @apply bg-gray-100 cursor-not-allowed;\n  }\n\n  .input-field-error {\n    @apply border-red-500 focus:ring-red-500;\n  }\n\n  .textarea-field {\n    @apply input-field resize-vertical min-h-32;\n  }\n\n  .select-field {\n    @apply input-field appearance-none bg-white cursor-pointer;\n    background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E\");\n    background-position: right 0.5rem center;\n    background-repeat: no-repeat;\n    background-size: 1.5em 1.5em;\n    padding-right: 2.5rem;\n  }\n\n  /* Form Labels */\n  .label {\n    @apply block text-sm font-medium text-gray-900 mb-2;\n  }\n\n  .label-required::after {\n    @apply content-['*'] text-red-600 ml-1;\n  }\n\n  .label-hint {\n    @apply text-gray-500 text-xs font-normal ml-1;\n  }\n\n  .error-message {\n    @apply text-red-600 text-sm mt-1 flex items-center gap-1;\n  }\n\n  .success-message {\n    @apply text-green-600 text-sm mt-1 flex items-center gap-1;\n  }\n\n  /* Badges */\n  .badge {\n    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;\n  }\n\n  .badge-primary {\n    @apply badge bg-blue-100 text-blue-800;\n  }\n\n  .badge-secondary {\n    @apply badge bg-gray-100 text-gray-800;\n  }\n\n  .badge-success {\n    @apply badge bg-green-100 text-green-800;\n  }\n\n  .badge-warning {\n    @apply badge bg-yellow-100 text-yellow-800;\n  }\n\n  .badge-danger {\n    @apply badge bg-red-100 text-red-800;\n  }\n\n  /* Alerts */\n  .alert {\n    @apply p-4 rounded-lg border;\n  }\n\n  .alert-info {\n    @apply alert bg-blue-50 border-blue-200 text-blue-800;\n  }\n\n  .alert-success {\n    @apply alert bg-green-50 border-green-200 text-green-800;\n  }\n\n  .alert-warning {\n    @apply alert bg-yellow-50 border-yellow-200 text-yellow-800;\n  }\n\n  .alert-danger {\n    @apply alert bg-red-50 border-red-200 text-red-800;\n  }\n\n  /* Tables */\n  .table {\n    @apply w-full border-collapse;\n  }\n\n  .table th {\n    @apply bg-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200;\n  }\n\n  .table td {\n    @apply px-4 py-3 border-b border-gray-200;\n  }\n\n  .table tbody tr {\n    @apply hover:bg-gray-50 transition-colors;\n  }\n\n  .table tbody tr:last-child td {\n    @apply border-b-0;\n  }\n\n  /* Divider */\n  .divider {\n    @apply border-t border-gray-200;\n  }\n\n  /* Spacing Utilities */\n  .section {\n    @apply py-8;\n  }\n\n  .section-sm {\n    @apply py-4;\n  }\n\n  .section-lg {\n    @apply py-12;\n  }\n\n  /* Gradients */\n  .gradient-primary {\n    @apply bg-gradient-to-r from-blue-600 to-blue-800;\n  }\n\n  .gradient-sunset {\n    @apply bg-gradient-to-r from-purple-600 via-pink-600 to-red-600;\n  }\n\n  /* Text Utilities */\n  .text-truncate {\n    @apply truncate;\n  }\n\n  .text-clamp {\n    @apply line-clamp-3;\n  }\n\n  /* Flex Utilities */\n  .flex-center {\n    @apply flex items-center justify-center;\n  }\n\n  .flex-between {\n    @apply flex items-center justify-between;\n  }\n\n  .flex-col-center {\n    @apply flex flex-col items-center justify-center;\n  }\n}\n\n/* ==========================================\n   Custom Animations\n   ========================================== */\n\n@layer utilities {\n  .animate-fade-in {\n    @apply animate-fade-in;\n  }\n\n  .animate-slide-up {\n    @apply animate-slide-up;\n  }\n\n  .animate-pulse-soft {\n    @apply animate-pulse-soft;\n  }\n\n  .transition-smooth {\n    @apply transition-all duration-300 ease-in-out;\n  }\n}\n\n/* ==========================================\n   Flowbite Customizations\n   ========================================== */\n\n/* Override Flowbite default colors jika diperlukan */\n:root {\n  --primary-color: #0ea5e9;\n  --primary-hover: #0284c7;\n}\n\n/* ==========================================\n   Print Styles\n   ========================================== */\n\n@media print {\n  .no-print {\n    @apply hidden;\n  }\n\n  body {\n    @apply bg-white text-gray-900;\n  }\n}\n\n/* ==========================================\n   Scrollbar Styling\n   ========================================== */\n\n::-webkit-scrollbar {\n  @apply w-2;\n}\n\n::-webkit-scrollbar-track {\n  @apply bg-gray-100;\n}\n\n::-webkit-scrollbar-thumb {\n  @apply bg-gray-300 rounded hover:bg-gray-400;\n}\n
+@import "tailwindcss";
+@import "./theme.css";
+
+/* ==========================================
+   Custom Components & Utilities
+   ========================================== */
+
+@layer components {
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 font-medium text-on-primary transition-all duration-200 hover:bg-primary-container active:bg-primary-active disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg border border-outline-variant bg-surface-container-high px-4 py-2 font-medium text-on-surface transition-all duration-200 hover:bg-surface-container-highest active:bg-surface-container-active disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center rounded-lg border-2 border-primary px-4 py-2 font-medium text-primary transition-all duration-200 hover:bg-primary/10 active:bg-primary/20;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center rounded-lg bg-error px-4 py-2 font-medium text-on-error transition-all duration-200 hover:bg-error-hover active:bg-error-active disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-small {
+    @apply px-3 py-1 text-sm;
+  }
+
+  .btn-large {
+    @apply px-6 py-3 text-lg;
+  }
+
+  .btn-full {
+    @apply w-full;
+  }
+
+  /* Cards */
+  .card {
+    @apply rounded-lg border border-outline-variant bg-surface-container p-6 transition-all duration-200 hover:border-primary;
+  }
+
+  .card-header {
+    @apply border-b border-outline-variant pb-4;
+  }
+
+  .card-body {
+    @apply py-4;
+  }
+
+  .card-footer {
+    @apply flex justify-end gap-2 border-t border-outline-variant pt-4;
+  }
+
+  /* Input Fields */
+  .input-field {
+    @apply w-full rounded-lg border border-outline-variant bg-surface-container-low px-4 py-2 text-on-surface transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary;
+  }
+
+  .input-field::placeholder {
+    @apply text-outline;
+  }
+
+  .input-field:disabled {
+    @apply cursor-not-allowed bg-surface-container-high;
+  }
+
+  .input-field-error {
+    @apply border-error focus:ring-error;
+  }
+
+  .textarea-field {
+    @apply min-h-32 w-full resize rounded-lg border border-outline-variant bg-surface-container-low px-4 py-2 text-on-surface transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary;
+  }
+
+  .select-field {
+    @apply w-full cursor-pointer appearance-none rounded-lg border border-outline-variant bg-surface-container-low px-4 py-2 text-on-surface transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%239f8e7a' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+  }
+
+  /* Form Labels */
+  .label {
+    @apply mb-2 block text-sm font-medium text-on-surface;
+  }
+
+  .label-hint {
+    @apply ml-1 text-xs font-normal text-outline;
+  }
+
+  .error-message {
+    @apply mt-1 flex items-center gap-1 text-sm text-error;
+  }
+
+  .success-message {
+    @apply mt-1 flex items-center gap-1 text-sm text-success;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .badge-primary {
+    @apply inline-flex items-center rounded-full bg-primary/20 px-3 py-1 text-sm font-medium text-primary;
+  }
+
+  .badge-secondary {
+    @apply inline-flex items-center rounded-full bg-outline/20 px-3 py-1 text-sm font-medium text-on-surface-variant;
+  }
+
+  .badge-success {
+    @apply inline-flex items-center rounded-full bg-success/20 px-3 py-1 text-sm font-medium text-success;
+  }
+
+  .badge-warning {
+    @apply inline-flex items-center rounded-full bg-primary-container/20 px-3 py-1 text-sm font-medium text-primary-container;
+  }
+
+  .badge-danger {
+    @apply inline-flex items-center rounded-full bg-error/20 px-3 py-1 text-sm font-medium text-error;
+  }
+
+  /* Alerts */
+  .alert {
+    @apply p-4 rounded-lg border;
+  }
+
+  .alert-info {
+    @apply rounded-lg border border-primary bg-primary/10 p-4 text-primary;
+  }
+
+  .alert-success {
+    @apply rounded-lg border border-success bg-success/10 p-4 text-success;
+  }
+
+  .alert-warning {
+    @apply rounded-lg border border-primary-container bg-primary-container/10 p-4 text-primary-container;
+  }
+
+  .alert-danger {
+    @apply rounded-lg border border-error bg-error/10 p-4 text-error;
+  }
+
+  /* Tables */
+  .table {
+    @apply w-full border-collapse;
+  }
+
+  .table th {
+    @apply border-b border-outline-variant bg-surface-container-high px-4 py-3 text-left text-sm font-semibold text-on-surface;
+  }
+
+  .table td {
+    @apply border-b border-outline-variant px-4 py-3 text-on-surface;
+  }
+
+  .table tbody tr:hover {
+    @apply bg-surface-container-high transition-all duration-200;
+  }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .animate-slide-down {
+    animation: slideDown 0.3s ease-out;
+  }
+}
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-outline-variant);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-outline);
+}
