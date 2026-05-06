@@ -20,9 +20,8 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
-    path('signin/', views.sign_in, name='signin'),
-    path('signup/', views.sign_up, name='signup'),
-    path('forgot-password/', views.forgot_password, name='forgot_password'),
+    path('project/', views.project, name='project'),
+    path('', include('accounts.urls')),
     path('admin/', admin.site.urls),
     path('django-rq/', include('django_rq.urls')),
 ]

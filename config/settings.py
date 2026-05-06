@@ -10,10 +10,14 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+from dotenv import load_dotenv
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -32,6 +36,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*.wsl.localhost', 'wsl.localhost']
 
 INSTALLED_APPS = [
     'project_commands',
+    'accounts.apps.AccountsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -51,6 +56,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# Enable Google Identity Services popups in Django 4.0+
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
+
 ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
@@ -64,6 +72,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'accounts.context_processors.auth_settings',
             ],
         },
     },
@@ -84,14 +93,23 @@ DATABASES = {
 
 # RQ (Redis Queue) Configuration
 # https://django-rq.readthedocs.io/en/latest/configuration.html
-RQ_QUEUES = {
-    'default': {
-        'HOST': 'localhost',
-        'PORT': 6379,
-        'DB': 0,
-        'DEFAULT_TIMEOUT': 360,
-    },
-}
+REDIS_URL = os.getenv('REDIS_URL', '').strip()
+if REDIS_URL:
+    RQ_QUEUES = {
+        'default': {
+            'URL': REDIS_URL,
+            'DEFAULT_TIMEOUT': 360,
+        },
+    }
+else:
+    RQ_QUEUES = {
+        'default': {
+            'HOST': 'localhost',
+            'PORT': 6379,
+            'DB': 0,
+            'DEFAULT_TIMEOUT': 360,
+        },
+    }
 
 
 # Password validation
@@ -138,3 +156,22 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Session-based auth defaults. Workspace/core feature views can use
+# accounts.decorators.verified_email_required when those apps are added.
+LOGIN_URL = 'signin'
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'home'
+
+# Console email keeps local WSL development dependency-free; production can
+# override EMAIL_BACKEND and SMTP settings through environment variables.
+EMAIL_BACKEND = os.getenv(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend',
+)
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@mythosnote.local')
+EMAIL_ASYNC = os.getenv('EMAIL_ASYNC', 'false').strip().lower() in ('1', 'true', 'yes')
+
+# Public Google Identity Services client id. When empty, the template keeps
+# the Google button disabled without breaking email/password auth.
+GOOGLE_OAUTH_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID', '')

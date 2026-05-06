@@ -115,11 +115,19 @@
       <!-- CTA Buttons -->
       <div data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300"
         class="flex flex-col items-center gap-3 pt-4 sm:gap-4 sm:flex-row">
-        <a
+        {% if request.user.is_authenticated %}
+        <a href="{% url 'project' %}"
+          class="inline-flex items-center gap-2 rounded-lg bg-primary px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-on-primary transition hover:bg-primary-container">
+          Go to Project
+          <img class="h-3 w-3" src="https://www.figma.com/api/mcp/asset/206ebc19-3467-4b7a-bd4f-e57a4e331ec6" alt="" />
+        </a>
+        {% else %}
+        <a href="{% url 'signup' %}"
           class="inline-flex items-center gap-2 rounded-lg bg-primary px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-on-primary transition hover:bg-primary-container">
           Start your first project
           <img class="h-3 w-3" src="https://www.figma.com/api/mcp/asset/206ebc19-3467-4b7a-bd4f-e57a4e331ec6" alt="" />
         </a>
+        {% endif %}
         <a class="rounded-lg border border-outline-variant bg-surface-container/50 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-on-surface hover:border-primary transition"
           href="#how">
           See how it works
@@ -313,7 +321,7 @@
           Ready to change the way you
           <span class="block font-newsreader italic text-primary">understand documents?</span>
         </h2>
-        <a
+        <a href="{% if request.user.is_authenticated %}{% if AUTH_EMAIL_VERIFIED %}#start{% else %}{% url 'email_unverified' %}{% endif %}{% else %}{% url 'signup' %}{% endif %}"
           class="inline-flex items-center gap-2 rounded-xl bg-primary px-8 sm:px-12 py-3 sm:py-5 text-base sm:text-xl font-bold text-on-primary transition hover:bg-primary-container">
           Start Your Notebook Free
         </a>

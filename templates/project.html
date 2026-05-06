@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Project Page - MythosNote{% endblock %}
+
+{% block content %}
+<!-- Project Navbar -->
+<nav class="sticky top-0 z-40 border-b border-surface-container-high bg-background/80 backdrop-blur-md">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+        <!-- Logo -->
+        <a href="{% url 'home' %}" class="flex items-center gap-4">
+            <img src="{% static 'svg/mythosnote-logo.svg' %}" alt="MythosNote Logo" class="h-8 w-auto" />
+            <span class="font-newsreader text-2xl italic text-primary-container">
+            MythosNote
+            </span>
+        </a>
+
+        <!-- User controls: Avatar and Logout -->
+        <div class="flex items-center gap-4">
+            <span class="text-sm font-bold text-on-surface">{{ request.user.username }}</span>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="px-4 py-2 text-sm text-error transition hover:text-red-400">
+                    Logout
+                </button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<!-- Main content -->
+<div class="flex items-center justify-center min-h-[calc(100vh-80px)]">
+    <div class="text-center space-y-4">
+        <h1 class="text-4xl font-newsreader font-bold text-on-surface">Welcome to the project page!</h1>
+        <p class="text-outline-variant text-lg">Logged in as: <span class="font-bold text-primary">{{ request.user.email }}</span></p>
+    </div>
+</div>
+{% endblock %}
