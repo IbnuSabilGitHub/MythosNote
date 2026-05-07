@@ -17,7 +17,7 @@
 
         <!-- User controls: Avatar and Logout -->
         <div class="flex items-center gap-4">
-            <span class="text-sm font-bold text-on-surface">{{ request.user.username }}</span>
+            <span class="text-sm font-bold text-on-surface">{{ request.user.username|escape }}</span>
             <form method="post" action="{% url 'logout' %}">
                 {% csrf_token %}
                 <button type="submit" class="px-4 py-2 text-sm text-error transition hover:text-red-400">
@@ -32,7 +32,7 @@
 <div class="flex items-center justify-center min-h-[calc(100vh-80px)]">
     <div class="text-center space-y-4">
         <h1 class="text-4xl font-newsreader font-bold text-on-surface">Welcome to the project page!</h1>
-        <p class="text-outline-variant text-lg">Logged in as: <span class="font-bold text-primary">{{ request.user.email }}</span></p>
+        <p class="text-outline-variant text-lg">Logged in as: <span class="font-bold text-primary">{{ request.user.email|escape }}</span></p>
     </div>
 </div>
 {% endblock %}

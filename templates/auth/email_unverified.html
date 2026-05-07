@@ -22,7 +22,7 @@
         <div class="mt-8 flex flex-col gap-3 sm:flex-row">
             <form method="post" action="{% url 'resend_verification' %}" class="flex-1">
                 {% csrf_token %}
-                <button type="submit"
+                <button id="resend-verification-button" type="submit" data-wait-seconds="{{ resend_wait_seconds|default:0|escape }}"
                     class="w-full bg-primary px-4 py-3 font-['Manrope'] text-sm font-semibold text-yellow-950 transition hover:bg-primary/70">
                     Kirim Ulang Link
                 </button>
@@ -37,4 +37,33 @@
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const resendButton = document.getElementById("resend-verification-button");
+    let waitSeconds = Number.parseInt(resendButton?.dataset.waitSeconds || "0", 10);
+    const originalLabel = "Kirim Ulang Link";
+
+    function updateResendButton() {
+        if (!resendButton || waitSeconds <= 0) {
+            if (resendButton) {
+                resendButton.disabled = false;
+                resendButton.textContent = originalLabel;
+                resendButton.classList.remove("opacity-50", "cursor-not-allowed");
+            }
+            return;
+        }
+
+        const minutes = Math.floor(waitSeconds / 60).toString().padStart(2, "0");
+        const seconds = (waitSeconds % 60).toString().padStart(2, "0");
+        resendButton.disabled = true;
+        resendButton.textContent = `Kirim ulang dalam ${minutes}:${seconds}`;
+        resendButton.classList.add("opacity-50", "cursor-not-allowed");
+        waitSeconds -= 1;
+        window.setTimeout(updateResendButton, 1000);
+    }
+
+    updateResendButton();
+</script>
 {% endblock %}

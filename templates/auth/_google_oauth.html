@@ -9,7 +9,7 @@
         {% csrf_token %}
         <input id="google-oauth-credential" type="hidden" name="credential" />
     </form>
-    <div id="g_id_onload" data-client_id="{{ GOOGLE_OAUTH_CLIENT_ID }}" data-callback="handleGoogleCredential"
+    <div id="g_id_onload" data-client_id="{{ GOOGLE_OAUTH_CLIENT_ID|escape }}" data-callback="handleGoogleCredential"
         data-auto_prompt="false"></div>
     <div class="g_id_signin" data-type="standard" data-theme="filled_black" data-size="large" data-width="384"
         data-text="continue_with"></div>

@@ -26,17 +26,53 @@ class AuthFlowTests(TestCase):
             },
         )
 
-        self.assertRedirects(response, reverse("email_unverified"))
+        self.assertRedirects(response, reverse("signin"))
         user = get_user_model().objects.get(username="alice")
         self.assertFalse(user.profile.email_verified)
         self.assertEqual(len(mail.outbox), 1)
+        self.assertFalse(response.wsgi_request.user.is_authenticated)
 
         verify_path = re.search(r"http://testserver(?P<path>/verify-email/\S+)", mail.outbox[0].body).group("path")
         verify_response = self.client.get(verify_path)
 
-        self.assertRedirects(verify_response, reverse("home"))
+        self.assertRedirects(verify_response, reverse("signin"))
         user.refresh_from_db()
         self.assertTrue(user.profile.email_verified)
+        self.assertFalse(verify_response.wsgi_request.user.is_authenticated)
+
+    def test_verification_resend_is_rate_limited(self):
+        user = get_user_model().objects.create_user(
+            username="eve",
+            email="eve@example.com",
+            password="StrongPass123!",
+        )
+        self.client.login(username="eve", password="StrongPass123!")
+
+        first = self.client.post(reverse("resend_verification"))
+        second = self.client.post(reverse("resend_verification"))
+
+        self.assertRedirects(first, reverse("email_unverified"))
+        self.assertRedirects(second, reverse("email_unverified"))
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_verification_token_is_single_use(self):
+        response = self.client.post(
+            reverse("signup"),
+            {
+                "username": "carol",
+                "email": "carol@example.com",
+                "password": "StrongPass123!",
+                "password_confirm": "StrongPass123!",
+            },
+        )
+        self.assertRedirects(response, reverse("signin"))
+        verify_path = re.search(r"http://testserver(?P<path>/verify-email/\S+)", mail.outbox[0].body).group("path")
+
+        self.assertRedirects(self.client.get(verify_path), reverse("signin"))
+        replay = self.client.get(verify_path)
+
+        self.assertEqual(replay.status_code, 200)
+        self.assertTemplateUsed(replay, "auth/email_verification_invalid.html")
 
     def test_guest_only_routes_redirect_logged_in_users(self):
         user = get_user_model().objects.create_user(

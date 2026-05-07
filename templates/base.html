@@ -102,7 +102,7 @@
   <script>
     window.djangoMessages = [
       {% for message in messages %}
-        { tags: "{{ message.tags|default:'info' }}", text: "{{ message|escapejs }}" }{% if not forloop.last %},{% endif %}
+        { tags: "{{ message.tags|default:'info'|escapejs }}", text: "{{ message|escapejs }}" }{% if not forloop.last %},{% endif %}
       {% endfor %}
     ];
   </script>

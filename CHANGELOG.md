@@ -8,26 +8,32 @@ Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a 
 ## [1.0.5] - 2026-05-07
 
 ### Summary
-- Perbaikan dan penyempurnaan sistem autentikasi serta penambahan aset frontend untuk pengalaman masuk dan landing page yang lebih kaya.
+- Penguatan alur autentikasi: verifikasi email tanpa auto-login, pembatasan kirim ulang email, rate limit Google OAuth, dan hardening template/frontend.
+
+### Added
+- `accounts/migrations/0002_userprofile_last_verification_email_sent_at.py`: Menambah field `last_verification_email_sent_at` pada `UserProfile` untuk melacak cooldown kirim ulang email verifikasi.
 
 ### Changed / Added (analisis per file)
-- `CHANGELOG.md`: Memperbarui changelog dengan ringkasan rilis ini dan analisis perubahan per-file.
-- `accounts/forms.py`: Menambahkan/menyempurnakan validasi form pendaftaran dan login (cek email/username, konfirmasi password, validasi kekuatan password).
-- `accounts/views.py`: Implementasi alur autentikasi penuh: `sign_in`, `sign_up`, `forgot_password`, `password_reset_confirm`, `verify_email`, `resend_verification`, `sign_out`, serta integrasi Google OAuth dan pencatatan/perlindungan rate-limiting.
-- `config/settings.py`: Penambahan konfigurasi terkait autentikasi dan keamanan (mis. `SECURE_CROSS_ORIGIN_OPENER_POLICY`), pendaftaran `accounts` app, dan context processor untuk data auth pada template.
-- `templates/base.html`: Menambahkan blok rendering Flash Messages (alerts), CTA dinamis (Sign In / Go to Project), dan pemuatan aset JS/CSS baru untuk notifikasi/toasts.
-- `templates/forgot_password.html`: Template halaman lupa password dengan form email dan instruksi pengiriman tautan reset.
-- `templates/signin.html`: Template sign-in diperbarui dengan dukungan validasi klien, Google OAuth snippet, dan pesan error yang ditampilkan melalui komponen notifikasi.
-- `templates/signup.html`: Template sign-up diperbarui dengan konfirmasi password dan umpan balik validasi yang lebih jelas.
+- `CHANGELOG.md`: Memuat ringkasan rilis ini dalam bahasa Indonesia dan analisis perubahan per file.
 
-### New assets (untracked yang direkomendasikan ditambahkan)
-- `static/js/auth-validation.js`: Validasi form autentikasi sisi-klien.
-- `static/js/messages.js`: Helpers untuk menampilkan pesan flash / server-sent messages.
-- `static/js/toast.js`: Komponen toast untuk notifikasi non-blokir.
-- `templates/components/`: Folder komponen ulang-pakai (mis. toast, forms) untuk konsistensi UI.
+- `accounts/models.py`: Menambahkan field timestamp untuk dukungan rate limit verifikasi email.
+- `accounts/tests.py`: Memperbarui ekspektasi alur autentikasi dan menambah tes untuk cooldown resend serta token verifikasi sekali pakai.
+- `accounts/utils.py`: Menambah generator token verifikasi khusus, pembatasan kirim ulang email, serta rate limit untuk endpoint Google OAuth.
+- `accounts/views.py`: Mengubah `sign_up` agar tidak auto-login, mengarahkan verifikasi ke halaman login, menerapkan cooldown resend, rate limit Google login, dan logout saat verifikasi berhasil.
+- `config/settings.py`: Menambahkan konfigurasi `PASSWORD_RESET_TIMEOUT` agar token reset password punya batas waktu.
+- `static/js/auth-validation.js`: Menambah sanitasi input frontend dengan trim otomatis saat submit dan blur.
+- `templates/auth/_google_oauth.html`: Meng-escape `GOOGLE_OAUTH_CLIENT_ID` saat dirender ke atribut HTML.
+- `templates/auth/email_unverified.html`: Menambah tombol resend dengan data cooldown dan countdown UI di sisi klien.
+- `templates/base.html`: Meng-escape tag pesan agar data flash lebih aman saat dipindah ke variabel JavaScript.
+- `templates/forgot_password.html`: Meng-escape error form agar output lebih aman.
+- `templates/project.html`: Meng-escape username dan email pengguna pada halaman proyek.
+- `templates/signin.html`: Meng-escape pesan error form pada halaman login.
+- `templates/signup.html`: Meng-escape pesan error form pada halaman daftar.
+
+
 
 ### Notes
-- Perubahan ini menambahkan fitur penting autentikasi; verifikasi end-to-end (email sending, Google OAuth client ID) harus diuji di lingkungan dev/staging.
+- Verifikasi end-to-end tetap perlu diuji: pengiriman email, invalidasi token lama, cooldown resend, dan Google OAuth rate limit.
 
 
 ## [1.0.4] - 2026-05-06

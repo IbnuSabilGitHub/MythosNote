@@ -87,8 +87,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     forms.forEach(form => {
         const inputs = form.querySelectorAll('input[name]');
+
+        form.addEventListener('submit', () => {
+            inputs.forEach(input => {
+                if (input.type !== 'password') {
+                    input.value = input.value.trim();
+                }
+            });
+        });
         
         inputs.forEach(input => {
+            input.addEventListener('blur', () => {
+                if (input.type !== 'password') {
+                    input.value = input.value.trim();
+                }
+            });
+
             const name = input.name;
             // Map input name to rule
             let ruleKey = name;

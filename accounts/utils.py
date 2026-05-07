@@ -4,7 +4,8 @@ import logging
 import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.tokens import PasswordResetTokenGenerator, default_token_generator
+from django.core.cache import cache
 from django.core.mail import send_mail
 from django.urls import reverse
 from django.utils import timezone
@@ -20,6 +21,22 @@ logger = logging.getLogger(__name__)
 
 LOGIN_RATE_LIMIT_ATTEMPTS = 5
 LOGIN_RATE_LIMIT_WINDOW = timedelta(minutes=15)
+VERIFICATION_RESEND_COOLDOWN = timedelta(minutes=5)
+GOOGLE_OAUTH_RATE_LIMIT_ATTEMPTS = 10
+GOOGLE_OAUTH_RATE_LIMIT_WINDOW = 300
+
+
+class EmailVerificationTokenGenerator(PasswordResetTokenGenerator):
+    """Token invalidates after email verification state changes."""
+
+    def _make_hash_value(self, user, timestamp):
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        verified = profile.email_verified
+        last_sent = profile.last_verification_email_sent_at
+        return f"{user.pk}{user.password}{timestamp}{verified}{last_sent}{user.email}"
+
+
+email_verification_token_generator = EmailVerificationTokenGenerator()
 
 
 def normalize_identifier(identifier):
@@ -35,6 +52,30 @@ def get_client_ip(request):
     if forwarded_for:
         return forwarded_for.split(",", 1)[0].strip()
     return request.META.get("REMOTE_ADDR")
+
+
+def get_verification_resend_wait_seconds(user):
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    if not profile.last_verification_email_sent_at:
+        return 0
+
+    retry_at = profile.last_verification_email_sent_at + VERIFICATION_RESEND_COOLDOWN
+    remaining = retry_at - timezone.now()
+    return max(0, int(remaining.total_seconds()))
+
+
+def can_send_verification_email(user):
+    return get_verification_resend_wait_seconds(user) == 0
+
+
+def is_google_oauth_rate_limited(request):
+    ip_address = get_client_ip(request) or "unknown"
+    cache_key = f"google-oauth-rate:{ip_address}"
+    attempts = cache.get(cache_key, 0)
+    if attempts >= GOOGLE_OAUTH_RATE_LIMIT_ATTEMPTS:
+        return True
+    cache.set(cache_key, attempts + 1, GOOGLE_OAUTH_RATE_LIMIT_WINDOW)
+    return False
 
 
 def get_login_usage(request, identifier):
@@ -162,8 +203,12 @@ def _dispatch_email(subject, message, recipient_list):
 def send_verification_email(request, user):
     """Send a signed email verification link via Django's configured email backend."""
 
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    profile.last_verification_email_sent_at = timezone.now()
+    profile.save(update_fields=["last_verification_email_sent_at", "updated_at"])
+
     uid = urlsafe_base64_encode(force_bytes(user.pk))
-    token = default_token_generator.make_token(user)
+    token = email_verification_token_generator.make_token(user)
     verify_url = build_absolute_auth_url(
         request,
         "verify_email",

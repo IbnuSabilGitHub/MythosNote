@@ -11,6 +11,7 @@ class UserProfile(models.Model):
         related_name="profile",
     )
     email_verified = models.BooleanField(default=False)
+    last_verification_email_sent_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -11,8 +11,12 @@ from django.views.decorators.http import require_POST
 from .decorators import guest_required
 from .forms import ForgotPasswordForm, PasswordResetConfirmForm, SignInForm, SignUpForm
 from .utils import (
+    can_send_verification_email,
     clear_failed_login_tracking,
+    email_verification_token_generator,
+    get_verification_resend_wait_seconds,
     get_login_usage,
+    is_google_oauth_rate_limited,
     is_email_verified,
     is_login_rate_limited,
     record_failed_login,
@@ -54,10 +58,9 @@ def sign_up(request):
     form = SignUpForm(data=request.POST or None)
     if request.method == "POST" and form.is_valid():
         user = form.save()
-        login(request, user)
         send_verification_email(request, user)
-        messages.success(request, "Akun berhasil dibuat. Silakan cek email untuk verifikasi.")
-        return redirect("email_unverified")
+        messages.success(request, "Akun berhasil dibuat. Cek email, lalu login setelah verifikasi.")
+        return redirect("signin")
 
     if request.method == "POST" and not form.is_valid():
         # Extract backend validation errors and show as toast
@@ -73,6 +76,10 @@ def sign_up(request):
 @guest_required
 def google_sign_in(request):
     """Create or login a user from a verified Google Identity Services credential."""
+
+    if is_google_oauth_rate_limited(request):
+        messages.error(request, "Terlalu banyak percobaan Google login. Coba lagi nanti.")
+        return redirect("signin")
 
     credential = request.POST.get("credential", "")
     if not credential:
@@ -133,7 +140,11 @@ def email_unverified(request):
 
     if is_email_verified(request.user):
         return redirect("home")
-    return render(request, "auth/email_unverified.html")
+    return render(
+        request,
+        "auth/email_unverified.html",
+        {"resend_wait_seconds": get_verification_resend_wait_seconds(request.user)},
+    )
 
 
 @login_required
@@ -143,6 +154,10 @@ def resend_verification(request):
 
     if is_email_verified(request.user):
         return redirect("home")
+    if not can_send_verification_email(request.user):
+        wait_seconds = get_verification_resend_wait_seconds(request.user)
+        messages.warning(request, f"Tunggu {wait_seconds} detik sebelum kirim ulang.")
+        return redirect("email_unverified")
     send_verification_email(request, request.user)
     messages.success(request, "Link verifikasi baru sudah dikirim.")
     return redirect("email_unverified")
@@ -152,12 +167,13 @@ def verify_email(request, uidb64, token):
     """Verify a user's email from the signed token URL."""
 
     user = get_user_from_uid(uidb64)
-    if user and default_token_generator.check_token(user, token):
+    if user and email_verification_token_generator.check_token(user, token):
         user.profile.email_verified = True
         user.profile.save(update_fields=["email_verified", "updated_at"])
-        login(request, user)
-        messages.success(request, "Email berhasil diverifikasi.")
-        return redirect("home")
+        if request.user.is_authenticated:
+            logout(request)
+        messages.success(request, "Email berhasil diverifikasi. Silakan login.")
+        return redirect("signin")
 
     messages.error(request, "Link verifikasi tidak valid atau sudah kedaluwarsa.")
     return render(request, "auth/email_verification_invalid.html")
