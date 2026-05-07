@@ -57,6 +57,23 @@
             <form method="post" action="{% url 'signin' %}"
                 class="flex flex-col items-start justify-start self-stretch pb-4">
                 {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="mb-4 flex flex-col items-start gap-2 self-stretch rounded-sm bg-on-error border border-error/50 px-4 py-3">
+                    <div class="flex items-start gap-2">
+                        <svg class="h-5 w-5 shrink-0 text-error mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
+                        <div class="flex flex-col gap-1">
+                            {% for error in form.non_field_errors %}
+                            <p class="font-['Manrope'] text-sm font-normal text-error">
+                                {{ error }}
+                            </p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
                 <div class="flex flex-col items-start justify-start gap-6 self-stretch">
                     <!-- Username Field -->
                     <div class="flex flex-col items-start justify-start gap-2 self-stretch">
@@ -67,8 +84,19 @@
                             </label>
                         </div>
                         <input name="username" type="text" required placeholder="nama@domain.com"
-                            value="{{ form.username.value|default:'' }}"
-                            class="self-stretch bg-neutral-800 px-4 pt-3 pb-3.5 text-on-surface/50 outline -outline-offset-1 outline-stone-700" />
+                            value="{{ form.username.value|default:''|escape }}"
+                            minlength="3" maxlength="254"
+                            class="self-stretch bg-neutral-800 px-4 pt-3 pb-3.5 text-on-surface/50 outline -outline-offset-1 outline-stone-700 transition" />
+                        {% if form.username.errors %}
+                        <div class="flex items-start gap-2 self-stretch">
+                            <svg class="h-4 w-4 shrink-0 text-red-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                            </svg>
+                            <span class="font-['Manrope'] text-xs font-normal text-red-500">
+                                {% for error in form.username.errors %}{{ error }}{% endfor %}
+                            </span>
+                        </div>
+                    {% endif %}
                     </div>
 
                     <!-- Password Field -->
@@ -88,8 +116,9 @@
                             </div>
                         </div>
                         <input name="password" type="password" required placeholder="••••••••"
-                            class="self-stretch bg-neutral-800 px-4 pt-3 pb-3.5 text-on-surface/50 outline  -outline-offset-1 outline-stone-700" />
+                            class="self-stretch bg-neutral-800 px-4 pt-3 pb-3.5 text-on-surface/50 outline -outline-offset-1 outline-stone-700 transition" />
                     </div>
+
 
                     <!-- Submit Button -->
                     <div class="flex flex-col items-start justify-start self-stretch pt-2">
@@ -123,4 +152,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/auth-validation.js' %}"></script>
 {% endblock %}

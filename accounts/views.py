@@ -59,9 +59,12 @@ def sign_up(request):
         messages.success(request, "Akun berhasil dibuat. Silakan cek email untuk verifikasi.")
         return redirect("email_unverified")
 
-    if request.method == "POST":
-        for errors in form.errors.values():
-            messages.error(request, errors[0])
+    if request.method == "POST" and not form.is_valid():
+        # Extract backend validation errors and show as toast
+        # Only email duplicates should be toast, others show in form
+        email_errors = form.errors.get("email", [])
+        if email_errors and "sudah terdaftar" in str(email_errors[0]).lower():
+            messages.error(request, str(email_errors[0]))
 
     return render(request, "signup.html", {"form": form, "hide_nav": True})
 
@@ -175,7 +178,6 @@ def sign_out(request):
     """Destroy the current Django session and return to the landing page."""
 
     logout(request)
-    messages.success(request, "Anda sudah logout.")
     return redirect("home")
 
 

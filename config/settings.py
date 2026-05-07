@@ -163,6 +163,16 @@ LOGIN_URL = 'signin'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 
+# Django Messages Framework - Map message levels to tags for ToastManager
+from django.contrib.messages import constants as message_constants
+MESSAGE_TAGS = {
+    message_constants.SUCCESS: 'success',
+    message_constants.ERROR: 'error',
+    message_constants.WARNING: 'warning',
+    message_constants.INFO: 'info',
+    message_constants.DEBUG: 'info',
+}
+
 # Console email keeps local WSL development dependency-free; production can
 # override EMAIL_BACKEND and SMTP settings through environment variables.
 EMAIL_BACKEND = os.getenv(

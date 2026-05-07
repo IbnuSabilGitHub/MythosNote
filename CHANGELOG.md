@@ -3,6 +3,33 @@
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+
+
+## [1.0.5] - 2026-05-07
+
+### Summary
+- Perbaikan dan penyempurnaan sistem autentikasi serta penambahan aset frontend untuk pengalaman masuk dan landing page yang lebih kaya.
+
+### Changed / Added (analisis per file)
+- `CHANGELOG.md`: Memperbarui changelog dengan ringkasan rilis ini dan analisis perubahan per-file.
+- `accounts/forms.py`: Menambahkan/menyempurnakan validasi form pendaftaran dan login (cek email/username, konfirmasi password, validasi kekuatan password).
+- `accounts/views.py`: Implementasi alur autentikasi penuh: `sign_in`, `sign_up`, `forgot_password`, `password_reset_confirm`, `verify_email`, `resend_verification`, `sign_out`, serta integrasi Google OAuth dan pencatatan/perlindungan rate-limiting.
+- `config/settings.py`: Penambahan konfigurasi terkait autentikasi dan keamanan (mis. `SECURE_CROSS_ORIGIN_OPENER_POLICY`), pendaftaran `accounts` app, dan context processor untuk data auth pada template.
+- `templates/base.html`: Menambahkan blok rendering Flash Messages (alerts), CTA dinamis (Sign In / Go to Project), dan pemuatan aset JS/CSS baru untuk notifikasi/toasts.
+- `templates/forgot_password.html`: Template halaman lupa password dengan form email dan instruksi pengiriman tautan reset.
+- `templates/signin.html`: Template sign-in diperbarui dengan dukungan validasi klien, Google OAuth snippet, dan pesan error yang ditampilkan melalui komponen notifikasi.
+- `templates/signup.html`: Template sign-up diperbarui dengan konfirmasi password dan umpan balik validasi yang lebih jelas.
+
+### New assets (untracked yang direkomendasikan ditambahkan)
+- `static/js/auth-validation.js`: Validasi form autentikasi sisi-klien.
+- `static/js/messages.js`: Helpers untuk menampilkan pesan flash / server-sent messages.
+- `static/js/toast.js`: Komponen toast untuk notifikasi non-blokir.
+- `templates/components/`: Folder komponen ulang-pakai (mis. toast, forms) untuk konsistensi UI.
+
+### Notes
+- Perubahan ini menambahkan fitur penting autentikasi; verifikasi end-to-end (email sending, Google OAuth client ID) harus diuji di lingkungan dev/staging.
+
+
 ## [1.0.4] - 2026-05-06
 
 ### Added

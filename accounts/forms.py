@@ -10,7 +10,7 @@ User = get_user_model()
 class SignInForm(forms.Form):
     """Authenticate with either username or email plus password."""
 
-    username = forms.CharField(max_length=254)
+    username = forms.CharField(max_length=254, min_length=3)
     password = forms.CharField(strip=False, widget=forms.PasswordInput)
 
     def __init__(self, request=None, *args, **kwargs):
@@ -58,6 +58,8 @@ class SignUpForm(forms.ModelForm):
 
     def clean_username(self):
         username = self.cleaned_data["username"].strip()
+        if len(username) < 3 or len(username) > 20:
+            raise forms.ValidationError("Username harus 3-20 karakter.")
         if User.objects.filter(username__iexact=username).exists():
             raise forms.ValidationError("Username sudah terdaftar.")
         return username
