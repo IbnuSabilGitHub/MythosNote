@@ -2,6 +2,11 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.0.7] - 2026-05-08
+### Summary
+ - `auth-validation.js` yang telah diperbaiki, lebih bersih dan mudah dipelihara, sambil tetap mempertahankan semua fungsinya 
+
 ## [1.0.6] - 2026-05-08
 
 ### Summary

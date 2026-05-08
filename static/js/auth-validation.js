@@ -1,165 +1,233 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Utility Debounce
-    function debounce(func, wait) {
+    // Utility Functions
+    const debounce = (func, wait) => {
         let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
+        return (...args) => {
             clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
+            timeout = setTimeout(() => func(...args), wait);
         };
-    }
+    };
 
-    // Validation rules
-    const rules = {
-        email: (val) => {
-            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return re.test(val) ? '' : 'Format email tidak valid';
+    // Constants & Configuration
+    const VALIDATION_RULES = {
+        email: (value) => {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(value) ? '' : 'Format email tidak valid';
         },
-        password: (val) => {
-            return val.length >= 6 ? '' : 'Password minimal 6 karakter';
+        password: (value) => {
+            return value.length >= 8 ? '' : 'Password minimal 8 karakter';
         },
-        username: (val) => {
-            if (val.length < 3) return 'Username minimal 3 karakter';
-            if (val.length > 20) return 'Username maksimal 20 karakter';
+        username: (value) => {
+            if (value.length < 3) return 'Username minimal 3 karakter';
+            if (value.length > 20) return 'Username maksimal 20 karakter';
             return '';
         },
-        password_confirm: (val, form) => {
-            const pass = form.querySelector('input[name="password"]').value;
-            return val === pass ? '' : 'Confirm password harus sama dengan password';
+        password_confirm: (value, form) => {
+            const password = form.querySelector('input[name="password"]').value;
+            return value === password ? '' : 'Confirm password harus sama dengan password';
         }
     };
 
-    // State tracking
-    const errors = {};
+    const ERROR_CLASS = 'outline-red-500/50';
+    const DEFAULT_CLASS = 'outline-stone-700';
+    const DISABLED_CLASSES = ['opacity-50', 'cursor-not-allowed'];
 
-    function showError(input, errorMsg) {
-        // Find or create error container
-        let errDiv = input.parentNode.querySelector('.js-error-msg');
-        if (!errDiv) {
-            errDiv = document.createElement('div');
-            errDiv.className = 'js-error-msg flex items-start gap-2 self-stretch mt-2';
-            errDiv.innerHTML = `
-                <svg class="h-4 w-4 shrink-0 text-red-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                </svg>
-                <span class="font-['Manrope'] text-xs font-normal text-red-500 error-text"></span>
-            `;
-            input.parentNode.appendChild(errDiv);
+    // Error UI Management
+    const createErrorElement = () => {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'js-error-msg flex items-start gap-2 self-stretch mt-2';
+        errorDiv.innerHTML = `
+            <svg class="h-4 w-4 shrink-0 text-red-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+            </svg>
+            <span class="font-['Manrope'] text-xs font-normal text-red-500 error-text"></span>
+        `;
+        return errorDiv;
+    };
+
+    const findOrCreateErrorElement = (input) => {
+        let errorElement = input.parentNode.querySelector('.js-error-msg');
+        if (!errorElement) {
+            errorElement = createErrorElement();
+            input.parentNode.appendChild(errorElement);
         }
-        errDiv.querySelector('.error-text').textContent = errorMsg;
-        errDiv.style.display = 'flex';
-        
-        // Update input styling (assumes outline-stone-700 ->  outline-red-500/50 replacement)
-        input.classList.remove('outline-stone-700');
-        input.classList.add('outline-red-500/50');
-    }
+        return errorElement;
+    };
 
-    function clearError(input) {
-        let errDiv = input.parentNode.querySelector('.js-error-msg');
-        if (errDiv) {
-            errDiv.style.display = 'none';
+    const showError = (input, errorMessage) => {
+        const errorElement = findOrCreateErrorElement(input);
+        errorElement.querySelector('.error-text').textContent = errorMessage;
+        errorElement.style.display = 'flex';
+        
+        input.classList.remove(DEFAULT_CLASS);
+        input.classList.add(ERROR_CLASS);
+    };
+
+    const clearError = (input) => {
+        const errorElement = input.parentNode.querySelector('.js-error-msg');
+        if (errorElement) {
+            errorElement.style.display = 'none';
         }
-        input.classList.remove('outline-red-500/50');
-        input.classList.add('outline-stone-700');
-    }
+        
+        input.classList.remove(ERROR_CLASS);
+        input.classList.add(DEFAULT_CLASS);
+    };
 
-    function updateSubmitButton(form) {
-        const btn = form.querySelector('button[type="submit"]');
-        const hasErrors = Object.values(errors).some(v => v !== '');
+    // Form State Management
+    const createFormState = () => ({
+        errors: {},
         
-        // Check if required fields are empty
-        const inputs = Array.from(form.querySelectorAll('input[required]'));
-        const isEmpty = inputs.some(i => i.value.trim() === '');
+        setError(fieldName, errorMessage) {
+            this.errors[fieldName] = errorMessage;
+        },
         
-        if (hasErrors || isEmpty) {
-            btn.disabled = true;
-            btn.classList.add('opacity-50', 'cursor-not-allowed');
+        clearError(fieldName) {
+            this.errors[fieldName] = '';
+        },
+        
+        hasErrors() {
+            return Object.values(this.errors).some(value => value !== '');
+        },
+        
+        isSubmittable() {
+            return !this.hasErrors();
+        }
+    });
+
+    const updateSubmitButton = (form, formState) => {
+        const submitButton = form.querySelector('button[type="submit"]');
+        if (!submitButton) return;
+
+        const requiredInputs = form.querySelectorAll('input[required]');
+        const hasEmptyRequired = Array.from(requiredInputs).some(input => input.value.trim() === '');
+        
+        const shouldDisable = formState.hasErrors() || hasEmptyRequired;
+        
+        submitButton.disabled = shouldDisable;
+        
+        if (shouldDisable) {
+            submitButton.classList.add(...DISABLED_CLASSES);
         } else {
-            btn.disabled = false;
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            submitButton.classList.remove(...DISABLED_CLASSES);
         }
-    }
+    };
 
-    const forms = document.querySelectorAll('form[action*="signin"], form[action*="signup"]');
-
-    forms.forEach(form => {
-        const inputs = form.querySelectorAll('input[name]');
-
-        form.addEventListener('submit', () => {
-            inputs.forEach(input => {
-                if (input.type !== 'password') {
-                    input.value = input.value.trim();
-                }
-            });
+    const trimNonPasswordInputs = (inputs) => {
+        inputs.forEach(input => {
+            if (input.type !== 'password') {
+                input.value = input.value.trim();
+            }
         });
+    };
+
+    // Input Validation Logic
+    const validateInput = (input, form, formState) => {
+        const fieldName = input.name;
+        const value = input.value;
+        
+        if (value === '') {
+            clearError(input);
+            formState.clearError(fieldName);
+            return;
+        }
+
+        const ruleKey = getRuleKey(fieldName, form);
+        if (!ruleKey || !VALIDATION_RULES[ruleKey]) return;
+
+        const errorMessage = VALIDATION_RULES[ruleKey](value, form);
+        formState.setError(fieldName, errorMessage);
+
+        if (errorMessage) {
+            showError(input, errorMessage);
+        } else {
+            clearError(input);
+        }
+    };
+
+    const getRuleKey = (fieldName, form) => {
+        // Skip username validation on signin form (it accepts email or username)
+        if (fieldName === 'username' && form.action.includes('signin')) {
+            return null;
+        }
+        return fieldName;
+    };
+
+    const handlePasswordConfirmInput = (input, form, formState, debouncedValidate) => {
+        const value = input.value;
+        
+        if (value.length >= 8) {
+            debouncedValidate();
+        } else {
+            clearError(input);
+            formState.clearError(input.name);
+            updateSubmitButton(form, formState);
+            
+            // Still check for errors to maintain disabled state
+            const errorMessage = VALIDATION_RULES.password_confirm(value, form);
+            if (errorMessage) {
+                formState.setError(input.name, errorMessage);
+            }
+        }
+    };
+
+    // Form Initialization
+    const setupFormValidation = (form) => {
+        const formState = createFormState();
+        const inputs = form.querySelectorAll('input[name]');
+        
+        // Trim non-password inputs on submit and blur
+        form.addEventListener('submit', () => trimNonPasswordInputs(inputs));
         
         inputs.forEach(input => {
-            input.addEventListener('blur', () => {
-                if (input.type !== 'password') {
+            if (input.type !== 'password') {
+                input.addEventListener('blur', () => {
                     input.value = input.value.trim();
-                }
-            });
-
-            const name = input.name;
-            // Map input name to rule
-            let ruleKey = name;
-            if (name === 'username' && form.action.includes('signin')) {
-                // Ignore username pattern on signin if it can be email or username, just check not empty
-                ruleKey = null; 
-            }
-
-            if (ruleKey && rules[ruleKey]) {
-                const validate = () => {
-                    const val = input.value;
-                    if (val === '') {
-                        clearError(input);
-                        errors[name] = '';
-                    } else {
-                        const errMsg = rules[ruleKey](val, form);
-                        errors[name] = errMsg;
-                        if (errMsg) {
-                            showError(input, errMsg);
-                        } else {
-                            clearError(input);
-                        }
-                    }
-                    updateSubmitButton(form);
-                };
-
-                const debouncedValidate = debounce(validate, 400);
-
-                input.addEventListener('input', (e) => {
-                    if (name === 'password_confirm') {
-                        // Confirm password: only validate immediately if length >= 8, otherwise don't show error yet
-                        if (e.target.value.length >= 8) {
-                            debouncedValidate();
-                        } else {
-                            // Still clears errors if it becomes valid or empty but won't eagerly validate small strings
-                            clearError(input);
-                            errors[name] = '';
-                            updateSubmitButton(form);
-                            // Set internal error state so submit stays disabled
-                            const errMsg = rules[ruleKey](e.target.value, form);
-                            if (errMsg) errors[name] = errMsg; 
-                        }
-                    } else {
-                        debouncedValidate();
-                    }
-                    // For requiredness check during typing
-                    setTimeout(() => updateSubmitButton(form), 10);
                 });
-
-                input.addEventListener('blur', validate);
-            } else {
-                // Just for required field submit button toggle
-                input.addEventListener('input', () => updateSubmitButton(form));
             }
+
+            setupInputValidation(input, form, formState);
         });
 
-        // Initial check
-        updateSubmitButton(form);
-    });
+        // Initial button state check
+        updateSubmitButton(form, formState);
+    };
+
+    const setupInputValidation = (input, form, formState) => {
+        const fieldName = input.name;
+        const ruleKey = getRuleKey(fieldName, form);
+        
+        if (!ruleKey || !VALIDATION_RULES[ruleKey]) {
+            // Input without validation rules - just track for button state
+            input.addEventListener('input', () => updateSubmitButton(form, formState));
+            return;
+        }
+
+        const validate = () => {
+            validateInput(input, form, formState);
+            updateSubmitButton(form, formState);
+        };
+
+        const debouncedValidate = debounce(validate, 400);
+
+        input.addEventListener('input', (event) => {
+            if (fieldName === 'password_confirm') {
+                handlePasswordConfirmInput(input, form, formState, debouncedValidate);
+            } else {
+                debouncedValidate();
+            }
+            
+            // Immediate check for required fields during typing
+            setTimeout(() => updateSubmitButton(form, formState), 10);
+        });
+
+        input.addEventListener('blur', validate);
+    };
+
+    // Application Entry Point
+    const initialize = () => {
+        const authForms = document.querySelectorAll('form[action*="signin"], form[action*="signup"]');
+        authForms.forEach(setupFormValidation);
+    };
+
+    initialize();
 });
