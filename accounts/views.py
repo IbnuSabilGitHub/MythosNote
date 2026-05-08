@@ -1,8 +1,13 @@
+"""Tampilan autentikasi untuk masuk, pendaftaran, dan verifikasi email."""
+
+from typing import Any, Mapping
+
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.tokens import default_token_generator
 from django.db import IntegrityError, transaction
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
@@ -30,7 +35,7 @@ User = get_user_model()
 
 
 @guest_required
-def sign_in(request):
+def sign_in(request: HttpRequest) -> HttpResponse:
     """Handle session-based login with failed-attempt rate limiting."""
 
     form = SignInForm(request=request, data=request.POST or None)
@@ -52,8 +57,9 @@ def sign_in(request):
 
 
 @guest_required
-def sign_up(request):
+def sign_up(request: HttpRequest) -> HttpResponse:
     """Register a local account and send the first verification email."""
+
 
     form = SignUpForm(data=request.POST or None)
     if request.method == "POST" and form.is_valid():
@@ -74,8 +80,8 @@ def sign_up(request):
 
 @require_POST
 @guest_required
-def google_sign_in(request):
-    """Create or login a user from a verified Google Identity Services credential."""
+def google_sign_in(request: HttpRequest) -> HttpResponse:
+    """Register a local account and send the first verification email."""
 
     if is_google_oauth_rate_limited(request):
         messages.error(request, "Terlalu banyak percobaan Google login. Coba lagi nanti.")
@@ -104,7 +110,7 @@ def google_sign_in(request):
     return redirect("home")
 
 
-def get_or_create_google_user(payload):
+def get_or_create_google_user(payload: Mapping[str, Any]) -> Any:
     """Create a Django user from Google profile data without adding OAuth tables yet."""
 
     with transaction.atomic():
@@ -122,7 +128,7 @@ def get_or_create_google_user(payload):
         return user
 
 
-def build_unique_username(email):
+def build_unique_username(email: str) -> str:
     """Generate a stable username seed from email and avoid collisions."""
 
     seed = email.split("@", 1)[0].replace(".", "_")[:140] or "user"
@@ -135,7 +141,7 @@ def build_unique_username(email):
 
 
 @login_required
-def email_unverified(request):
+def email_unverified(request: HttpRequest) -> HttpResponse:
     """Show the verification gate for logged-in users with unverified email."""
 
     if is_email_verified(request.user):
@@ -149,7 +155,7 @@ def email_unverified(request):
 
 @login_required
 @require_POST
-def resend_verification(request):
+def resend_verification(request: HttpRequest) -> HttpResponse:
     """Resend verification email for the current logged-in account."""
 
     if is_email_verified(request.user):
@@ -163,7 +169,7 @@ def resend_verification(request):
     return redirect("email_unverified")
 
 
-def verify_email(request, uidb64, token):
+def verify_email(request: HttpRequest, uidb64: str, token: str) -> HttpResponse:
     """Verify a user's email from the signed token URL."""
 
     user = get_user_from_uid(uidb64)
@@ -179,7 +185,7 @@ def verify_email(request, uidb64, token):
     return render(request, "auth/email_verification_invalid.html")
 
 
-def get_user_from_uid(uidb64):
+def get_user_from_uid(uidb64: str) -> Any | None:
     """Decode a URL-safe user id and return the matching user if it exists."""
 
     try:
@@ -190,7 +196,7 @@ def get_user_from_uid(uidb64):
 
 
 @require_POST
-def sign_out(request):
+def sign_out(request: HttpRequest) -> HttpResponse:
     """Destroy the current Django session and return to the landing page."""
 
     logout(request)
@@ -198,7 +204,7 @@ def sign_out(request):
 
 
 @guest_required
-def forgot_password(request):
+def forgot_password(request: HttpRequest) -> HttpResponse:
     """Send reset-password instructions while keeping account discovery private."""
 
     form = ForgotPasswordForm(data=request.POST or None)
@@ -216,7 +222,7 @@ def forgot_password(request):
 
 
 @guest_required
-def password_reset_confirm(request, uidb64, token):
+def password_reset_confirm(request: HttpRequest, uidb64: str, token: str) -> HttpResponse:
     """Validate a reset token and allow the user to choose a new password."""
 
     user = get_user_from_uid(uidb64)

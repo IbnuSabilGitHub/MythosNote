@@ -1,3 +1,5 @@
+"""Authentication profile and usage models."""
+
 from django.conf import settings
 from django.db import models
 
@@ -15,7 +17,7 @@ class UserProfile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Profile<{self.user_id}>"
 
 
@@ -50,6 +52,6 @@ class UserUsage(models.Model):
             models.Index(fields=["date", "user"]),
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         owner = self.user_id or self.identifier or "anonymous"
         return f"Usage<{owner}:{self.date}>"

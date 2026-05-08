@@ -1,3 +1,5 @@
+"""Integration tests for the authentication flow."""
+
 import re
 
 from django.contrib.auth import get_user_model
@@ -15,7 +17,7 @@ from .models import UserUsage
 class AuthFlowTests(TestCase):
     """Cover the session auth flow without touching future workspace features."""
 
-    def test_signup_requires_email_verification_before_full_access(self):
+    def test_signup_requires_email_verification_before_full_access(self) -> None:
         response = self.client.post(
             reverse("signup"),
             {
@@ -40,7 +42,7 @@ class AuthFlowTests(TestCase):
         self.assertTrue(user.profile.email_verified)
         self.assertFalse(verify_response.wsgi_request.user.is_authenticated)
 
-    def test_verification_resend_is_rate_limited(self):
+    def test_verification_resend_is_rate_limited(self) -> None:
         user = get_user_model().objects.create_user(
             username="eve",
             email="eve@example.com",
@@ -55,7 +57,7 @@ class AuthFlowTests(TestCase):
         self.assertRedirects(second, reverse("email_unverified"))
         self.assertEqual(len(mail.outbox), 1)
 
-    def test_verification_token_is_single_use(self):
+    def test_verification_token_is_single_use(self) -> None:
         response = self.client.post(
             reverse("signup"),
             {
@@ -74,7 +76,7 @@ class AuthFlowTests(TestCase):
         self.assertEqual(replay.status_code, 200)
         self.assertTemplateUsed(replay, "auth/email_verification_invalid.html")
 
-    def test_guest_only_routes_redirect_logged_in_users(self):
+    def test_guest_only_routes_redirect_logged_in_users(self) -> None:
         user = get_user_model().objects.create_user(
             username="verified",
             email="verified@example.com",
@@ -88,7 +90,7 @@ class AuthFlowTests(TestCase):
 
         self.assertRedirects(response, reverse("home"))
 
-    def test_failed_login_attempts_are_rate_limited(self):
+    def test_failed_login_attempts_are_rate_limited(self) -> None:
         get_user_model().objects.create_user(
             username="bob",
             email="bob@example.com",

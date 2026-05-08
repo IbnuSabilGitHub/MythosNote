@@ -1,7 +1,10 @@
+"""Compatibility wrapper for running RQ workers with django-rq."""
+
 import os
 import sys
+from typing import Any
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandParser
 from redis.exceptions import ConnectionError
 from rq.logutils import setup_loghandlers
 
@@ -17,7 +20,7 @@ class Command(BaseCommand):
 
     args = "<queue queue ...>"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument("--worker-class", action="store", dest="worker_class", help="RQ Worker class to use")
         parser.add_argument("--pid", action="store", dest="pid", default=None, help="PID file path")
         parser.add_argument("--burst", action="store_true", dest="burst", default=False, help="Run worker in burst mode")
@@ -45,7 +48,7 @@ class Command(BaseCommand):
         )
         parser.add_argument("args", nargs="*", type=str, help="Queues to work on")
 
-    def handle(self, *args, **options):
+    def handle(self, *args: str, **options: Any) -> None:
         pid = options.get("pid")
         if pid:
             with open(os.path.expanduser(pid), "w", encoding="utf-8") as fp:

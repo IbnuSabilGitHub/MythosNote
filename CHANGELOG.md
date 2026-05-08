@@ -2,8 +2,15 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6] - 2026-05-08
 
+### Summary
+- Refactor dokumentasi dan type hint di modul auth utama.
 
+### Changed
+- Tambah docstring modul dan type hints di `accounts/`, `config/views.py`, `manage.py`, dan `project_commands/management/commands/rqworker.py`.
+- Rapikan signature fungsi agar lebih konsisten dan mudah dicek Django.
+- Validasi lulus: `manage.py check` dan `accounts.tests.AuthFlowTests`.
 
 ## [1.0.5] - 2026-05-07
 

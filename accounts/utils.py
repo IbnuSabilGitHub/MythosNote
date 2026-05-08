@@ -1,4 +1,7 @@
+"""Shared authentication utilities for account, login, and email workflows."""
+
 from datetime import timedelta
+from typing import Any
 import logging
 
 import requests
@@ -7,6 +10,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import PasswordResetTokenGenerator, default_token_generator
 from django.core.cache import cache
 from django.core.mail import send_mail
+from django.http import HttpRequest
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import force_bytes
@@ -29,7 +33,7 @@ GOOGLE_OAUTH_RATE_LIMIT_WINDOW = 300
 class EmailVerificationTokenGenerator(PasswordResetTokenGenerator):
     """Token invalidates after email verification state changes."""
 
-    def _make_hash_value(self, user, timestamp):
+    def _make_hash_value(self, user: Any, timestamp: int) -> str:
         profile, _ = UserProfile.objects.get_or_create(user=user)
         verified = profile.email_verified
         last_sent = profile.last_verification_email_sent_at
@@ -39,13 +43,13 @@ class EmailVerificationTokenGenerator(PasswordResetTokenGenerator):
 email_verification_token_generator = EmailVerificationTokenGenerator()
 
 
-def normalize_identifier(identifier):
+def normalize_identifier(identifier: str | None) -> str:
     """Normalize login identifiers so rate-limit buckets stay consistent."""
 
     return (identifier or "").strip().lower()
 
 
-def get_client_ip(request):
+def get_client_ip(request: HttpRequest) -> str | None:
     """Return the best-effort client IP while staying proxy-aware."""
 
     forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
@@ -54,7 +58,7 @@ def get_client_ip(request):
     return request.META.get("REMOTE_ADDR")
 
 
-def get_verification_resend_wait_seconds(user):
+def get_verification_resend_wait_seconds(user: Any) -> int:
     profile, _ = UserProfile.objects.get_or_create(user=user)
     if not profile.last_verification_email_sent_at:
         return 0
@@ -64,11 +68,11 @@ def get_verification_resend_wait_seconds(user):
     return max(0, int(remaining.total_seconds()))
 
 
-def can_send_verification_email(user):
+def can_send_verification_email(user: Any) -> bool:
     return get_verification_resend_wait_seconds(user) == 0
 
 
-def is_google_oauth_rate_limited(request):
+def is_google_oauth_rate_limited(request: HttpRequest) -> bool:
     ip_address = get_client_ip(request) or "unknown"
     cache_key = f"google-oauth-rate:{ip_address}"
     attempts = cache.get(cache_key, 0)
@@ -78,7 +82,7 @@ def is_google_oauth_rate_limited(request):
     return False
 
 
-def get_login_usage(request, identifier):
+def get_login_usage(request: HttpRequest, identifier: str) -> UserUsage:
     """Fetch or create today's login usage row for an identifier/IP pair."""
 
     normalized = normalize_identifier(identifier)
@@ -97,7 +101,7 @@ def get_login_usage(request, identifier):
     return usage
 
 
-def is_login_rate_limited(usage):
+def is_login_rate_limited(usage: UserUsage) -> bool:
     """Check whether failed login attempts are still inside the lock window."""
 
     if not usage.failed_login_window_started_at:
@@ -120,7 +124,7 @@ def is_login_rate_limited(usage):
     return usage.failed_login_count >= LOGIN_RATE_LIMIT_ATTEMPTS
 
 
-def record_failed_login(usage):
+def record_failed_login(usage: UserUsage) -> None:
     """Increment failed login attempts for the current lock window."""
 
     now = timezone.now()
@@ -139,7 +143,7 @@ def record_failed_login(usage):
     )
 
 
-def clear_failed_login_tracking(usage):
+def clear_failed_login_tracking(usage: UserUsage) -> None:
     """Clear failed login counters after a successful authentication."""
 
     usage.failed_login_count = 0
@@ -154,7 +158,7 @@ def clear_failed_login_tracking(usage):
     )
 
 
-def is_email_verified(user):
+def is_email_verified(user: Any) -> bool:
     """Return verification state while tolerating legacy users without profile rows."""
 
     if not user.is_authenticated:
@@ -163,13 +167,13 @@ def is_email_verified(user):
     return profile.email_verified
 
 
-def build_absolute_auth_url(request, route_name, **kwargs):
+def build_absolute_auth_url(request: HttpRequest, route_name: str, **kwargs: Any) -> str:
     """Build absolute URLs used in email verification and reset messages."""
 
     return request.build_absolute_uri(reverse(route_name, kwargs=kwargs))
 
 
-def _send_mail_job(subject, message, recipient_list, from_email):
+def _send_mail_job(subject: str, message: str, recipient_list: list[str], from_email: str) -> None:
     send_mail(
         subject,
         message,
@@ -179,7 +183,7 @@ def _send_mail_job(subject, message, recipient_list, from_email):
     )
 
 
-def _dispatch_email(subject, message, recipient_list):
+def _dispatch_email(subject: str, message: str, recipient_list: list[str]) -> None:
     if settings.EMAIL_ASYNC:
         try:
             queue = django_rq.get_queue("default")
@@ -200,7 +204,7 @@ def _dispatch_email(subject, message, recipient_list):
     _send_mail_job(subject, message, recipient_list, settings.DEFAULT_FROM_EMAIL)
 
 
-def send_verification_email(request, user):
+def send_verification_email(request: HttpRequest, user: Any) -> None:
     """Send a signed email verification link via Django's configured email backend."""
 
     profile, _ = UserProfile.objects.get_or_create(user=user)
@@ -227,7 +231,7 @@ def send_verification_email(request, user):
     )
 
 
-def send_password_reset_email(request, user):
+def send_password_reset_email(request: HttpRequest, user: Any) -> None:
     """Send a password reset link using Django's default signed token."""
 
     uid = urlsafe_base64_encode(force_bytes(user.pk))
@@ -250,7 +254,7 @@ def send_password_reset_email(request, user):
     )
 
 
-def verify_google_credential(credential):
+def verify_google_credential(credential: str) -> dict[str, str | bool]:
     """Validate a Google Identity Services credential through Google's tokeninfo endpoint."""
 
     response = requests.get(

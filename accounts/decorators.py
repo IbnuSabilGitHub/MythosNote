@@ -1,17 +1,21 @@
+"""Decorators for guarding auth-only and verification-only views."""
+
+from typing import Any, Callable
 from functools import wraps
 
 from django.contrib import messages
 from django.contrib.auth.views import redirect_to_login
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 
 from .utils import is_email_verified
 
 
-def guest_required(view_func):
+def guest_required(view_func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
     """Redirect authenticated users away from auth-only pages."""
 
     @wraps(view_func)
-    def wrapper(request, *args, **kwargs):
+    def wrapper(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         if request.user.is_authenticated:
             return redirect("home")
         return view_func(request, *args, **kwargs)
@@ -19,11 +23,11 @@ def guest_required(view_func):
     return wrapper
 
 
-def verified_email_required(view_func):
+def verified_email_required(view_func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
     """Future-facing guard for workspace and core features."""
 
     @wraps(view_func)
-    def wrapper(request, *args, **kwargs):
+    def wrapper(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         if not request.user.is_authenticated:
             return redirect_to_login(request.get_full_path())
         if not is_email_verified(request.user):

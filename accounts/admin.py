@@ -1,3 +1,5 @@
+"""Admin registrations for authentication-related models."""
+
 from django.contrib import admin
 
 from .models import UserProfile, UserUsage

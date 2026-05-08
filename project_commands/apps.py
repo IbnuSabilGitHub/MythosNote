@@ -1,3 +1,5 @@
+"""App configuration for management commands used by the project."""
+
 from django.apps import AppConfig
 
 

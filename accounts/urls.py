@@ -1,3 +1,5 @@
+"""URL routes for authentication and verification flows."""
+
 from django.urls import path
 
 from . import views
