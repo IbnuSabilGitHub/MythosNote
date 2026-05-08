@@ -40,6 +40,7 @@ Sistem AI-powered note-taking yang memungkinkan pengguna mengelola workspace, me
 - **Git** ([Download](https://git-scm.com/))
 - **PostgreSQL 12+** (database)
 - **Redis 6+** (cache)
+- **Node.js 20+** (untuk Tailwind CSS watch/build)
 - **pip** (Python package manager - included dengan Python)
 
 ### Akun & API Keys
@@ -172,10 +173,23 @@ sudo apt install -y postgresql postgresql-contrib
 # Install Redis
 sudo apt install -y redis-server
 
+# Install Node.js 20+ (nvm)
+curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.bashrc
+nvm install 20
+nvm use 20
+
 # Verifikasi
 python3 --version
 psql --version
 redis-cli --version
+node --version
+```
+
+Catatan: jika `nvm` belum terbaca, jalankan ulang:
+```bash
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 ```
 
 ### Step 3: Start Services
@@ -206,7 +220,13 @@ GRANT ALL PRIVILEGES ON DATABASE mythosnote TO mythosnote_user;
 \q
 
 # Verifikasi
-psql -U mythosnote_user -d mythosnote -c "SELECT version();"
+psql -U mythosnote_user -d mythosnote -h localhost -c "SELECT version();"
+```
+
+Catatan: jika muncul error "Peer authentication failed", jalankan:
+```bash
+sudo -u postgres psql -c "CREATE USER mythosnote_user WITH PASSWORD 'your_secure_password';"
+sudo -u postgres psql -c "CREATE DATABASE mythosnote OWNER mythosnote_user;"
 ```
 
 ### Step 5: Clone & Setup Project
@@ -268,6 +288,12 @@ brew install python@3.11 postgresql redis git
 # Linux (Ubuntu/Debian)
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y python3 python3-pip python3-venv python3-dev git postgresql postgresql-contrib redis-server
+
+# Install Node.js 20+ (nvm) untuk Linux
+curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.bashrc
+nvm install 20
+nvm use 20
 ```
 
 ### Step 2: Start Services
@@ -277,6 +303,12 @@ sudo systemctl start postgresql
 sudo systemctl start redis-server
 
 # macOS: Services sudah auto-start via Homebrew
+```
+
+Catatan: di WSL (tanpa systemd), gunakan:
+```bash
+sudo service postgresql start
+sudo service redis-server start
 ```
 
 ### Step 3: Setup Database
@@ -545,6 +577,12 @@ redis-cli ping
 # Jalankan Redis:
 redis-server  # Linux/macOS
 redis-server.exe  # Windows
+```
+
+### Error: "System has not been booted with systemd"
+```bash
+sudo service postgresql start
+sudo service redis-server start
 ```
 
 ### Error: "ModuleNotFoundError"
