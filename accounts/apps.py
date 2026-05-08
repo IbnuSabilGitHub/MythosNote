@@ -1,15 +1,15 @@
-"""App configuration for the accounts app."""
+"""Konfigurasi aplikasi untuk app accounts."""
 
 from django.apps import AppConfig
 
 
 class AccountsConfig(AppConfig):
-    """Register account models and signal hooks for authentication state."""
+    """Daftarkan model akun dan hook signal untuk status auth."""
 
     default_auto_field = "django.db.models.BigAutoField"
     name = "accounts"
 
     def ready(self) -> None:
-        """Load signal handlers once Django's app registry is ready."""
+        """Muat handler signal saat registry app siap."""
 
         import accounts.signals  # noqa: F401

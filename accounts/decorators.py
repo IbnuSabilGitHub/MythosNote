@@ -1,4 +1,4 @@
-"""Decorators for guarding auth-only and verification-only views."""
+"""Decorator untuk menjaga view auth-only dan verifikasi."""
 
 from typing import Any, Callable
 from functools import wraps
@@ -12,7 +12,7 @@ from .utils import is_email_verified
 
 
 def guest_required(view_func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
-    """Redirect authenticated users away from auth-only pages."""
+    """Arahkan user login menjauh dari halaman auth-only."""
 
     @wraps(view_func)
     def wrapper(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
@@ -24,7 +24,7 @@ def guest_required(view_func: Callable[..., HttpResponse]) -> Callable[..., Http
 
 
 def verified_email_required(view_func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
-    """Future-facing guard for workspace and core features."""
+    """Guard untuk fitur workspace dan inti."""
 
     @wraps(view_func)
     def wrapper(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:

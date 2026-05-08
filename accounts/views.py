@@ -36,7 +36,7 @@ User = get_user_model()
 
 @guest_required
 def sign_in(request: HttpRequest) -> HttpResponse:
-    """Handle session-based login with failed-attempt rate limiting."""
+    """Tangani login sesi dengan pembatasan percobaan gagal."""
 
     form = SignInForm(request=request, data=request.POST or None)
     if request.method == "POST":
@@ -58,7 +58,7 @@ def sign_in(request: HttpRequest) -> HttpResponse:
 
 @guest_required
 def sign_up(request: HttpRequest) -> HttpResponse:
-    """Register a local account and send the first verification email."""
+    """Daftarkan akun lokal dan kirim email verifikasi pertama."""
 
 
     form = SignUpForm(data=request.POST or None)
@@ -81,7 +81,7 @@ def sign_up(request: HttpRequest) -> HttpResponse:
 @require_POST
 @guest_required
 def google_sign_in(request: HttpRequest) -> HttpResponse:
-    """Register a local account and send the first verification email."""
+    """Login via Google dan buat akun lokal bila perlu."""
 
     if is_google_oauth_rate_limited(request):
         messages.error(request, "Terlalu banyak percobaan Google login. Coba lagi nanti.")
@@ -111,7 +111,7 @@ def google_sign_in(request: HttpRequest) -> HttpResponse:
 
 
 def get_or_create_google_user(payload: Mapping[str, Any]) -> Any:
-    """Create a Django user from Google profile data without adding OAuth tables yet."""
+    """Buat user Django dari data profil Google tanpa tabel OAuth."""
 
     with transaction.atomic():
         user = User.objects.select_for_update().filter(email__iexact=payload["email"]).first()
@@ -129,7 +129,7 @@ def get_or_create_google_user(payload: Mapping[str, Any]) -> Any:
 
 
 def build_unique_username(email: str) -> str:
-    """Generate a stable username seed from email and avoid collisions."""
+    """Buat username dari email dan hindari tabrakan."""
 
     seed = email.split("@", 1)[0].replace(".", "_")[:140] or "user"
     username = seed
@@ -142,7 +142,7 @@ def build_unique_username(email: str) -> str:
 
 @login_required
 def email_unverified(request: HttpRequest) -> HttpResponse:
-    """Show the verification gate for logged-in users with unverified email."""
+    """Tampilkan gerbang verifikasi untuk user login yang belum verifikasi."""
 
     if is_email_verified(request.user):
         return redirect("home")
@@ -156,7 +156,7 @@ def email_unverified(request: HttpRequest) -> HttpResponse:
 @login_required
 @require_POST
 def resend_verification(request: HttpRequest) -> HttpResponse:
-    """Resend verification email for the current logged-in account."""
+    """Kirim ulang email verifikasi untuk akun login."""
 
     if is_email_verified(request.user):
         return redirect("home")
@@ -170,7 +170,7 @@ def resend_verification(request: HttpRequest) -> HttpResponse:
 
 
 def verify_email(request: HttpRequest, uidb64: str, token: str) -> HttpResponse:
-    """Verify a user's email from the signed token URL."""
+    """Verifikasi email user dari URL token bertanda."""
 
     user = get_user_from_uid(uidb64)
     if user and email_verification_token_generator.check_token(user, token):
@@ -186,7 +186,7 @@ def verify_email(request: HttpRequest, uidb64: str, token: str) -> HttpResponse:
 
 
 def get_user_from_uid(uidb64: str) -> Any | None:
-    """Decode a URL-safe user id and return the matching user if it exists."""
+    """Decode user id URL-safe dan ambil user jika ada."""
 
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
@@ -197,7 +197,7 @@ def get_user_from_uid(uidb64: str) -> Any | None:
 
 @require_POST
 def sign_out(request: HttpRequest) -> HttpResponse:
-    """Destroy the current Django session and return to the landing page."""
+    """Hapus sesi Django dan kembali ke landing page."""
 
     logout(request)
     return redirect("home")
@@ -205,7 +205,7 @@ def sign_out(request: HttpRequest) -> HttpResponse:
 
 @guest_required
 def forgot_password(request: HttpRequest) -> HttpResponse:
-    """Send reset-password instructions while keeping account discovery private."""
+    """Kirim instruksi reset password tanpa bocorkan akun."""
 
     form = ForgotPasswordForm(data=request.POST or None)
     if request.method == "POST" and form.is_valid():
@@ -223,7 +223,7 @@ def forgot_password(request: HttpRequest) -> HttpResponse:
 
 @guest_required
 def password_reset_confirm(request: HttpRequest, uidb64: str, token: str) -> HttpResponse:
-    """Validate a reset token and allow the user to choose a new password."""
+    """Validasi token reset dan izinkan pilih password baru."""
 
     user = get_user_from_uid(uidb64)
     token_valid = user and default_token_generator.check_token(user, token)

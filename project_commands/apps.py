@@ -1,4 +1,4 @@
-"""App configuration for management commands used by the project."""
+"""Konfigurasi app untuk command manajemen proyek."""
 
 from django.apps import AppConfig
 

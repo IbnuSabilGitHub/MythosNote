@@ -1,4 +1,4 @@
-"""Shared authentication utilities for account, login, and email workflows."""
+"""Utilitas auth bersama untuk akun, login, dan alur email."""
 
 from datetime import timedelta
 from typing import Any
@@ -31,7 +31,7 @@ GOOGLE_OAUTH_RATE_LIMIT_WINDOW = 300
 
 
 class EmailVerificationTokenGenerator(PasswordResetTokenGenerator):
-    """Token invalidates after email verification state changes."""
+    """Token batal saat status verifikasi email berubah."""
 
     def _make_hash_value(self, user: Any, timestamp: int) -> str:
         profile, _ = UserProfile.objects.get_or_create(user=user)
@@ -44,13 +44,13 @@ email_verification_token_generator = EmailVerificationTokenGenerator()
 
 
 def normalize_identifier(identifier: str | None) -> str:
-    """Normalize login identifiers so rate-limit buckets stay consistent."""
+    """Normalisasi identifier login agar bucket rate-limit konsisten."""
 
     return (identifier or "").strip().lower()
 
 
 def get_client_ip(request: HttpRequest) -> str | None:
-    """Return the best-effort client IP while staying proxy-aware."""
+    """Ambil IP klien terbaik dengan memperhatikan proxy."""
 
     forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
     if forwarded_for:
@@ -83,7 +83,7 @@ def is_google_oauth_rate_limited(request: HttpRequest) -> bool:
 
 
 def get_login_usage(request: HttpRequest, identifier: str) -> UserUsage:
-    """Fetch or create today's login usage row for an identifier/IP pair."""
+    """Ambil atau buat usage login hari ini untuk identifier/IP."""
 
     normalized = normalize_identifier(identifier)
     today = timezone.localdate()
@@ -102,7 +102,7 @@ def get_login_usage(request: HttpRequest, identifier: str) -> UserUsage:
 
 
 def is_login_rate_limited(usage: UserUsage) -> bool:
-    """Check whether failed login attempts are still inside the lock window."""
+    """Cek apakah percobaan gagal masih dalam jendela lock."""
 
     if not usage.failed_login_window_started_at:
         return False
@@ -125,7 +125,7 @@ def is_login_rate_limited(usage: UserUsage) -> bool:
 
 
 def record_failed_login(usage: UserUsage) -> None:
-    """Increment failed login attempts for the current lock window."""
+    """Tambah hitungan gagal untuk jendela lock saat ini."""
 
     now = timezone.now()
     if not usage.failed_login_window_started_at:
@@ -144,7 +144,7 @@ def record_failed_login(usage: UserUsage) -> None:
 
 
 def clear_failed_login_tracking(usage: UserUsage) -> None:
-    """Clear failed login counters after a successful authentication."""
+    """Reset hitungan gagal setelah auth sukses."""
 
     usage.failed_login_count = 0
     usage.failed_login_window_started_at = None
@@ -159,7 +159,7 @@ def clear_failed_login_tracking(usage: UserUsage) -> None:
 
 
 def is_email_verified(user: Any) -> bool:
-    """Return verification state while tolerating legacy users without profile rows."""
+    """Kembalikan status verifikasi sambil toleran user lama tanpa profil."""
 
     if not user.is_authenticated:
         return False
@@ -168,7 +168,7 @@ def is_email_verified(user: Any) -> bool:
 
 
 def build_absolute_auth_url(request: HttpRequest, route_name: str, **kwargs: Any) -> str:
-    """Build absolute URLs used in email verification and reset messages."""
+    """Bangun URL absolut untuk verifikasi email dan reset."""
 
     return request.build_absolute_uri(reverse(route_name, kwargs=kwargs))
 
@@ -205,7 +205,7 @@ def _dispatch_email(subject: str, message: str, recipient_list: list[str]) -> No
 
 
 def send_verification_email(request: HttpRequest, user: Any) -> None:
-    """Send a signed email verification link via Django's configured email backend."""
+    """Kirim link verifikasi bertanda lewat backend email Django."""
 
     profile, _ = UserProfile.objects.get_or_create(user=user)
     profile.last_verification_email_sent_at = timezone.now()
@@ -232,7 +232,7 @@ def send_verification_email(request: HttpRequest, user: Any) -> None:
 
 
 def send_password_reset_email(request: HttpRequest, user: Any) -> None:
-    """Send a password reset link using Django's default signed token."""
+    """Kirim link reset password dengan token bawaan Django."""
 
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
@@ -255,7 +255,7 @@ def send_password_reset_email(request: HttpRequest, user: Any) -> None:
 
 
 def verify_google_credential(credential: str) -> dict[str, str | bool]:
-    """Validate a Google Identity Services credential through Google's tokeninfo endpoint."""
+    """Validasi credential Google lewat endpoint tokeninfo."""
 
     response = requests.get(
         "https://oauth2.googleapis.com/tokeninfo",

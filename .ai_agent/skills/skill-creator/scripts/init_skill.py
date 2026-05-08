@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Skill Initializer - Creates a new skill from template
+Inisialisasi Skill - Membuat skill baru dari template
 
 Usage:
     init_skill.py <skill-name> --path <path>
@@ -187,21 +187,12 @@ Note: This is a text placeholder. Actual assets can be any file type.
 
 
 def title_case_skill_name(skill_name):
-    """Convert hyphenated skill name to Title Case for display."""
+    """Ubah nama skill bertanda hubung ke Title Case untuk tampilan."""
     return ' '.join(word.capitalize() for word in skill_name.split('-'))
 
 
 def init_skill(skill_name, path):
-    """
-    Initialize a new skill directory with template SKILL.md.
-
-    Args:
-        skill_name: Name of the skill
-        path: Path where the skill directory should be created
-
-    Returns:
-        Path to created skill directory, or None if error
-    """
+    """Inisialisasi direktori skill baru dengan template SKILL.md."""
     # Determine skill directory path
     skill_dir = Path(path).resolve() / skill_name
 

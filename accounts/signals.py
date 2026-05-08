@@ -1,4 +1,4 @@
-"""Signal handlers for keeping authentication state in sync."""
+"""Handler signal untuk sinkron status autentikasi."""
 
 from typing import Any
 
@@ -11,7 +11,7 @@ from .models import UserProfile
 
 @receiver(post_save, sender=get_user_model())
 def ensure_user_profile(sender: Any, instance: Any, created: bool, **kwargs: Any) -> None:
-    """Ensure every user has profile state for email verification gates."""
+    """Pastikan tiap user punya profil untuk verifikasi email."""
 
     if created:
         UserProfile.objects.get_or_create(user=instance)

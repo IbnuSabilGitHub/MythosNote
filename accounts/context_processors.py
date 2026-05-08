@@ -1,4 +1,4 @@
-"""Template context processors for exposing safe auth settings."""
+"""Context processor template untuk setelan auth aman."""
 
 from typing import Any
 
@@ -9,7 +9,7 @@ from .models import UserProfile
 
 
 def auth_settings(request: HttpRequest) -> dict[str, Any]:
-    """Expose safe public auth settings needed by template-based auth UI."""
+    """Sediakan setelan auth publik aman untuk UI template."""
 
     email_verified = False
     if request.user.is_authenticated:

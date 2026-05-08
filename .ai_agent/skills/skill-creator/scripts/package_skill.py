@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Skill Packager - Creates a distributable zip file of a skill folder
+Pengemas Skill - Membuat file zip distribusi dari folder skill
 
 Usage:
     python utils/package_skill.py <path/to/skill-folder> [output-directory]
@@ -17,16 +17,7 @@ from quick_validate import validate_skill
 
 
 def package_skill(skill_path, output_dir=None):
-    """
-    Package a skill folder into a zip file.
-
-    Args:
-        skill_path: Path to the skill folder
-        output_dir: Optional output directory for the zip file (defaults to current directory)
-
-    Returns:
-        Path to the created zip file, or None if error
-    """
+    """Kemas folder skill menjadi file zip."""
     skill_path = Path(skill_path).resolve()
 
     # Validate skill folder exists

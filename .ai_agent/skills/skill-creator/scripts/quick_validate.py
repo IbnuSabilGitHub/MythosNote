@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Quick validation script for skills - minimal version
-"""
+"""Script validasi cepat untuk skill - versi minimal."""
 
 import sys
 import os
@@ -9,7 +7,7 @@ import re
 from pathlib import Path
 
 def validate_skill(skill_path):
-    """Basic validation of a skill"""
+    """Validasi dasar untuk skill."""
     skill_path = Path(skill_path)
     
     # Check SKILL.md exists

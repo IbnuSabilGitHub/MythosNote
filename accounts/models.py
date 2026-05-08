@@ -1,11 +1,11 @@
-"""Authentication profile and usage models."""
+"""Model profil dan pemakaian autentikasi."""
 
 from django.conf import settings
 from django.db import models
 
 
 class UserProfile(models.Model):
-    """Small auth profile kept separate from Django's built-in user table."""
+    """Profil auth kecil terpisah dari tabel user bawaan Django."""
 
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -22,7 +22,7 @@ class UserProfile(models.Model):
 
 
 class UserUsage(models.Model):
-    """Per-day usage tracker prepared for login limits and future AI quotas."""
+    """Pelacak pemakaian harian untuk limit login dan kuota AI."""
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,

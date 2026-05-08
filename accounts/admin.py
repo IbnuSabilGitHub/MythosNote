@@ -1,4 +1,4 @@
-"""Admin registrations for authentication-related models."""
+"""Registrasi admin untuk model terkait auth."""
 
 from django.contrib import admin
 
@@ -7,7 +7,7 @@ from .models import UserProfile, UserUsage
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    """Expose verification state for operational support."""
+    """Tampilkan status verifikasi untuk operasional."""
 
     list_display = ("user", "email_verified", "created_at", "updated_at")
     list_filter = ("email_verified",)
@@ -16,7 +16,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 @admin.register(UserUsage)
 class UserUsageAdmin(admin.ModelAdmin):
-    """Inspect rate-limit counters and future daily AI usage quotas."""
+    """Periksa counter rate-limit dan kuota AI harian."""
 
     list_display = (
         "user",

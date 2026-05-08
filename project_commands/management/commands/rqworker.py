@@ -1,4 +1,4 @@
-"""Compatibility wrapper for running RQ workers with django-rq."""
+"""Pembungkus kompatibilitas untuk menjalankan worker RQ dengan django-rq."""
 
 import os
 import sys
@@ -14,8 +14,8 @@ from django_rq.workers import get_worker
 
 class Command(BaseCommand):
     """
-    Compatibility wrapper for django-rq on newer rq releases where
-    `rq.Connection` is no longer exported.
+    Pembungkus kompatibilitas untuk django-rq pada rilis rq baru
+    saat `rq.Connection` tidak lagi diekspor.
     """
 
     args = "<queue queue ...>"

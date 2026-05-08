@@ -1,4 +1,4 @@
-"""Integration tests for the authentication flow."""
+"""Tes integrasi untuk alur autentikasi."""
 
 import re
 
@@ -15,7 +15,7 @@ from .models import UserUsage
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
 )
 class AuthFlowTests(TestCase):
-    """Cover the session auth flow without touching future workspace features."""
+    """Cakup alur auth sesi tanpa fitur workspace."""
 
     def test_signup_requires_email_verification_before_full_access(self) -> None:
         response = self.client.post(

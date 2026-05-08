@@ -1,4 +1,4 @@
-"""Authentication forms for sign in, sign up, and password recovery flows."""
+"""Form autentikasi untuk masuk, daftar, dan pemulihan sandi."""
 
 from typing import Any
 
@@ -12,7 +12,7 @@ User = get_user_model()
 
 
 class SignInForm(forms.Form):
-    """Authenticate with either username or email plus password."""
+    """Masuk pakai username atau email dan password."""
 
     username = forms.CharField(max_length=254, min_length=3)
     password = forms.CharField(strip=False, widget=forms.PasswordInput)
@@ -23,14 +23,7 @@ class SignInForm(forms.Form):
         self.user = None
 
     def clean(self) -> dict[str, Any]:
-        """ Authenticate the user based on the provided identifier and password.
-
-        Raises:
-            forms.ValidationError: If authentication fails due to invalid credentials.
-
-        Returns:
-            dict[str, Any]: The cleaned data from the form, including the authenticated user object if successful.
-        """
+        """Autentikasi berdasarkan identifier dan password."""
         cleaned_data = super().clean()
         identifier = cleaned_data.get("username", "").strip()
         password = cleaned_data.get("password")
@@ -53,7 +46,7 @@ class SignInForm(forms.Form):
 
 
 class SignUpForm(forms.ModelForm):
-    """Create local email/password accounts ready for verification."""
+    """Buat akun email/password untuk verifikasi."""
 
     password = forms.CharField(strip=False, widget=forms.PasswordInput)
     password_confirm = forms.CharField(strip=False, widget=forms.PasswordInput)
@@ -63,28 +56,14 @@ class SignUpForm(forms.ModelForm):
         fields = ["username", "email"]
 
     def clean_email(self) -> str:
-        """ Validate that the email is not already associated with an existing account.
-
-        Raises:
-            forms.ValidationError: If the email is already registered with an existing account.
-
-        Returns:
-            str: The cleaned email address, normalized to lowercase and stripped of leading/trailing whitespace.
-        """
+        """Cek email belum terdaftar."""
         email = self.cleaned_data["email"].strip().lower()
         if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("Email sudah terdaftar.")
         return email
 
     def clean_username(self) -> str:
-        """ Validate that the username is unique and meets length requirements.
-
-        Raises:
-            forms.ValidationError: If the username is not unique or does not meet length requirements.
-
-        Returns:
-            str: The cleaned username, stripped of leading/trailing whitespace.
-        """
+        """Cek username unik dan sesuai panjang."""
         username = self.cleaned_data["username"].strip()
         if len(username) < 3 or len(username) > 20:
             raise forms.ValidationError("Username harus 3-20 karakter.")
@@ -93,11 +72,7 @@ class SignUpForm(forms.ModelForm):
         return username
 
     def clean(self) -> dict[str, Any]:
-        """ Validate that the password and password confirmation match, and that the password meets complexity requirements.
-
-        Returns:
-            dict[str, Any]: The cleaned data from the form, including any validation errors related to password confirmation and complexity.
-        """
+        """Cek konfirmasi password dan kekuatan password."""
         cleaned_data = super().clean()
         password = cleaned_data.get("password")
         password_confirm = cleaned_data.get("password_confirm")
@@ -110,14 +85,7 @@ class SignUpForm(forms.ModelForm):
         return cleaned_data
 
     def save(self, commit: bool = True) -> Any:
-        """Create and save a new user instance based on the validated form data, setting the password properly.
-
-        Args:
-            commit (bool, optional): Whether to save the user instance to the database. Defaults to True.
-
-        Returns:
-            Any: The saved user instance.
-        """
+        """Simpan user baru dengan password yang benar."""
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]
         user.set_password(self.cleaned_data["password"])
@@ -127,12 +95,12 @@ class SignUpForm(forms.ModelForm):
 
 
 class ForgotPasswordForm(forms.Form):
-    """Request a password reset email without revealing account existence."""
+    """Minta email reset tanpa bocorkan akun."""
 
     email = forms.EmailField()
 
 
 class PasswordResetConfirmForm(SetPasswordForm):
-    """Set a new password after Django token validation succeeds."""
+    """Set password baru setelah token valid."""
 
     pass

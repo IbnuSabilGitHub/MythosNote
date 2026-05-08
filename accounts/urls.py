@@ -1,4 +1,4 @@
-"""URL routes for authentication and verification flows."""
+"""Rute URL untuk alur autentikasi dan verifikasi."""
 
 from django.urls import path
 
