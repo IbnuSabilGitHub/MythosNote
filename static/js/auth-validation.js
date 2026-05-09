@@ -22,8 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (value.length > 20) return 'Username maksimal 20 karakter';
             return '';
         },
-        password_confirm: (value, form) => {
-            const password = form.querySelector('input[name="password"]').value;
+        password_confirm: (value, form, input) => {
+            const passwordFieldName = input.dataset.matchPassword || 'password';
+            const passwordInput = form.querySelector(`input[name="${passwordFieldName}"]`);
+            const password = passwordInput ? passwordInput.value : '';
             return value === password ? '' : 'Confirm password harus sama dengan password';
         }
     };
@@ -131,10 +133,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const ruleKey = getRuleKey(fieldName, form);
+        const ruleKey = getRuleKey(fieldName, form, input);
         if (!ruleKey || !VALIDATION_RULES[ruleKey]) return;
 
-        const errorMessage = VALIDATION_RULES[ruleKey](value, form);
+        const errorMessage = VALIDATION_RULES[ruleKey](value, form, input);
         formState.setError(fieldName, errorMessage);
 
         if (errorMessage) {
@@ -144,9 +146,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const getRuleKey = (fieldName, form) => {
+    const getRuleKey = (fieldName, form, input = null) => {
+        if (input && input.dataset.validationRule) {
+            return input.dataset.validationRule;
+        }
+
+        if (fieldName === 'new_password1') {
+            return 'password';
+        }
+        if (fieldName === 'new_password2') {
+            return 'password_confirm';
+        }
+
         // Skip username validation on signin form (it accepts email or username)
-        if (fieldName === 'username' && form.action.includes('signin')) {
+        const isSignInForm = form.action.includes('signin') || form.matches('form[data-auth-kind="signin"]');
+        if (fieldName === 'username' && isSignInForm) {
             return null;
         }
         return fieldName;
@@ -163,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateSubmitButton(form, formState);
             
             // Still check for errors to maintain disabled state
-            const errorMessage = VALIDATION_RULES.password_confirm(value, form);
+            const errorMessage = VALIDATION_RULES.password_confirm(value, form, input);
             if (errorMessage) {
                 formState.setError(input.name, errorMessage);
             }
@@ -194,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const setupInputValidation = (input, form, formState) => {
         const fieldName = input.name;
-        const ruleKey = getRuleKey(fieldName, form);
+        const ruleKey = getRuleKey(fieldName, form, input);
         
         if (!ruleKey || !VALIDATION_RULES[ruleKey]) {
             // Input without validation rules - just track for button state
@@ -225,7 +239,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Application Entry Point
     const initialize = () => {
-        const authForms = document.querySelectorAll('form[action*="signin"], form[action*="signup"]');
+        const authForms = document.querySelectorAll(
+            'form[action*="signin"], form[action*="signup"], form[data-auth-kind="password-reset-confirm"]'
+        );
         authForms.forEach(setupFormValidation);
     };
 

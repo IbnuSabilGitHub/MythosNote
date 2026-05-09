@@ -3,6 +3,10 @@
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.0.8] - 2026-05-09
+### Summary
+- Perbaikan alur reset password: password lama kini ditolak saat reset, dan validasi frontend pada form reset kini aktif seperti signup/signin dengan tombol submit auto-disable saat aturan belum terpenuhi.
+
 ## [1.0.7] - 2026-05-08
 ### Summary
  - `auth-validation.js` yang telah diperbaiki, lebih bersih dan mudah dipelihara, sambil tetap mempertahankan semua fungsinya 

@@ -103,4 +103,9 @@ class ForgotPasswordForm(forms.Form):
 class PasswordResetConfirmForm(SetPasswordForm):
     """Set password baru setelah token valid."""
 
-    pass
+    def clean_new_password1(self) -> str:
+        """Tolak password baru yang sama dengan password lama."""
+        password = self.cleaned_data.get("new_password1", "")
+        if password and self.user.check_password(password):
+            raise forms.ValidationError("Password baru tidak boleh sama dengan password lama.")
+        return password
