@@ -7,6 +7,7 @@ from django.core import mail
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
+from .views import get_or_create_google_user
 from .models import UserUsage
 
 
@@ -112,3 +113,15 @@ class AuthFlowTests(TestCase):
         self.assertFalse(response.wsgi_request.user.is_authenticated)
         usage = UserUsage.objects.get(identifier="bob")
         self.assertEqual(usage.failed_login_count, 5)
+
+    def test_google_user_creation_sets_username(self) -> None:
+        user = get_or_create_google_user(
+            {
+                "email": "google.user@example.com",
+                "email_verified": True,
+            }
+        )
+
+        self.assertIsNone(user.username)
+        self.assertEqual(user.email, "google.user@example.com")
+        self.assertTrue(user.profile.email_verified)

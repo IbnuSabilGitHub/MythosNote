@@ -2,7 +2,27 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-05-11
 
+### Added
+- Environment variable loading via `python-dotenv` di `settings.py` (GOOGLE_OAUTH_CLIENT_ID kini terbaca saat Django start).
+- Test regresi untuk Google OAuth: memastikan user baru terbentuk dengan benar dan `email_verified` ikut terset.
+- Konfigurasi `SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'`.
+
+### Changed
+- Perbaikan alur Google OAuth di `views.py`:
+  - User baru dibuat tanpa `create_user()`.
+  - Password dibuat `unusable` (bukan empty string).
+  - Login sekarang menggunakan backend eksplisit `django.contrib.auth.backends.ModelBackend`.
+- `ALLOWED_HOSTS` dipersempit ke `localhost` dan `127.0.0.1`.
+
+### Files Changed
+- `config/settings.py`
+- `accounts/views.py`
+- `accounts/tests.py`
+
+### Notes
+- Helper yang tidak terpakai di `accounts/views.py` dapat dibersihkan lebih lanjut (opsional).
 
 ## [1.1.0] - 2026-05-11
 

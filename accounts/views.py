@@ -104,7 +104,7 @@ def google_sign_in(request: HttpRequest) -> HttpResponse:
         messages.error(request, "Email Google sudah terhubung ke akun lain.")
         return redirect("signin")
 
-    login(request, user)
+    login(request, user, backend="django.contrib.auth.backends.ModelBackend")
     if not is_email_verified(user):
         return redirect("email_unverified")
     return redirect("home")
@@ -116,11 +116,9 @@ def get_or_create_google_user(payload: Mapping[str, Any]) -> Any:
     with transaction.atomic():
         user = User.objects.select_for_update().filter(email__iexact=payload["email"]).first()
         if user is None:
-            user = User.objects.create_user(
-                username=None,
-                email=payload["email"],
-                password=None,
-            )
+            user = User(username=None, email=payload["email"])
+            user.set_unusable_password()
+            user.save()
         if payload["email_verified"]:
             user.profile.email_verified = True
             user.profile.save(update_fields=["email_verified", "updated_at"])

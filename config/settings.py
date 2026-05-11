@@ -13,8 +13,12 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -26,7 +30,7 @@ SECRET_KEY = 'django-insecure-3axk+w8(7q)7_ahlff90-hw@t&20-3szmof6y1^_b9iboe366p
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*.wsl.localhost', 'wsl.localhost']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "").strip()
 CSRF_TRUSTED_ORIGINS = [FRONTEND_URL] if FRONTEND_URL else []
@@ -177,3 +181,5 @@ EMAIL_ASYNC = os.getenv('EMAIL_ASYNC', 'false').strip().lower() in ('1', 'true',
 # Public Google Identity Services client id. When empty, the template keeps
 # the Google button disabled without breaking email/password auth.
 GOOGLE_OAUTH_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID', '')
+# Security settings for modern browsers to mitigate certain types of attacks. Adjust as needed.
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
