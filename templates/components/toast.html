@@ -4,9 +4,7 @@
 <!-- Toast Template -->
 <template id="toast-template">
     <div class="toast-item pointer-events-auto flex items-start gap-3 rounded-sm bg-neutral-800 border border-stone-700 px-4 py-3 shadow-lg animate-slide-in-right">
-        <svg class="toast-icon h-5 w-5 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-        </svg>
+        <iconify-icon class="toast-icon h-5 w-5 shrink-0 mt-0.5" icon="tabler:info-circle"></iconify-icon>
         <div class="flex-1">
             <p class="toast-message font-['Manrope'] text-sm font-normal text-stone-300"></p>
         </div>
@@ -21,9 +19,7 @@
 <!-- Toast Action Template (with confirm buttons) -->
 <template id="toast-action-template">
     <div class="toast-action-item pointer-events-auto flex items-start gap-4 rounded-sm bg-neutral-800 border border-stone-700 px-4 py-4 shadow-lg animate-slide-in-right">
-        <svg class="toast-action-icon h-5 w-5 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-        </svg>
+        <iconify-icon class="toast-action-icon h-5 w-5 shrink-0 mt-0.5" icon="tabler:info-circle"></iconify-icon>
         <div class="flex-1">
             <h3 class="toast-action-title font-['Manrope'] text-sm font-semibold text-on-surface mb-1"></h3>
             <p class="toast-action-message font-['Manrope'] text-sm font-normal text-stone-400"></p>

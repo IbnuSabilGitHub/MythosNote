@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}MythosNote - Change your document into structured clarity{% endblock %}
 
@@ -26,8 +27,7 @@
           class="rounded-lg border border-outline-variant bg-surface-container-high p-5 shadow-[0px_25px_50px_-12px_rgba(0,0,0,0.35)] backdrop-blur-md">
           <div class="flex items-center gap-3 pb-2">
             <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-container">
-              <img class="h-3 w-3" src="https://www.figma.com/api/mcp/asset/45cd711d-d0a1-4756-bd8d-3c531bb86222"
-                alt="" />
+              <iconify-icon icon="tabler:sparkles" class="text-on-primary-container"></iconify-icon>
             </div>
             <span class="font-grotesk text-xs font-bold uppercase tracking-wide text-outline">AI Summary</span>
           </div>
@@ -41,8 +41,7 @@
         class="absolute right-38 top-54 w-76 rotate-5">
         <div class="rounded-xl border border-primary/30 bg-surface-container-highest/80 px-6 py-3 backdrop-blur-md">
           <div class="flex items-center gap-4">
-            <img class="h-6 w-6" src="https://www.figma.com/api/mcp/asset/e4faeda3-65cd-474a-9331-d7fb2517cafa"
-              alt="" />
+              <iconify-icon icon="tabler:affiliate" class="text-primary text-xl"></iconify-icon>
             <span class="font-newsreader text-lg font-bold italic text-on-surface">Modern Education System</span>
           </div>
         </div>
@@ -53,13 +52,12 @@
         class="absolute bottom-32 left-63 w-90 rotate-2">
         <div
           class="flex gap-4 rounded border border-outline-variant bg-surface-container p-4 shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.2)]">
-          <div class="h-12 w-12 overflow-hidden rounded-xl opacity-80">
-            <img class="h-full w-full object-cover"
-              src="https://www.figma.com/api/mcp/asset/cec0f288-40df-428c-8606-d29ae411d2d6" alt="" />
+          <div class="h-8 w-12 overflow-hidden rounded-xl opacity-80 flex items-center justify-center">
+            <iconify-icon icon="tabler:folder" class="text-primary text-2xl"></iconify-icon>
           </div>
           <div class="space-y-2">
-            <p class="text-[0.5625rem] font-bold text-primary sm:text-[0.625rem]">Source: documents/chapter-3.pdf</p>
-            <p class="text-[0.75rem] font-bold text-on-surface sm:text-[0.8125rem] leading-snug">
+            <p class="text-xs font-bold text-primary ">Source: documents/chapter-3.pdf</p>
+            <p class="text-xs font-bold text-on-surface  leading-snug">
               "Deep understanding doesn't come from rereading, but from actively synthesizing information."
             </p>
           </div>
@@ -90,7 +88,7 @@
       <!-- Badge -->
       <div data-aos="fade-in" data-aos-duration="800"
         class="inline-flex items-center gap-2 rounded-xl border border-outline-variant/50 bg-surface-container-low px-3 sm:px-4 py-1 sm:py-1.5">
-        <img class="h-3 w-4" src="https://www.figma.com/api/mcp/asset/a12a7b97-157c-4458-b8e7-c68edab54416" alt="" />
+        <img class="h-3 w-4" src="{% static 'svg/deepseek-logo.svg' %}" alt="DeepSeek AI Logo" />
         <span
           class="font-grotesk text-[0.6875rem] sm:text-xs font-bold uppercase tracking-[0.0375rem] text-primary">Powered
           by DeepSeek
@@ -119,13 +117,13 @@
         <a href="{% url 'project' %}"
           class="inline-flex items-center gap-2 rounded-lg bg-primary px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-on-primary transition hover:bg-primary-container">
           Go to Project
-          <img class="h-3 w-3" src="https://www.figma.com/api/mcp/asset/206ebc19-3467-4b7a-bd4f-e57a4e331ec6" alt="" />
+          <iconify-icon icon="tabler:arrow-right" class="text-on-primary text-md"></iconify-icon>
         </a>
         {% else %}
         <a href="{% url 'signup' %}"
           class="inline-flex items-center gap-2 rounded-lg bg-primary px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-on-primary transition hover:bg-primary-container">
           Start your first project
-          <img class="h-3 w-3" src="https://www.figma.com/api/mcp/asset/206ebc19-3467-4b7a-bd4f-e57a4e331ec6" alt="" />
+          <iconify-icon icon="tabler:arrow-right" class="text-on-primary text-md"></iconify-icon>
         </a>
         {% endif %}
         <a class="rounded-lg border border-outline-variant bg-surface-container/50 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-on-surface hover:border-primary transition"
@@ -152,8 +150,7 @@
           </p>
         </div>
         <div class="mt-12 flex justify-end">
-          <img class="h-11 w-11" src="https://www.figma.com/api/mcp/asset/3c18e3ba-aab6-45ba-99c7-5f3e2bf1d4c1"
-            alt="" />
+              <iconify-icon icon="tabler:file-text-ai" class="text-primary text-4xl"></iconify-icon>
         </div>
       </div>
 
@@ -161,7 +158,7 @@
       <div data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200"
         class="col-span-1 rounded-2xl border border-outline-variant bg-surface-container-high px-8 pb-10 pt-8 lg:col-span-4">
         <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-surface-container-highest">
-          <img class="h-5 w-4" src="https://www.figma.com/api/mcp/asset/ac00ec54-c4d3-4711-b174-496b1412aed6" alt="" />
+          <iconify-icon icon="tabler:shield-check" class="text-primary text-2xl"></iconify-icon>
         </div>
         <h4 class="font-newsreader text-lg font-bold text-on-surface sm:text-xl">Your Data, Only Yours</h4>
         <p class="mt-3 text-xs font-bold text-on-surface-variant sm:text-sm leading-relaxed">
@@ -174,7 +171,7 @@
       <div data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300"
         class="col-span-1 rounded-2xl border border-outline-variant bg-surface-container-high p-8 lg:col-span-4">
         <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-surface-container-highest">
-          <img class="h-5 w-5" src="https://www.figma.com/api/mcp/asset/6037ab8e-dd55-4343-9c94-bd2a11a44197" alt="" />
+            <iconify-icon icon="tabler:binary-tree-2" class="text-primary text-2xl"></iconify-icon>
         </div>
         <h4 class="font-newsreader text-lg font-bold text-on-surface sm:text-xl">Four Outputs, One Click</h4>
         <p class="mt-3 text-xs font-bold text-on-surface-variant sm:text-sm leading-relaxed">
@@ -187,7 +184,7 @@
       <div data-aos="fade-up" data-aos-duration="1000" data-aos-delay="400"
         class="relative col-span-1 overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-low lg:col-span-8">
         <img class="absolute inset-0 h-full w-full object-cover opacity-10"
-          src="https://www.figma.com/api/mcp/asset/562eccdd-c844-47b5-9e1b-030ef21aaa2c" alt="" />
+          src="{% static 'img/feature_card_4.png' %}" alt="" />
         <div class="relative p-10">
           <h3 class="font-newsreader text-xl font-bold text-on-surface sm:text-2xl lg:text-[1.875rem]">
             From Hundreds of Pages to One Page
@@ -199,8 +196,7 @@
           <a class="mt-6 inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-primary-container transition sm:text-base"
             href="#start">
             Try it now
-            <img class="h-2.5 w-2.5" src="https://www.figma.com/api/mcp/asset/749b9af5-9fc5-4f46-ad05-417f21347e89"
-              alt="" />
+            <iconify-icon icon="tabler:arrow-right" class="text-primary text-md"></iconify-icon>
           </a>
         </div>
       </div>
@@ -284,7 +280,7 @@
           <div data-aos="fade-left" data-aos-duration="1000" data-aos-delay="200"
             class="relative flex-1 overflow-hidden rounded-3xl border border-outline-variant bg-surface-container">
             <img class="size-full object-cover"
-              src="https://www.figma.com/api/mcp/asset/27509364-8913-41b7-b610-8f05a47a49b0"
+              src="{% static 'img/vertical_timeline_image.png' %}"
               alt="How it works illustration" />
 
             <!-- Gradient Overlay -->
@@ -294,8 +290,7 @@
             <div
               class="absolute bottom-8 left-8 right-8 rounded-lg border border-outline-variant bg-surface-container-highest/60 p-6 backdrop-blur-md">
               <div class="flex items-center gap-3">
-                <img class="size-3 w-4" src="https://www.figma.com/api/mcp/asset/2acbf8da-ba68-4039-ba97-4bde0103e65b"
-                  alt="" />
+                <iconify-icon icon="tabler:eye" class="text-primary text-md"></iconify-icon>
                 <span
                   class="font-grotesk text-[0.5625rem] sm:text-[0.625rem] font-bold uppercase tracking-[0.0625rem] text-outline">
                   Active Context
