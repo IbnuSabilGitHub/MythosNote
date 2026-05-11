@@ -17,11 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
         password: (value) => {
             return value.length >= 8 ? '' : 'Password minimal 8 karakter';
         },
-        username: (value) => {
-            if (value.length < 3) return 'Username minimal 3 karakter';
-            if (value.length > 20) return 'Username maksimal 20 karakter';
-            return '';
-        },
         password_confirm: (value, form, input) => {
             const passwordFieldName = input.dataset.matchPassword || 'password';
             const passwordInput = form.querySelector(`input[name="${passwordFieldName}"]`);
@@ -156,12 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (fieldName === 'new_password2') {
             return 'password_confirm';
-        }
-
-        // Skip username validation on signin form (it accepts email or username)
-        const isSignInForm = form.action.includes('signin') || form.matches('form[data-auth-kind="signin"]');
-        if (fieldName === 'username' && isSignInForm) {
-            return null;
         }
         return fieldName;
     };

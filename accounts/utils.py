@@ -89,8 +89,7 @@ def get_login_usage(request: HttpRequest, identifier: str) -> UserUsage:
     today = timezone.localdate()
     user = None
     if normalized:
-        query = {"email__iexact": normalized} if "@" in normalized else {"username__iexact": normalized}
-        user = get_user_model().objects.filter(**query).first()
+        user = get_user_model().objects.filter(email__iexact=normalized).first()
 
     usage, _ = UserUsage.objects.get_or_create(
         user=user,

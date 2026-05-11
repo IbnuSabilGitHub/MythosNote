@@ -40,7 +40,7 @@ def sign_in(request: HttpRequest) -> HttpResponse:
 
     form = SignInForm(request=request, data=request.POST or None)
     if request.method == "POST":
-        usage = get_login_usage(request, request.POST.get("username", ""))
+        usage = get_login_usage(request, request.POST.get("email", ""))
         if is_login_rate_limited(usage):
             messages.error(request, "Terlalu banyak percobaan login. Coba lagi beberapa menit lagi.")
         elif form.is_valid():
@@ -51,7 +51,7 @@ def sign_in(request: HttpRequest) -> HttpResponse:
             return redirect("home")
         else:
             record_failed_login(usage)
-            messages.error(request, "Email/username atau password salah.")
+            messages.error(request, "Email atau password salah.")
 
     return render(request, "signin.html", {"form": form, "hide_nav": True})
 
@@ -116,9 +116,8 @@ def get_or_create_google_user(payload: Mapping[str, Any]) -> Any:
     with transaction.atomic():
         user = User.objects.select_for_update().filter(email__iexact=payload["email"]).first()
         if user is None:
-            username = build_unique_username(payload["email"])
             user = User.objects.create_user(
-                username=username,
+                username=None,
                 email=payload["email"],
                 password=None,
             )

@@ -2,7 +2,42 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-05-11
+
+
+## [1.1.0] - 2026-05-11
+
+### Fixed
+- Perbaikan Google OAuth 400 `origin_mismatch` dengan penambahan konfigurasi `Authorized JavaScript origins` pada Google Cloud Console (frontend URL seperti `http://localhost:8000`, `http://wsl.localhost:8000`, `http://localhost:5173`).
+- Penyesuaian backend: variabel `FRONTEND_URL` ditambahkan ke `CSRF_TRUSTED_ORIGINS` secara otomatis, serta validasi `aud` pada auth Google dipastikan sesuai dengan `GOOGLE_OAUTH_CLIENT_ID`.
+
+### Changed
+- Login diubah dari username/email menjadi **email only**:
+  - Form login sekarang hanya menerima email + password.
+  - Penghapusan validasi unique username (signup tidak lagi memiliki field username).
+  - Penambahan auth backend email-only.
+- Database:
+  - Kolom `auth_user.username` menjadi nullable dan tidak unique (constraint unique dihapus).
+  - Migrasi baru: `accounts/migrations/0003_auth_user_username_nullable_not_unique.py`.
+- Frontend:
+  - `signin.html`: input berubah menjadi email only.
+  - `signup.html`: field username dihapus.
+  - `auth-validation.js`: aturan validasi username dihapus.
+
+### Files Changed
+- `config/settings.py`
+- `accounts/forms.py`
+- `accounts/views.py`
+- `accounts/utils.py`
+- `accounts/backends.py`
+- `templates/signin.html`
+- `templates/signup.html`
+- `static/js/auth-validation.js`
+
+### Notes
+- Migrasi database telah berhasil dijalankan di WSL dengan perintah `./venv/bin/python manage.py migrate`. Skema terverifikasi: kolom username sudah NULLable dan indeks unique telah dihapus.
+- Pastikan Client ID yang digunakan UI sesuai dengan `GOOGLE_OAUTH_CLIENT_ID` di environment.
+
+## [1.0.6] - 2026-05-11
 
 ### Changed
 - Pembaruan template autentikasi dan halaman utama.

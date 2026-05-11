@@ -28,6 +28,14 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*.wsl.localhost', 'wsl.localhost']
 
+FRONTEND_URL = os.getenv("FRONTEND_URL", "").strip()
+CSRF_TRUSTED_ORIGINS = [FRONTEND_URL] if FRONTEND_URL else []
+
+AUTHENTICATION_BACKENDS = [
+    "accounts.backends.EmailBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
 
 # Application definition
 
