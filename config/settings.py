@@ -215,6 +215,7 @@ EMAIL_BACKEND = os.getenv(
 )
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@mythosnote.local')
 EMAIL_ASYNC = os.getenv('EMAIL_ASYNC', 'false').strip().lower() in ('1', 'true', 'yes')
+UNVERIFIED_USER_CLEANUP_DAYS = int(os.getenv('UNVERIFIED_USER_CLEANUP_DAYS', '1'))
 
 # Public Google Identity Services client id. When empty, the template keeps
 # the Google button disabled without breaking email/password auth.

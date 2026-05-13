@@ -1,11 +1,16 @@
 """Tes integrasi untuk alur autentikasi."""
 
 import re
+from datetime import timedelta
+from io import StringIO
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core import mail
+from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from .views import get_or_create_google_user
 from .models import UserUsage
@@ -22,6 +27,14 @@ class AuthFlowTests(TestCase):
         user = get_user_model()(username=email, email=email, is_active=is_active)
         user.set_password(password)
         user.save()
+        return user
+
+    def create_stale_unverified_user(self, email: str, *, days_old: int = 2):
+        user = self.create_local_user(email, "StrongPass123!", is_active=False)
+        user.date_joined = timezone.now() - timedelta(days=days_old)
+        user.save(update_fields=["date_joined"])
+        user.profile.email_verified = False
+        user.profile.save(update_fields=["email_verified"])
         return user
 
     def test_signup_requires_email_verification_before_full_access(self) -> None:
@@ -143,3 +156,44 @@ class AuthFlowTests(TestCase):
         self.assertIsNone(user.username)
         self.assertEqual(user.email, "google.user@gmail.com")
         self.assertTrue(user.profile.email_verified)
+
+    def test_cleanup_unverified_users_dry_run_keeps_data(self) -> None:
+        stale_user = self.create_stale_unverified_user("stale@gmail.com")
+        output = StringIO()
+
+        call_command(
+            "cleanup_unverified_users",
+            "--dry-run",
+            "--days=1",
+            stdout=output,
+        )
+
+        stale_user.refresh_from_db()
+        self.assertIn("stale@gmail.com", output.getvalue())
+        self.assertTrue(get_user_model().objects.filter(pk=stale_user.pk).exists())
+
+    def test_cleanup_unverified_users_deletes_only_matching_users(self) -> None:
+        stale_user = self.create_stale_unverified_user("delete-me@gmail.com")
+        keep_verified = self.create_local_user("keep-verified@gmail.com", "StrongPass123!", is_active=False)
+        keep_verified.date_joined = timezone.now() - timedelta(days=3)
+        keep_verified.save(update_fields=["date_joined"])
+        keep_verified.profile.email_verified = True
+        keep_verified.profile.save(update_fields=["email_verified"])
+
+        keep_active = self.create_local_user("keep-active@gmail.com", "StrongPass123!", is_active=True)
+        keep_active.date_joined = timezone.now() - timedelta(days=3)
+        keep_active.save(update_fields=["date_joined"])
+
+        output = StringIO()
+        with patch("builtins.input", return_value="yes"):
+            call_command(
+                "cleanup_unverified_users",
+                "--days=1",
+                "--batch-size=1",
+                stdout=output,
+            )
+
+        self.assertFalse(get_user_model().objects.filter(pk=stale_user.pk).exists())
+        self.assertTrue(get_user_model().objects.filter(pk=keep_verified.pk).exists())
+        self.assertTrue(get_user_model().objects.filter(pk=keep_active.pk).exists())
+        self.assertIn("delete-me@gmail.com", output.getvalue())

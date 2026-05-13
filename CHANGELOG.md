@@ -2,6 +2,31 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.5] - 2026-05-13
+
+### Summary
+Implementasi pembersihan otomatis akun unverified yang expired.
+
+### Added
+- `accounts/management/commands/cleanup_unverified_users.py`: Management command untuk membersihkan user inactive yang belum verifikasi email.
+
+### Changed
+- Sistem cleanup unverified users:
+  - Menghapus user dengan `is_active=False` dan `email_verified=False` yang melebihi batas waktu.
+  - Default cutoff: 24 jam sejak `date_joined`.
+
+### Features
+- Mode `--dry-run` untuk preview tanpa menghapus data
+- Opsi `--days` untuk mengatur masa tenggang
+- Batch processing untuk performa yang baik
+- Logging lengkap dan safety confirmation
+- Command idempotent dan aman dijalankan berkali-kali
+
+### Notes
+- Hanya menghapus akun yang memang belum pernah verifikasi email
+- Siap dijadwalkan via cron job untuk maintenance rutin
+- Mendukung konfigurasi di masa depan (misalnya 72 jam)
+
 
 ## [1.1.4] - 2026-05-13
 

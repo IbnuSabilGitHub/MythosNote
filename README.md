@@ -703,3 +703,17 @@ Pertanyaan atau isu? Hubungi:
 **Happy Coding! 🚀**
 
 *Last Updated: 2026-05-07*
+## Cleanup unverified users
+
+Hapus akun signup yang tetap `is_active=False` dan `email_verified=False` setelah 24 jam:
+
+```bash
+./venv/bin/python manage.py cleanup_unverified_users --dry-run
+./venv/bin/python manage.py cleanup_unverified_users --no-confirm
+```
+
+Cron contoh harian:
+
+```cron
+0 3 * * * cd /home/mypc/projects/MythosNote && ./venv/bin/python manage.py cleanup_unverified_users --no-confirm >> /var/log/mythosnote-cleanup.log 2>&1
+```
