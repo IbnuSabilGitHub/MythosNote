@@ -5,6 +5,19 @@ Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a 
 ## [1.1.2] - 2026-05-13
 
 ### Summary
+email verification hardening
+
+### Added
+- `accounts/validator.py`:  untuk memeriksa cooldown pengiriman email verifikasi.
+  
+### Changed
+- `accounts/forms.py`: Implementasi validasi email dengan memanggil fungsi validator.
+- `requirements.txt`: email-validator ditambahkan sebagai dependensi untuk validasi email yang lebih robust.
+
+
+## [1.1.2] - 2026-05-13
+
+### Summary
 Docker setup telah selesai dikonfigurasi untuk development dan production.
 
 ### Added

@@ -7,6 +7,8 @@ from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.password_validation import validate_password
 
+from .validators import validate_real_email
+
 
 User = get_user_model()
 
@@ -52,7 +54,7 @@ class SignUpForm(forms.ModelForm):
 
     def clean_email(self) -> str:
         """Cek email belum terdaftar."""
-        email = self.cleaned_data["email"].strip().lower()
+        email = validate_real_email(self.cleaned_data["email"])
         if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("Email sudah terdaftar.")
         return email
