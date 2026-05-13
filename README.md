@@ -13,6 +13,7 @@ Sistem AI-powered note-taking yang memungkinkan pengguna mengelola workspace, me
 - [Setup untuk Windows](#setup-untuk-windows)
 - [Setup untuk WSL (Windows Subsystem for Linux)](#setup-untuk-wsl)
 - [Setup untuk Linux/macOS](#setup-untuk-linuxmacos)
+- [Setup untuk Docker](#setup-untuk-docker)
 - [Konfigurasi Environment](#konfigurasi-environment)
 - [Menjalankan Aplikasi](#menjalankan-aplikasi)
 - [Struktur Project](#struktur-project)
@@ -139,8 +140,8 @@ python manage.py runserver
 # Terminal 2: Redis Server (jika menggunakan Windows native Redis)
 redis-server
 
-# Terminal 3: Celery Worker (untuk async tasks)
-celery -A mythosnote worker -l info
+# Terminal 3: RQ Worker (untuk async tasks)
+python manage.py rqworker default
 ```
 
 ✅ Akses aplikasi di: `http://localhost:8000`
@@ -358,6 +359,37 @@ python manage.py runserver
 
 ---
 
+## 🐳 Setup untuk Docker
+
+### Prasyarat
+- Install Docker Desktop atau Docker Engine + Docker Compose.
+- Pastikan file `.env` sudah ada. Cara paling cepat: copy dari `.env.example`.
+
+### Step 1: Siapkan environment
+```bash
+cp .env.example .env
+```
+
+### Step 2: Jalankan stack
+```bash
+docker compose up --build
+```
+
+### Step 3: Buat superuser
+```bash
+docker compose exec web python manage.py createsuperuser
+```
+
+### Service yang ikut jalan
+- `web`: Django app di `http://localhost:8000`
+- `db`: PostgreSQL
+- `redis`: Redis untuk RQ
+- `worker`: RQ worker
+
+Catatan: `docker compose` akan override `DATABASE_URL` dan `REDIS_URL` supaya memakai service internal `db` dan `redis`.
+
+---
+
 ## ⚙️ Konfigurasi Environment
 
 ### File `.env` - Penjelasan Detail
@@ -441,11 +473,11 @@ python manage.py runserver
 # Terminal 2: Redis (jika tidak auto-start)
 redis-server
 
-# Terminal 3: Celery Worker (untuk async tasks)
-celery -A mythosnote worker -l info
+# Terminal 3: RQ Worker (untuk async tasks)
+python manage.py rqworker default
 
-# Terminal 4: Celery Beat (untuk scheduled tasks)
-celery -A mythosnote beat -l info
+# Terminal 4: RQ Scheduler
+python manage.py rqworker default --with-scheduler
 ```
 
 ### Collect Static Files
@@ -485,7 +517,7 @@ MythosNote/
 │   ├── settings.py          # Konfigurasi utama
 │   ├── urls.py              # URL routing
 │   ├── wsgi.py              # Production server config
-│   └── celery.py            # Celery configuration
+│   └── rqworker.py          # RQ worker compatibility command
 │
 ├── apps/
 │   ├── workspace/           # Workspace management
@@ -497,7 +529,7 @@ MythosNote/
 │   ├── document/            # Document handling
 │   │   ├── models.py
 │   │   ├── views.py
-│   │   ├── tasks.py         # Celery tasks
+│   │   ├── tasks.py         # RQ jobs
 │   │   └── urls.py
 │   │
 │   ├── ai/                  # AI integration
@@ -635,7 +667,7 @@ pip install -r requirements.txt
 
 - [Django Documentation](https://docs.djangoproject.com/)
 - [Django REST Framework](https://www.django-rest-framework.org/)
-- [Celery Documentation](https://docs.celeryproject.org/)
+- [django-rq Documentation](https://django-rq.readthedocs.io/)
 - [PostgreSQL Tutorial](https://www.postgresql.org/docs/current/tutorial.html)
 - [Google Cloud Storage](https://cloud.google.com/storage/docs)
 - [Gemini API](https://ai.google.dev/tutorials/get_started_web)

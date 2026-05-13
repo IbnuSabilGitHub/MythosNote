@@ -2,6 +2,22 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-05-13
+
+### Summary
+Docker setup telah selesai dikonfigurasi untuk development dan production.
+
+### Added
+- `Dockerfile`
+- `docker-compose.yml`
+- `.dockerignore`
+
+### Changed
+- `config/settings.py`: Menambahkan support `DATABASE_URL` dan dynamic `ALLOWED_HOSTS`
+- `README.md`: 
+  - Menambahkan panduan instalasi & menjalankan via Docker
+  - Mengganti referensi worker dari Celery menjadi RQ
+
 ## [1.1.1] - 2026-05-11
 
 ### Added

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
@@ -19,6 +20,46 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR / '.env')
+
+
+def _get_allowed_hosts() -> list[str]:
+    raw_hosts = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1')
+    return [host.strip() for host in raw_hosts.split(',') if host.strip()]
+
+
+def _get_database_config() -> dict[str, dict[str, str | Path | int]]:
+    database_url = os.getenv('DATABASE_URL', '').strip()
+    if not database_url:
+        return {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+
+    parsed_url = urlparse(database_url)
+    if parsed_url.scheme in ('postgres', 'postgresql'):
+        return {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': parsed_url.path.lstrip('/'),
+                'USER': parsed_url.username or '',
+                'PASSWORD': parsed_url.password or '',
+                'HOST': parsed_url.hostname or '',
+                'PORT': parsed_url.port or '',
+            }
+        }
+
+    if parsed_url.scheme == 'sqlite':
+        database_name = parsed_url.path or database_url.removeprefix('sqlite://')
+        return {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': database_name,
+            }
+        }
+
+    raise ValueError(f"Skema DATABASE_URL tidak didukung: {parsed_url.scheme}")
 
 
 # Quick-start development settings - unsuitable for production
@@ -32,7 +73,7 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'false').strip().lower() in ('1', 'true', 'yes')
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = _get_allowed_hosts()
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "").strip()
 CSRF_TRUSTED_ORIGINS = [FRONTEND_URL] if FRONTEND_URL else []
@@ -92,12 +133,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+DATABASES = _get_database_config()
 
 # RQ (Redis Queue) Configuration
 # https://django-rq.readthedocs.io/en/latest/configuration.html
