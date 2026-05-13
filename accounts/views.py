@@ -69,11 +69,8 @@ def sign_up(request: HttpRequest) -> HttpResponse:
         return redirect("signin")
 
     if request.method == "POST" and not form.is_valid():
-        # Extract backend validation errors and show as toast
-        # Only email duplicates should be toast, others show in form
-        email_errors = form.errors.get("email", [])
-        if email_errors and "sudah terdaftar" in str(email_errors[0]).lower():
-            messages.error(request, str(email_errors[0]))
+        for email_error in form.errors.get("email", []):
+            messages.error(request, str(email_error))
 
     return render(request, "signup.html", {"form": form, "hide_nav": True})
 

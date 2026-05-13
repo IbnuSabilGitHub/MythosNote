@@ -2,6 +2,15 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-05-13
+
+### Summary
+- Error `Email atau domain email tidak valid` muncul di toast.
+
+### Changed
+- `accounts/views.py`: Perbaikan pesan error validasi email agar lebih user-friendly dan muncul di toast.
+
+
 ## [1.1.2] - 2026-05-13
 
 ### Summary
