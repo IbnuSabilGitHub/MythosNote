@@ -23,6 +23,7 @@ class SignInForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.request = request
         self.user = None
+        self.inactive_user = None
 
     def clean(self) -> dict[str, Any]:
         """Autentikasi berdasarkan email dan password."""
@@ -31,6 +32,10 @@ class SignInForm(forms.Form):
         password = cleaned_data.get("password")
 
         if email and password:
+            self.inactive_user = User.objects.filter(email__iexact=email, is_active=False).first()
+            if self.inactive_user and self.inactive_user.check_password(password):
+                raise forms.ValidationError("Akun belum aktif. Verifikasi email dulu.")
+
             self.user = authenticate(
                 self.request,
                 email=email,

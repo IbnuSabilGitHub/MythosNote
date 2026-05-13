@@ -49,6 +49,16 @@ def sign_in(request: HttpRequest) -> HttpResponse:
             if not is_email_verified(form.user):
                 return redirect("email_unverified")
             return redirect("home")
+        elif form.inactive_user is not None:
+            wait_seconds = get_verification_resend_wait_seconds(form.inactive_user)
+            if can_send_verification_email(form.inactive_user):
+                send_verification_email(request, form.inactive_user)
+                messages.error(request, "Akun belum aktif. Link verifikasi baru sudah dikirim.")
+            else:
+                messages.error(
+                    request,
+                    f"Akun belum aktif. Cek email verifikasi Anda atau tunggu {wait_seconds} detik untuk kirim ulang.",
+                )
         else:
             record_failed_login(usage)
             messages.error(request, "Email atau password salah.")
@@ -63,7 +73,11 @@ def sign_up(request: HttpRequest) -> HttpResponse:
 
     form = SignUpForm(data=request.POST or None)
     if request.method == "POST" and form.is_valid():
-        user = form.save()
+        user = form.save(commit=False)
+        user.is_active = False
+        user.save()
+        user.profile.email_verified = False
+        user.profile.save(update_fields=["email_verified", "updated_at"])
         send_verification_email(request, user)
         messages.success(request, "Akun berhasil dibuat. Cek email, lalu login setelah verifikasi.")
         return redirect("signin")
@@ -168,6 +182,8 @@ def verify_email(request: HttpRequest, uidb64: str, token: str) -> HttpResponse:
 
     user = get_user_from_uid(uidb64)
     if user and email_verification_token_generator.check_token(user, token):
+        user.is_active = True
+        user.save(update_fields=["is_active"])
         user.profile.email_verified = True
         user.profile.save(update_fields=["email_verified", "updated_at"])
         if request.user.is_authenticated:

@@ -2,6 +2,22 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.1.4] - 2026-05-13
+
+### Summary
+Perbaikan dan peningkatan sistem verifikasi email.
+
+### Changed
+- `accounts/views.py`: Signup user sekarang langsung inactive.
+- `accounts/views.py`: Link verifikasi dapat mengaktifkan user sekaligus menandai profile sebagai verified.
+- `accounts/forms.py`  dan `accounts/views.py` : Login memblokir user inactive dengan pesan yang jelas, serta otomatis mengirim ulang email verifikasi jika cooldown sudah lewat.
+- `templates/auth/email_verification_invalid.html` (line 7): Pesan untuk link expired/used diperbarui.
+- `accounts/tests.py` : Test diupdate sesuai lifecycle verifikasi email yang baru.
+
+### Notes
+- Error "Email atau domain email tidak valid" sekarang muncul dengan benar di toast notification.
+
 ## [1.1.3] - 2026-05-13
 
 ### Summary
