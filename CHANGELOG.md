@@ -2,7 +2,9 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.5] - 2026-05-13
+
+
+## [1.3.0] - 2026-05-13
 
 ### Summary
 Implementasi pembersihan otomatis akun unverified yang expired.
@@ -28,7 +30,7 @@ Implementasi pembersihan otomatis akun unverified yang expired.
 - Mendukung konfigurasi di masa depan (misalnya 72 jam)
 
 
-## [1.1.4] - 2026-05-13
+## [1.2.2] - 2026-05-13
 
 ### Summary
 Perbaikan dan peningkatan sistem verifikasi email.
@@ -52,7 +54,7 @@ Perbaikan dan peningkatan sistem verifikasi email.
 - `accounts/views.py`: Perbaikan pesan error validasi email agar lebih user-friendly dan muncul di toast.
 
 
-## [1.1.2] - 2026-05-13
+## [1.2.1] - 2026-05-13
 
 ### Summary
 email verification hardening
@@ -65,7 +67,7 @@ email verification hardening
 - `requirements.txt`: email-validator ditambahkan sebagai dependensi untuk validasi email yang lebih robust.
 
 
-## [1.1.2] - 2026-05-13
+## [1.2.0] - 2026-05-13
 
 ### Summary
 Docker setup telah selesai dikonfigurasi untuk development dan production.

@@ -261,38 +261,145 @@ def dashboard(request):
 
 ---
 
+### 3.5. **accounts/backends.py** - Custom Auth Backend (NEW v1.1.0)
+
+**File:** [accounts/backends.py](../accounts/backends.py)
+
+```python
+class EmailBackend(ModelBackend):
+    """Authenticate using email/password only (tidak username)."""
+    
+    def authenticate(self, request, username=None, password=None, **kwargs):
+        email = (kwargs.get("email") or username or "").strip().lower()
+        if not email or not password:
+            return None
+        
+        user = UserModel.objects.filter(email__iexact=email, is_active=True).first()
+        if user and user.check_password(password) and self.user_can_authenticate(user):
+            return user
+        return None
+```
+
+**Purpose:** Menggantikan default ModelBackend untuk support email-only authentication.
+
+**Perubahan v1.1.0:**
+- Signup form tidak lagi ada username field
+- User.username bisa `null=True` di database
+- AuthenticationBackend khusus untuk email-only login
+
+**Registrasi di settings.py:**
+```python
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.EmailBackend',
+    'django.contrib.auth.backends.ModelBackend',  # fallback
+]
+```
+
+**Usage di view:**
+```python
+user = authenticate(request, email="john@example.com", password="password123")
+# Backend akan cari user dengan email, bukan username
+```
+
+---
+
 ### 4. **accounts/forms.py** - Form Validation
 
 **File:** [accounts/forms.py](../accounts/forms.py)
 
 Form adalah layer validasi data sebelum masuk database:
 
-#### `SignInForm`
+#### `SignInForm` (Update v1.1.0)
+
 ```python
 class SignInForm(forms.Form):
-    username = forms.CharField(max_length=254)
-    password = forms.CharField(widget=forms.PasswordInput)
+    email = forms.EmailField()
+    password = forms.CharField(strip=False, widget=forms.PasswordInput)
 ```
 
-**Validasi khusus:**
-- Username bisa email atau username (check both)
-- Password diverifikasi dengan `authenticate()` function
-- Error message: "Email/username atau password salah."
+**Validasi khusus (v1.1.0):**
+- ⚠️ Email ONLY (tidak ada username), beda dari versi lama
+- Email divalidasi dengan `EmailField()` (format check)
+- Password tidak di-strip (preserve whitespace)
+- Custom `clean()` method:
+  1. Check apakah ada user dengan `is_active=False` & email cocok & password benar:
+     - Jika YES → set `self.inactive_user = user` (untuk auto-resend verif email di view)
+     - Raise ValidationError: "Akun belum aktif. Verifikasi email dulu."
+  2. Call `authenticate(request, email=email, password=password)`:
+     - Backend: `EmailBackend` (custom, lihat accounts/backends.py)
+     - Check: `User.objects.filter(email__iexact=email, is_active=True)`
+     - Verify password: `user.check_password(password)`
+  3. Jika `authenticate()` return None → raise ValidationError: "Email atau password salah."
+- Error message: "Email atau password salah."
 
-#### `SignUpForm`
+**Perbedaan v1.0 → v1.1.0:**
+```
+v1.0:
+  username_or_email = forms.CharField()
+  # Support both email & username
+  
+v1.1.0:
+  email = forms.EmailField()
+  # Email ONLY, username dihapus sepenuhnya
+```
+
+#### `SignUpForm` (Update v1.1.4)
+
 ```python
 class SignUpForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput)
-    password_confirm = forms.CharField(widget=forms.PasswordInput)
+    password = forms.CharField(strip=False, widget=forms.PasswordInput)
+    password_confirm = forms.CharField(strip=False, widget=forms.PasswordInput)
+    
+    class Meta:
+        model = User
+        fields = ["email"]
 ```
 
-**Validasi khusus:**
-- Email unique check (case-insensitive)
-- Username unique check (case-insensitive)
-- Password & password_confirm harus match
-- Password strength validation (Django's default: min 8 chars, not all numeric, dll)
+**Validasi khusus (v1.1.2, v1.1.4):**
+- **Email field** (NEW: validate_real_email):
+  - Format check via `EmailField()`
+  - Domain check: Validate domain exists + MX record valid
+  - Function: `validate_real_email(email)` dari [accounts/validators.py](../accounts/validators.py)
+  - Library: `email-validator` package (diperlukan di requirements.txt)
+  - Error: "Email atau domain email tidak valid." (jika domain invalid)
+  - Case-insensitive unique check: "Email sudah terdaftar."
+  
+- **Password fields:**
+  - `strip=False`: Preserve whitespace (jangan auto-trim)
+  - Confirm match: `password == password_confirm`
+    - Error jika tidak cocok: "Password tidak cocok."
+  - Django password strength validation:
+    - Min length: 8 characters
+    - Not all numeric
+    - Not too similar dengan username/email
+    - Not in common password list
+  
+- **Save method:**
+  - user.email = validated & normalized email
+  - user.username = None (v1.1.0 change)
+  - user.set_password() → hash password
+  - user.save()
+  - Auto-signal: UserProfile created dengan email_verified=False
+
+**Perbedaan v1.0 → v1.1.0 → v1.1.2 → v1.1.4:**
+```
+v1.0:
+  username = forms.CharField()
+  email = forms.EmailField()
+  # Support both username & email for signup
+  
+v1.1.0:
+  email = forms.EmailField()  # username dihapus
+  
+v1.1.2:
+  email = forms.EmailField()  # + validate_real_email() (domain check)
+  
+v1.1.4:
+  email = forms.EmailField()  # same, tapi user sekarang inactive by default
+```
 
 #### `ForgotPasswordForm`
+
 ```python
 class ForgotPasswordForm(forms.Form):
     email = forms.EmailField()
@@ -301,11 +408,58 @@ class ForgotPasswordForm(forms.Form):
 Simple email-only form (tidak reveal apakah email terdaftar atau tidak).
 
 #### `PasswordResetConfirmForm`
-Warisan dari Django's `SetPasswordForm` - built-in untuk reset password.
+
+```python
+class PasswordResetConfirmForm(SetPasswordForm):
+    """Inherit dari Django's SetPasswordForm"""
+    
+    def clean_new_password1(self):
+        """Tolak password baru yang sama dengan password lama"""
+        password = self.cleaned_data.get("new_password1", "")
+        if password and self.user.check_password(password):
+            raise ValidationError("Password baru tidak boleh sama dengan password lama.")
+        return password
+```
+
+- Inherit dari Django's built-in `SetPasswordForm`
+- Extra validation: Prevent user set password yang sama dengan password lama
 
 ---
 
-### 5. **accounts/utils.py** - Helper Functions
+### 5. **accounts/validators.py** - Email Validation (NEW v1.1.2)
+
+**File:** [accounts/validators.py](../accounts/validators.py)
+
+```python
+def validate_real_email(email: str) -> str:
+    """Validasi format email + domain + MX. Return email normalisasi."""
+    try:
+        result = validate_email(email, check_deliverability=True)
+        return result.normalized
+    except EmailNotValidError as exc:
+        raise ValidationError(ERROR_INVALID_EMAIL) from exc
+```
+
+**Library:** `email-validator` (package eksternal, tambah ke requirements.txt)
+
+**Checks:**
+- Format: RFC 5321 compliance
+- Domain exists: DNS lookup
+- MX records: Domain punya mail server yang valid
+- Deliverability: Praktis bisa terima email
+
+**Usage:**
+```python
+# Di SignUpForm.clean_email():
+email = validate_real_email(self.cleaned_data["email"])
+```
+
+**Error:**
+- "Email atau domain email tidak valid." (user-friendly message)
+
+---
+
+### 6. **accounts/utils.py** - Helper Functions
 
 **File:** [accounts/utils.py](../accounts/utils.py)
 
@@ -382,7 +536,7 @@ verify_google_credential(credential)
 
 ---
 
-### 6. **accounts/urls.py** - URL Routing
+### 7. **accounts/urls.py** - URL Routing
 
 **File:** [accounts/urls.py](../accounts/urls.py)
 
@@ -416,7 +570,7 @@ Jadi URL final:
 
 ---
 
-### 7. **accounts/context_processors.py** - Template Context
+### 8. **accounts/context_processors.py** - Template Context
 
 **File:** [accounts/context_processors.py](../accounts/context_processors.py)
 
@@ -459,14 +613,16 @@ Register di `settings.py`:
 
 **URL:** `POST /signup/`
 
+**⚠️ PENTING:** User dibuat dalam status **INACTIVE** dan TIDAK auto-login. Email harus diverifikasi terlebih dahulu.
+
 **Step-by-step:**
 
 ```
 1. User akses GET /signup/
    → Render signup.html dengan form kosong
+   → Form field: email, password, password_confirm (TIDAK ada username)
    
 2. User input:
-   - username: "johndoe"
    - email: "john@example.com"
    - password: "SecurePass123!"
    - password_confirm: "SecurePass123!"
@@ -474,73 +630,75 @@ Register di `settings.py`:
 3. User submit POST /signup/
    → View sign_up() dipanggil
    
-4. Validasi form:
-   a) Email sudah terdaftar? NO → OK
-   b) Username sudah terdaftar? NO → OK
+4. Validasi form (SignUpForm):
+   a) Email valid format? → validate_real_email() cek format + domain + MX
+      - Jika invalid → error: "Email atau domain email tidak valid."
+   b) Email sudah terdaftar (case-insensitive)? → error: "Email sudah terdaftar."
    c) Password & confirm match? YES → OK
-   d) Password strength OK? YES → OK
+   d) Password strength OK? (Django default checks)
    
 5. Form valid:
    → Create Django User:
-      - username: "johndoe"
+      - username: None (nullable, tidak unique lagi)
       - email: "john@example.com"
-      - password: (hashed, tidak disimpan plaintext)
-      - is_active: True
+      - password: (hashed via set_password())
+      - is_active: False ← INACTIVE! (CHANGE from v1.1.4)
       - is_staff: False
+      - is_superuser: False
    
-   → Signal triggered (dari django.db.models.post_save):
+   → Signal triggered (django.db.models.post_save):
       - Auto-create UserProfile untuk user baru
       - profile.email_verified = False
-   
-   → login(request, user):
-      - Create Django session
-      - request.user sekarang authenticated
+      - profile.created_at = now()
    
    → send_verification_email(request, user):
       - Generate uid = urlsafe_base64_encode(user.pk)
-      - Generate token = default_token_generator.make_token(user)
+      - Generate token = email_verification_token_generator.make_token(user)
+        (Token this tied to user.pk, user.password, user.email, & profile.email_verified)
       - Build URL: /verify-email/MTIz/xyz-token/
-      - Kirim email dengan subject "Verifikasi email MythosNote"
+      - Update profile.last_verification_email_sent_at = now()
+      - Send email dengan subject "Verifikasi email MythosNote"
    
-   → messages.success(...): Flash message ke session
+   → messages.success(...): "Akun berhasil dibuat. Cek email, lalu login setelah verifikasi."
    
-   → redirect("email_unverified"):
-      - Redirect ke /email-unverified/
+   → redirect("signin"):
+      - Redirect ke halaman login
+      - User HARUS login lagi setelah verifikasi email
       
-6. User lihat: "Email belum terverifikasi"
-   - Tombol: "Kirim Ulang Link"
-   - Tombol: "Logout / Ganti Akun"
-   
-7. User check email inbox
+6. User cek email inbox
    → Klik link verifikasi
    → GET /verify-email/MTIz/xyz-token/
    
-8. Verify endpoint:
+7. Verify endpoint:
    a) Decode uid → user.id = 123
    b) Get user dari database
-   c) Check token dengan default_token_generator.check_token(user, token)
+   c) Check token dengan email_verification_token_generator.check_token(user, token)
+      - Token ini signed dengan user password & email_verified status
+      - Jika email_verified sudah berubah, token invalid
+      - Token valid hanya untuk user tertentu
    d) Jika valid:
+      - Set user.is_active = True
       - Set user.profile.email_verified = True
-      - login(request, user) (update session)
-      - messages.success(...): "Email berhasil diverifikasi."
-      - redirect("home")
+      - if request.user.is_authenticated: logout(request) ← logout user sebelumnya jika ada
+      - messages.success(...): "Email berhasil diverifikasi. Silakan login."
+      - redirect("signin")
    e) Jika invalid/expired:
       - messages.error(...): "Link verifikasi tidak valid atau sudah kedaluwarsa."
       - render("auth/email_verification_invalid.html")
+      - User bisa lihat link untuk "resend verification email"
       
-9. User ke home page
-   → request.user.is_authenticated = True
-   → user.profile.email_verified = True
-   → Full akses ke workspace & fitur core
+8. User login lagi dengan email
+   → POST /signin/
+   → (lihat Fitur 2)
 ```
 
 **Database state sesudah signup:**
 
 | Table | Data |
 |-------|------|
-| auth_user | id=1, username="johndoe", email="john@example.com", password_hash="...", is_active=1 |
-| accounts_userprofile | id=1, user_id=1, email_verified=0, created_at="2026-05-05 10:00:00" |
-| accounts_userusage | user_id=1, identifier="johndoe", date="2026-05-05", failed_login_count=0 |
+| auth_user | id=1, username=None, email="john@example.com", password_hash="...", is_active=0 |
+| accounts_userprofile | id=1, user_id=1, email_verified=0, last_verification_email_sent_at="2026-05-05 10:00:00", created_at="2026-05-05 10:00:00" |
+| accounts_userusage | user_id=None, identifier="john@example.com", date="2026-05-05", ... |
 
 **Email yang dikirim:**
 
@@ -556,11 +714,20 @@ http://localhost:8000/verify-email/MTIz/xyz-abc-def-token/
 Jika Anda tidak membuat akun MythosNote, abaikan email ini.
 ```
 
+**Validasi Email Baru (v1.1.2):**
+- Library: `email-validator`
+- Check: Format valid + Domain exists + MX record valid
+- Error message: "Email atau domain email tidak valid."
+- Function: `validate_real_email(email)` di [accounts/validators.py](../accounts/validators.py)
+
+
 ---
 
 ### Fitur 2: Sign In (Login)
 
 **URL:** `POST /signin/`
+
+**⚠️ PERUBAHAN v1.1.0:** Login sekarang **email-only**, bukan username/email. Field username di form dihapus.
 
 **Step-by-step:**
 
@@ -570,53 +737,74 @@ Jika Anda tidak membuat akun MythosNote, abaikan email ini.
       - Sudah login? NO → OK lanjut
       - Sudah login? YES → redirect("home")
    → Render signin.html dengan form kosong
+   → Form field: email, password (TIDAK ada username)
    
 2. User input:
-   - username: "john@example.com" (atau "johndoe")
+   - email: "john@example.com"
    - password: "SecurePass123!"
    
 3. User submit POST /signin/
    → View sign_in() dipanggil
    
 4. Cek rate limiting:
-   a) get_login_usage(request, "john@example.com")
+   a) get_login_usage(request, email)
       → UserUsage record untuk hari ini (atau create baru)
+      → Normalize identifier: email.strip().lower()
    b) is_login_rate_limited(usage)?
       - Jika yes (5+ attempts dalam 15 min) → error message & re-render form
       - Jika no → lanjut
    
-5. Validasi form:
-   a) SignInForm.clean():
-      - Cek apakah "@" di identifier?
-        - YES (email) → Query User.objects.filter(email__iexact="john@example.com")
-        - NO (username) → Gunakan langsung sebagai username
-      - authenticate(request, username=auth_username, password=password)
-        - Return user jika password benar, else None
-   b) Jika form valid:
-      - self.user = authenticated user object
+5. Validasi form (SignInForm):
+   a) Clean method:
+      - Check apakah ada user dengan is_active=False & email cocok & password benar
+        - YES → set self.inactive_user = user ← untuk auto-resend verif email
+        - Then raise ValidationError: "Akun belum aktif. Verifikasi email dulu."
+      - authenticate(request, email=email, password=password)
+        - EmailBackend backend: filter is_active=True & email iexact & password match
+        - Return user jika valid, else None
+      - Jika self.user is None → raise ValidationError: "Email atau password salah."
    
-6. Form valid & password benar:
-   a) login(request, self.user):
+6. Form valid & password benar & user active:
+   a) login(request, user):
       - Create Django session
       - request.user sekarang authenticated
    
    b) clear_failed_login_tracking(usage):
       - Set failed_login_count = 0
       - Set failed_login_window_started_at = None
+      - Set last_failed_login_at = None
    
    c) is_email_verified(user)?
       - YES → redirect("home")
-      - NO → redirect("email_unverified")
+      - NO → redirect("email_unverified") ← gerbang verifikasi
    
-7. Form invalid & password salah:
+7. Form invalid - user inactive tapi password benar:
+   (Dari CHECK #5a di atas)
+   
+   a) Check can_send_verification_email(form.inactive_user)?
+      - Check: now() - last_verification_email_sent_at >= 5 menit
+      - YES → send_verification_email(request, form.inactive_user)
+      - messages.error: "Akun belum aktif. Link verifikasi baru sudah dikirim."
+      - Automatic resend! ← (NEW in v1.1.4)
+   
+   b) Jika cooldown belum lewat:
+      - get_verification_resend_wait_seconds(user) → e.g., 120 seconds
+      - messages.error: "Akun belum aktif. Cek email verifikasi Anda atau tunggu 120 detik untuk kirim ulang."
+   
+   c) Re-render form dengan error
+   
+8. Form invalid - password salah atau user tidak ditemukan:
    a) record_failed_login(usage):
+      - Jika belum ada window, set failed_login_window_started_at = now()
       - Increment failed_login_count
-      - Set failed_login_window_started_at (jika belum)
       - Set last_failed_login_at = now()
    
-   b) messages.error(...): "Email/username atau password salah."
+   b) Jika failed_login_count >= 5:
+      - BLOCKED sampai 15 menit lewat
    
-   c) Re-render form dengan error (keep username field filled)
+   c) messages.error(...): "Email atau password salah."
+   
+   d) Re-render form dengan error (keep email field filled)
 ```
 
 **Database state:**
@@ -624,7 +812,13 @@ Jika Anda tidak membuat akun MythosNote, abaikan email ini.
 | Table | Data |
 |-------|------|
 | django_session | session_key="...", session_data="...", expire_date="2026-05-19" |
-| accounts_userusage | ..., failed_login_count=0 atau > 0 |
+| accounts_userusage | ..., failed_login_count=0 atau > 0, failed_login_window_started_at="2026-05-05 10:05:00" |
+
+**Custom Auth Backend (v1.1.0):**
+- File: [accounts/backends.py](../accounts/backends.py)
+- Class: `EmailBackend` (inherit dari ModelBackend)
+- Authenticate method: Accept `email` kwarg, filter `email__iexact` & `is_active=True`
+- Usage: Di settings.py `AUTHENTICATION_BACKENDS` sudah include EmailBackend
 
 ---
 
@@ -674,17 +868,117 @@ Jika Anda tidak membuat akun MythosNote, abaikan email ini.
 
 ---
 
-### Fitur 4: Email Verification via Link
+### Fitur 3.5: Resend Verification Email dengan Cooldown (v1.1.2 & v1.1.4)
+
+**URL:** `POST /resend-verification/`
+
+**⚠️ NEW:** Ada cooldown **5 menit** antar pengiriman verification email (prevent spam).
+
+**Step-by-step:**
+
+```
+1. User login tapi email belum verified → di halaman /email-unverified/
+   → Tombol "Kirim Ulang Link" ada
+   
+2. User klik tombol
+   → POST /resend-verification/
+   
+3. View resend_verification():
+   a) Check is_email_verified(request.user)? YES → redirect("home")
+   
+   b) Check can_send_verification_email(request.user)?
+      - Function cek: now() - profile.last_verification_email_sent_at >= 5 menit
+      - Jika YES (boleh kirim) → lanjut
+      - Jika NO (terlalu cepat) → error & redirect
+   
+   c) Jika boleh kirim:
+      - send_verification_email(request, request.user)
+      - Update profile.last_verification_email_sent_at = now()
+      - messages.success(...): "Link verifikasi baru sudah dikirim."
+      - redirect("email_unverified")
+   
+   d) Jika terlalu cepat (cooldown aktif):
+      - get_verification_resend_wait_seconds(request.user) → e.g., 120 seconds
+      - messages.warning(...): f"Tunggu 120 detik sebelum kirim ulang."
+      - redirect("email_unverified")
+```
+
+**Frontend Countdown Timer:**
+```html
+<!-- Template: auth/email_unverified.html -->
+<button id="resend-btn" type="submit">Kirim Ulang Link</button>
+<span id="cooldown-timer" style="display: none;">
+    Tunggu <span id="seconds">120</span> detik...
+</span>
+
+<script>
+// Auto-disable button jika cooldown masih aktif
+const waitSeconds = {{ resend_wait_seconds }};  // From view context
+if (waitSeconds > 0) {
+    document.getElementById('resend-btn').disabled = true;
+    document.getElementById('cooldown-timer').style.display = 'inline';
+    
+    let remaining = waitSeconds;
+    const timerInterval = setInterval(() => {
+        remaining--;
+        document.getElementById('seconds').textContent = remaining;
+        if (remaining <= 0) {
+            clearInterval(timerInterval);
+            document.getElementById('resend-btn').disabled = false;
+            document.getElementById('cooldown-timer').style.display = 'none';
+        }
+    }, 1000);
+}
+</script>
+```
+
+**Database state:**
+```python
+profile.last_verification_email_sent_at = "2026-05-05 14:00:00"
+
+# User coba resend di 14:03
+# get_verification_resend_wait_seconds() → 120 seconds (cooldown masih aktif)
+
+# User coba resend di 14:05
+# get_verification_resend_wait_seconds() → 0 (boleh kirim!)
+```
+
+**Email Token Invalidation (v1.1.2):**
+```python
+# Token generator: EmailVerificationTokenGenerator (custom)
+# Token di-hash dengan:
+# - user.pk
+# - user.password
+# - timestamp
+# - profile.email_verified ← PENTING!
+# - profile.last_verification_email_sent_at ← PENTING!
+# - user.email
+
+# Akibat: Jika user kirim ulang email (update last_verification_email_sent_at),
+# token lama menjadi INVALID otomatis!
+
+# Ini prevent:
+# - User kopinya lama token masih berlaku
+# - Token lama bisa dipakai berkali-kali
+```
+
+---
+
+### Fitur 4: Email Verification via Link (Update v1.1.4)
 
 **URL:** `GET /verify-email/<uidb64>/<token>/`
+
+**⚠️ PERUBAHAN v1.1.4:** 
+- User dibuat dengan `is_active=False`, verification link mengaktifkan user sekaligus marking email_verified
+- If user sudah login, auto-logout saat verifikasi berhasil (security: biar user login ulang dari email yang sudah verified)
 
 **Step-by-step:**
 
 ```
 1. User klik link dari email:
-   http://localhost:8000/verify-email/MTIz/xyz-abc-token/
+   http://localhost:8000/verify-email/MTIz/xyz-abc-def-token/
    
-   → GET /verify-email/MTIz/xyz-abc-token/
+   → GET /verify-email/MTIz/xyz-abc-def-token/
    
 2. View verify_email(request, uidb64, token):
    
@@ -695,26 +989,61 @@ Jika Anda tidak membuat akun MythosNote, abaikan email ini.
       - Return user object atau None
    
    b) Check token:
-      - default_token_generator.check_token(user, "xyz-abc-token")
-      - Token ini tied ke specific user & password
-      - Jika user ubah password, token invalid
+      - email_verification_token_generator.check_token(user, token)
+      - Token ini signed dengan:
+        * user.pk
+        * user.password
+        * timestamp
+        * profile.email_verified
+        * profile.last_verification_email_sent_at
+        * user.email
+      - Jika user ubah password, atau admin edit email_verified, token invalid
+      - Jika user resend email (update last_verification_email_sent_at), token lama invalid
       - Token expire dalam beberapa hari (Django default: 1 hari)
    
    c) Jika valid:
-      - user.profile.email_verified = True
-      - user.profile.save()
-      - login(request, user): Re-create session
-      - messages.success(...): "Email berhasil diverifikasi."
-      - redirect("home")
+      - Set user.is_active = True ← ACTIVATE user (NEW in v1.1.4)
+      - Set user.profile.email_verified = True
+      - user.profile.save(update_fields=["email_verified", "updated_at"])
+      
+      - if request.user.is_authenticated:
+          logout(request) ← Auto-logout user sebelumnya! (NEW in v1.1.4)
+          # This ensure user login ulang dari email yang sudah verified
+      
+      - messages.success(...): "Email berhasil diverifikasi. Silakan login."
+      - redirect("signin")
    
    d) Jika invalid/expired:
-      - messages.error(...): "Link tidak valid atau sudah kedaluwarsa."
+      - messages.error(...): "Link verifikasi tidak valid atau sudah kedaluwarsa."
       - render("auth/email_verification_invalid.html")
-      - User bisa klik link di halaman ini untuk kembali ke resend page
+      - User bisa lihat link untuk "resend verification email" atau kembali ke signin
       
-3. User akses home
-   → @verified_email_required decorator (di fitur core nanti):
-      - Check email_verified? YES → full akses
+3. User login dengan credential di /signin/
+   → (lihat Fitur 2)
+```
+
+**Contoh Scenario:**
+
+```
+Scenario 1: Fresh signup user
+1. User signup, is_active=False, email_verified=False
+2. User terima email dengan link verifikasi
+3. User klik link → is_active=True, email_verified=True
+4. User redirect ke signin → login dengan email & password
+
+Scenario 2: User ubah password di tengah proses
+1. User signup, terima email dengan link verifikasi
+2. User (belum verify) reset password via forgot_password
+3. User terima email reset password, ubah password
+4. Sekarang link verifikasi LAMA menjadi INVALID (karena user.password berubah)
+5. User harus resend email verifikasi baru atau login & resend ulang
+
+Scenario 3: User resend verification email
+1. User signup, terima email verifikasi pertama (token A)
+2. User tidak klik link, request resend
+3. profile.last_verification_email_sent_at updated
+4. Token A sekarang INVALID (karena last_verification_email_sent_at berubah)
+5. User terima email baru dengan token B (yang valid)
 ```
 
 ---
@@ -807,14 +1136,23 @@ Jika Anda tidak membuat akun MythosNote, abaikan email ini.
 
 ---
 
-### Fitur 7: Google OAuth Sign In
+### Fitur 7: Google OAuth Sign In (Update v1.1.0 & v1.1.1)
 
 **URL:** `POST /auth/google/`
+
+**⚠️ PERUBAHAN v1.1.0 & v1.1.1:**
+- Username dihapus dari signup form, hanya email
+- Google OAuth membuat user dengan `username=None`
+- User dibuat dengan `password=unusable` (bukan empty string)
+- Email dari Google OAuth otomatis marked as `email_verified=True` jika payload `email_verified=True`
+- Rate limiting: Max 10 attempts per IP dalam 300 detik (5 menit)
 
 **Prerequisite:**
 - Setup Google OAuth di Google Cloud Console
 - Config `GOOGLE_OAUTH_CLIENT_ID` di `settings.py`
-- Tambahkan `SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'` pada `settings.py` (Mencegah masalah popup token nyangkut/stuck di GSI redirect pada Django 4.0+).
+- Tambahkan authorized origins di GCP: `http://localhost:8000`, `http://wsl.localhost:8000`, `http://localhost:5173`
+- Tambahkan `SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'` pada `settings.py` 
+  - Mencegah masalah popup token nyangkut/stuck di GSI redirect pada Django 4.0+
 - Frontend load Google Identity Services library & handle token generation
 
 **Step-by-step:**
@@ -828,51 +1166,85 @@ Jika Anda tidak membuat akun MythosNote, abaikan email ini.
    e) JavaScript POST token ke /auth/google/
    
 2. Backend POST /auth/google/:
-   a) View google_sign_in():
+   a) Check is_google_oauth_rate_limited(request)?
+      - Cache key: "google-oauth-rate:{ip_address}"
+      - Limit: 10 attempts per 300 detik (5 menit)
+      - Jika terlampaui → error: "Terlalu banyak percobaan Google login. Coba lagi nanti."
+   
+   b) View google_sign_in():
       - Get credential dari POST data
+      - Jika kosong → error: "Credential Google tidak ditemukan."
    
-   b) verify_google_credential(credential):
+   c) verify_google_credential(credential):
       - HTTP GET ke https://oauth2.googleapis.com/tokeninfo?id_token=...
+      - Timeout: 8 detik
       - Check apakah `aud` (audience) == GOOGLE_OAUTH_CLIENT_ID
-      - Extract: email, name, email_verified dari payload
-      - Return: {"email": ..., "email_verified": ...}
+        - Jika tidak cocok → ValueError("Token Google tidak sesuai client aplikasi.")
+      - Check apakah ada field `email` → Jika tidak → ValueError("Token Google tidak berisi email.")
+      - Extract: 
+        * email: payload["email"].lower() (normalized)
+        * name: payload.get("name", "")
+        * email_verified: payload.get("email_verified") in (True, "true", "True")
+      - Return: {"email": ..., "name": ..., "email_verified": ...}
    
-   c) get_or_create_google_user(payload):
+   d) get_or_create_google_user(payload):
+      - Use atomic transaction untuk thread-safety
       - Query User.objects.filter(email__iexact=payload["email"])
-      - Jika ada → gunakan existing user
-      - Jika tidak ada → create new user:
-        a) Generate username = build_unique_username("john@gmail.com")
-           - Remove "@gmail.com" part → "john"
-           - Check unique? If taken, add suffix: "john_1", "john_2", etc
-        b) Create User:
-           - username: "john_1"
-           - email: "john@gmail.com"
-           - password: None (social login, tidak set password)
-        c) Auto-create UserProfile via signal
-      - If payload["email_verified"] = true:
-        - user.profile.email_verified = True
-        - user.profile.save()
+      - Jika ada (existing user):
+        → gunakan existing user
+        → update profile.email_verified jika payload["email_verified"]=True
+      - Jika tidak ada (new user):
+        → Create new User:
+           * username: None (nullable di database sejak v1.1.0)
+           * email: payload["email"]
+           * password: set_unusable_password() ← TIDAK ada password!
+           * is_active: True (beda dari signup yang is_active=False)
+        → Signal auto-create UserProfile
+        → If payload["email_verified"]=True:
+           * profile.email_verified = True (no need to verify!)
       
-   d) login(request, user):
+   e) login(request, user, backend="django.contrib.auth.backends.ModelBackend"):
       - Create Django session
+      - Explicit backend specification (best practice)
    
-   e) is_email_verified(user)?
-      - YES → redirect("home")
-      - NO → redirect("email_unverified")
+   f) is_email_verified(user)?
+      - YES (Google already verified) → redirect("home")
+      - NO (rare case) → redirect("email_unverified") ← user bisa resend
       
 3. Keuntungan Google OAuth:
-   - Email sudah diverifikasi oleh Google
+   - Email sudah diverifikasi oleh Google server
    - Tidak perlu password verification
    - Faster signup & login
+   - Lebih aman (Google handle auth complexity)
 ```
 
 **Error handling:**
 ```
+- Rate limited → "Terlalu banyak percobaan Google login. Coba lagi nanti."
 - Credential not found → "Credential Google tidak ditemukan."
 - Token validation fail → "Login Google gagal divalidasi."
+- Audience mismatch → (user dapat generic error di view)
+- Email not in token → (user dapat generic error di view)
 - Email already linked to other account (IntegrityError) 
   → "Email Google sudah terhubung ke akun lain."
 ```
+
+**Database state (Google OAuth user):**
+
+```
+auth_user:
+  id=2, username=None, email="john@gmail.com", password="!", is_active=1
+
+accounts_userprofile:
+  user_id=2, email_verified=1, created_at="2026-05-05 14:30:00"
+
+accounts_userusage:
+  user_id=2, identifier="john@gmail.com", date="2026-05-05"
+```
+
+**Email Verification Token for Google Users:**
+- User dari Google OAuth TIDAK perlu verifikasi email ulang
+- Token generator hanya dipakai jika email_verified=False
 
 ---
 
@@ -906,6 +1278,68 @@ Jika Anda tidak membuat akun MythosNote, abaikan email ini.
 ```
 
 ---
+
+## Fitur Maintenance: Cleanup Unverified Users (v1.1.5)
+
+**Command:** `python manage.py cleanup_unverified_users`
+
+**Tujuan:** Otomatis menghapus akun yang never verified dalam jangka waktu tertentu (default 24 jam).
+
+**Opsi:**
+```bash
+# Preview (dry-run):
+python manage.py cleanup_unverified_users --dry-run
+
+# Hapus dengan konfirmasi:
+python manage.py cleanup_unverified_users
+
+# Hapus tanpa konfirmasi:
+python manage.py cleanup_unverified_users --no-confirm
+
+# Custom cutoff (72 jam):
+python manage.py cleanup_unverified_users --days 72
+
+# Custom batch size:
+python manage.py cleanup_unverified_users --batch-size 50
+```
+
+**Kriteria Penghapusan:**
+```python
+User.objects.filter(
+    is_active=False,                    # User belum pernah aktif
+    profile__email_verified=False,      # Email belum pernah diverifikasi
+    date_joined__lte=cutoff_date        # Terdaftar lebih dari X hari lalu
+)
+```
+
+**Contoh timeline:**
+```
+2026-05-05 10:00:00 - User signup, is_active=False
+2026-05-05 10:01:00 - Verification email dikirim
+2026-05-05 14:00:00 - User tidak verifikasi, masih inactive
+
+2026-05-06 10:00:00 (24 jam kemudian) - Command dijalankan:
+  - Jika --days 1 (default)
+  - Cutoff = 2026-05-05 10:00:00
+  - User akan DIHAPUS!
+  
+2026-05-06 09:59:00 (< 24 jam) - Command dijalankan:
+  - Cutoff = 2026-05-05 10:00:01
+  - User masih ada (belum 24 jam lewat)
+```
+
+**Use Cases:**
+- Scheduled via cron job setiap malam
+- Manual cleanup setelah campaign/spam signup
+- Maintenance task di production (safe: hanya inactive & unverified users)
+
+**Safety Features:**
+- `--dry-run`: Preview tanpa menghapus
+- `--no-confirm`: Skip prompt (untuk automation)
+- Batch processing: Process 100 per batch (configurable)
+- Logging lengkap: Siapa dihapus, kapan, berapa banyak
+- Idempotent: Aman dijalankan berkali-kali
+
 
 ## Keamanan & Rate Limiting
 
@@ -1034,6 +1468,49 @@ if payload.get("aud") != settings.GOOGLE_OAUTH_CLIENT_ID:
 # - Token dari Google app lain tidak bisa dipakai
 # - Man-in-the-middle attacks
 ```
+
+### 6.5. Google OAuth Rate Limiting (NEW v1.1.1)
+
+**Algoritma:**
+
+```python
+GOOGLE_OAUTH_RATE_LIMIT_ATTEMPTS = 10
+GOOGLE_OAUTH_RATE_LIMIT_WINDOW = 300  # 5 menit
+
+def is_google_oauth_rate_limited(request):
+    ip_address = get_client_ip(request) or "unknown"
+    cache_key = f"google-oauth-rate:{ip_address}"
+    attempts = cache.get(cache_key, 0)
+    
+    if attempts >= GOOGLE_OAUTH_RATE_LIMIT_ATTEMPTS:
+        return True  # BLOCKED
+    
+    cache.set(cache_key, attempts + 1, GOOGLE_OAUTH_RATE_LIMIT_WINDOW)
+    return False  # OK, increment & allow
+```
+
+**Tracking by:**
+- IP Address (per-IP limit)
+- Cache backend (Redis, Memcached, atau in-memory)
+- 5-minute sliding window
+
+**Timeline Example:**
+
+```
+14:00:00 - User attempt #1  → attempts=1, cache TTL=5 min
+14:00:05 - User attempt #2  → attempts=2
+...
+14:00:45 - User attempt #10 → attempts=10, LIMIT REACHED
+14:00:46 - User attempt #11 → is_google_oauth_rate_limited = True → BLOCKED!
+14:05:01 - Cache expired, attempts reset
+14:05:02 - User attempt #12 → cache cleared, attempts=1, OK!
+```
+
+**Use Case:**
+- Prevent brute force Google token attacks
+- Different from login rate limiting (per-email)
+- Login: 5 attempts per 15 min per email
+- Google: 10 attempts per 5 min per IP
 
 ### 7. IP Address Tracking
 
@@ -1564,6 +2041,131 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Session permanent sampai SESSION_COOK
    >>> token = default_token_generator.make_token(user)
    >>> valid = default_token_generator.check_token(user, token)
    >>> print(valid)  # Should be True
+   ```
+
+---
+
+### Problem: Email verification token invalid / expired (v1.1.2+)
+
+**Perubahan v1.1.2:** Token di-sign dengan `profile.last_verification_email_sent_at`
+
+**Penyebab token invalid:**
+1. **User resend email verification** → `last_verification_email_sent_at` updated → token lama invalid
+   - Solusi: User gunakan link dari email TERBARU
+2. **User ubah password** → token invalid (standard Django behavior)
+   - Solusi: Resend verification email lagi
+3. **Token expired** (default 1 hari) → token invalid
+   - Solusi: Click "Resend Verification" di halaman email_unverified
+
+**Test token generator:**
+```bash
+python manage.py shell
+>>> from accounts.utils import email_verification_token_generator
+>>> from django.contrib.auth import get_user_model
+>>> User = get_user_model()
+>>> user = User.objects.first()
+>>> token = email_verification_token_generator.make_token(user)
+>>> valid = email_verification_token_generator.check_token(user, token)
+>>> print(valid)  # Should be True
+```
+
+---
+
+### Problem: User masih bisa login padahal email belum verified (v1.1.4)
+
+**Perubahan v1.1.4:** User dibuat dengan `is_active=False`, tidak bisa login sampai email verified.
+
+**Check:**
+1. **Signup tidak buat user dengan is_active=False**
+   - Solusi: Update SignUpForm.save() untuk set `user.is_active = False`
+   
+2. **Login tidak check inactive user**
+   - Solusi: SignInForm.clean() harus check `is_active=False` users & send verification email
+
+```python
+# Debug di shell:
+>>> from django.contrib.auth import get_user_model
+>>> User = get_user_model()
+>>> user = User.objects.first()
+>>> print(f"is_active: {user.is_active}")
+>>> print(f"email_verified: {user.profile.email_verified}")
+```
+
+---
+
+### Problem: Email validator reject valid email (v1.1.2+)
+
+**Library:** `email-validator` (strict validation)
+
+**Issue:** Email dengan domain valid tapi sedikit unconventional bisa di-reject.
+
+**Solusi:**
+
+1. **Check error message:**
+   ```bash
+   python manage.py shell
+   >>> from accounts.validators import validate_real_email
+   >>> try:
+   ...     validate_real_email("user@example.com")
+   ... except Exception as e:
+   ...     print(e)
+   ```
+
+2. **Disable MX check (tidak recommended):**
+   ```python
+   # accounts/validators.py
+   result = validate_email(email, check_deliverability=False)
+   # Tapi jadi tidak jadi check MX records
+   ```
+
+---
+
+### Problem: Cleanup command tidak menghapus user (v1.1.5)
+
+**Command:** `python manage.py cleanup_unverified_users`
+
+**Debug:**
+```bash
+# Dry-run untuk lihat siapa yang akan dihapus:
+python manage.py cleanup_unverified_users --dry-run
+
+# Check criteria di database:
+python manage.py shell
+>>> from django.contrib.auth import get_user_model
+>>> User = get_user_model()
+>>> from datetime import timedelta, timezone
+>>> cutoff = timezone.now() - timedelta(days=1)
+>>> candidates = User.objects.filter(
+...     is_active=False,
+...     profile__email_verified=False,
+...     date_joined__lte=cutoff
+... )
+>>> print(f"Total candidates: {candidates.count()}")
+>>> for user in candidates:
+...     print(f"- {user.email} (joined {user.date_joined})")
+```
+
+---
+
+### Problem: Google OAuth tidak auto-mark email_verified (v1.1.1)
+
+**Perubahan v1.1.1:** User dari Google OAuth sekarang otomatis marked sebagai email_verified.
+
+**Check:**
+1. **Google token harus punya `email_verified: True`**
+   ```python
+   # Inspect di view:
+   payload = verify_google_credential(credential)
+   print(f"email_verified: {payload.get('email_verified')}")
+   ```
+
+2. **User already existed sebelum update?**
+   - Google OAuth tidak auto-update existing users
+   - Solusi: Manual update di admin atau shell:
+   ```python
+   >>> user = User.objects.get(email="google-user@gmail.com")
+   >>> user.profile.email_verified = True
+   >>> user.profile.save()
    ```
 
 ---
