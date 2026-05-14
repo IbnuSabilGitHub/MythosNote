@@ -28,6 +28,9 @@ LOGIN_RATE_LIMIT_WINDOW = timedelta(minutes=15)
 VERIFICATION_RESEND_COOLDOWN = timedelta(minutes=5)
 GOOGLE_OAUTH_RATE_LIMIT_ATTEMPTS = 10
 GOOGLE_OAUTH_RATE_LIMIT_WINDOW = 300
+PASSWORD_RESET_EMAIL_COOLDOWN = 300
+PASSWORD_RESET_RATE_LIMIT_ATTEMPTS = 5
+PASSWORD_RESET_RATE_LIMIT_WINDOW = 300
 
 
 class EmailVerificationTokenGenerator(PasswordResetTokenGenerator):
@@ -80,6 +83,24 @@ def is_google_oauth_rate_limited(request: HttpRequest) -> bool:
         return True
     cache.set(cache_key, attempts + 1, GOOGLE_OAUTH_RATE_LIMIT_WINDOW)
     return False
+
+
+def is_password_reset_rate_limited(request: HttpRequest) -> bool:
+    """Batasi volume request reset password per IP."""
+
+    ip_address = get_client_ip(request) or "unknown"
+    cache_key = f"password-reset-rate:{ip_address}"
+    attempts = cache.get(cache_key, 0)
+    if attempts >= PASSWORD_RESET_RATE_LIMIT_ATTEMPTS:
+        return True
+    cache.set(cache_key, attempts + 1, PASSWORD_RESET_RATE_LIMIT_WINDOW)
+    return False
+
+
+def can_send_password_reset_email(user: Any) -> bool:
+    """Batasi kirim email reset per akun tanpa bocorkan status."""
+
+    return cache.get(f"password-reset-cooldown:{user.pk}") is None
 
 
 def get_login_usage(request: HttpRequest, identifier: str) -> UserUsage:
@@ -232,6 +253,8 @@ def send_verification_email(request: HttpRequest, user: Any) -> None:
 
 def send_password_reset_email(request: HttpRequest, user: Any) -> None:
     """Kirim link reset password dengan token bawaan Django."""
+
+    cache.set(f"password-reset-cooldown:{user.pk}", True, PASSWORD_RESET_EMAIL_COOLDOWN)
 
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)

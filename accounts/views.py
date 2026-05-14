@@ -4,7 +4,6 @@ from typing import Any, Mapping
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.tokens import default_token_generator
 from django.db import IntegrityError, transaction
 from django.http import HttpRequest, HttpResponse
@@ -17,6 +16,7 @@ from .decorators import guest_required
 from .forms import ForgotPasswordForm, PasswordResetConfirmForm, SignInForm, SignUpForm
 from .utils import (
     can_send_verification_email,
+    can_send_password_reset_email,
     clear_failed_login_tracking,
     email_verification_token_generator,
     get_verification_resend_wait_seconds,
@@ -24,6 +24,7 @@ from .utils import (
     is_google_oauth_rate_limited,
     is_email_verified,
     is_login_rate_limited,
+    is_password_reset_rate_limited,
     record_failed_login,
     send_password_reset_email,
     send_verification_email,
@@ -32,6 +33,36 @@ from .utils import (
 
 
 User = get_user_model()
+PENDING_VERIFICATION_SESSION_KEY = "pending_verification_user_id"
+
+
+def set_pending_verification_user(request: HttpRequest, user: Any) -> None:
+    """Simpan target verifikasi di session untuk flow guest."""
+
+    request.session[PENDING_VERIFICATION_SESSION_KEY] = user.pk
+
+
+def clear_pending_verification_user(request: HttpRequest) -> None:
+    """Hapus target verifikasi tersimpan dari session."""
+
+    request.session.pop(PENDING_VERIFICATION_SESSION_KEY, None)
+
+
+def get_pending_verification_user(request: HttpRequest) -> Any | None:
+    """Ambil target verifikasi dari session guest bila ada."""
+
+    user_id = request.session.get(PENDING_VERIFICATION_SESSION_KEY)
+    if not user_id:
+        return None
+    return User.objects.filter(pk=user_id, is_active=False).first()
+
+
+def get_verification_target_user(request: HttpRequest) -> Any | None:
+    """Ambil user target resend/status tanpa menerima email mentah."""
+
+    if request.user.is_authenticated:
+        return request.user
+    return get_pending_verification_user(request)
 
 
 @guest_required
@@ -46,19 +77,14 @@ def sign_in(request: HttpRequest) -> HttpResponse:
         elif form.is_valid():
             login(request, form.user)
             clear_failed_login_tracking(usage)
+            clear_pending_verification_user(request)
             if not is_email_verified(form.user):
                 return redirect("email_unverified")
             return redirect("home")
         elif form.inactive_user is not None:
-            wait_seconds = get_verification_resend_wait_seconds(form.inactive_user)
-            if can_send_verification_email(form.inactive_user):
-                send_verification_email(request, form.inactive_user)
-                messages.error(request, "Akun belum aktif. Link verifikasi baru sudah dikirim.")
-            else:
-                messages.error(
-                    request,
-                    f"Akun belum aktif. Cek email verifikasi Anda atau tunggu {wait_seconds} detik untuk kirim ulang.",
-                )
+            set_pending_verification_user(request, form.inactive_user)
+            messages.error(request, "Akun belum aktif. Cek email verifikasi Anda atau kirim ulang dari halaman berikut.")
+            return redirect("email_unverified")
         else:
             record_failed_login(usage)
             messages.error(request, "Email atau password salah.")
@@ -79,8 +105,9 @@ def sign_up(request: HttpRequest) -> HttpResponse:
         user.profile.email_verified = False
         user.profile.save(update_fields=["email_verified", "updated_at"])
         send_verification_email(request, user)
-        messages.success(request, "Akun berhasil dibuat. Cek email, lalu login setelah verifikasi.")
-        return redirect("signin")
+        set_pending_verification_user(request, user)
+        messages.success(request, "Akun berhasil dibuat. Cek email verifikasi Anda.")
+        return redirect("email_unverified")
 
     if request.method == "POST" and not form.is_valid():
         for email_error in form.errors.get("email", []):
@@ -148,31 +175,48 @@ def build_unique_username(email: str) -> str:
     return username
 
 
-@login_required
 def email_unverified(request: HttpRequest) -> HttpResponse:
-    """Tampilkan gerbang verifikasi untuk user login yang belum verifikasi."""
+    """Tampilkan gerbang verifikasi.
 
-    if is_email_verified(request.user):
+    Support untuk user yang sudah login *dan* untuk flow dimana user belum
+    terautentikasi (mis. setelah percobaan signin dengan akun unverified).
+    """
+
+    user = get_verification_target_user(request)
+    if not user:
+        messages.warning(request, "Sesi verifikasi tidak ditemukan. Silakan login lagi.")
+        return redirect("signin")
+
+    if is_email_verified(user):
+        clear_pending_verification_user(request)
         return redirect("home")
+
+    resend_wait_seconds = get_verification_resend_wait_seconds(user)
     return render(
         request,
         "auth/email_unverified.html",
-        {"resend_wait_seconds": get_verification_resend_wait_seconds(request.user)},
+        {"resend_wait_seconds": resend_wait_seconds, "hide_nav": not request.user.is_authenticated},
     )
 
 
-@login_required
 @require_POST
 def resend_verification(request: HttpRequest) -> HttpResponse:
-    """Kirim ulang email verifikasi untuk akun login."""
+    """Kirim ulang email verifikasi untuk user terikat session/login."""
 
-    if is_email_verified(request.user):
+    target_user = get_verification_target_user(request)
+    if not target_user:
+        messages.warning(request, "Sesi verifikasi tidak ditemukan. Silakan login lagi.")
+        return redirect("signin")
+
+    if is_email_verified(target_user):
+        clear_pending_verification_user(request)
         return redirect("home")
-    if not can_send_verification_email(request.user):
-        wait_seconds = get_verification_resend_wait_seconds(request.user)
-        messages.warning(request, f"Tunggu {wait_seconds} detik sebelum kirim ulang.")
+
+    if not can_send_verification_email(target_user):
+        messages.warning(request, "Tunggu sebentar sebelum kirim ulang link verifikasi.")
         return redirect("email_unverified")
-    send_verification_email(request, request.user)
+
+    send_verification_email(request, target_user)
     messages.success(request, "Link verifikasi baru sudah dikirim.")
     return redirect("email_unverified")
 
@@ -188,6 +232,7 @@ def verify_email(request: HttpRequest, uidb64: str, token: str) -> HttpResponse:
         user.profile.save(update_fields=["email_verified", "updated_at"])
         if request.user.is_authenticated:
             logout(request)
+        clear_pending_verification_user(request)
         messages.success(request, "Email berhasil diverifikasi. Silakan login.")
         return redirect("signin")
 
@@ -209,6 +254,7 @@ def get_user_from_uid(uidb64: str) -> Any | None:
 def sign_out(request: HttpRequest) -> HttpResponse:
     """Hapus sesi Django dan kembali ke landing page."""
 
+    clear_pending_verification_user(request)
     logout(request)
     return redirect("home")
 
@@ -219,9 +265,11 @@ def forgot_password(request: HttpRequest) -> HttpResponse:
 
     form = ForgotPasswordForm(data=request.POST or None)
     if request.method == "POST" and form.is_valid():
-        users = User.objects.filter(email__iexact=form.cleaned_data["email"], is_active=True)
-        for user in users:
-            send_password_reset_email(request, user)
+        if not is_password_reset_rate_limited(request):
+            users = User.objects.filter(email__iexact=form.cleaned_data["email"], is_active=True)
+            for user in users:
+                if can_send_password_reset_email(user):
+                    send_password_reset_email(request, user)
         messages.success(request, "Jika email terdaftar, link reset password akan dikirim.")
         return redirect("signin")
 

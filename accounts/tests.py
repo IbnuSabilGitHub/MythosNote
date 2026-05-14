@@ -47,12 +47,13 @@ class AuthFlowTests(TestCase):
             },
         )
 
-        self.assertRedirects(response, reverse("signin"))
+        self.assertRedirects(response, reverse("email_unverified"))
         user = get_user_model().objects.get(email="alice@gmail.com")
         self.assertFalse(user.is_active)
         self.assertFalse(user.profile.email_verified)
         self.assertEqual(len(mail.outbox), 1)
         self.assertFalse(response.wsgi_request.user.is_authenticated)
+        self.assertEqual(self.client.session.get("pending_verification_user_id"), user.pk)
 
         verify_path = re.search(r"http://testserver(?P<path>/verify-email/\S+)", mail.outbox[0].body).group("path")
         verify_response = self.client.get(verify_path)
@@ -62,6 +63,7 @@ class AuthFlowTests(TestCase):
         self.assertTrue(user.is_active)
         self.assertTrue(user.profile.email_verified)
         self.assertFalse(verify_response.wsgi_request.user.is_authenticated)
+        self.assertNotIn("pending_verification_user_id", self.client.session)
 
     def test_inactive_user_cannot_login_before_verification(self) -> None:
         self.client.post(
@@ -82,13 +84,16 @@ class AuthFlowTests(TestCase):
             },
         )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(response.wsgi_request.user.is_authenticated)
+        self.assertRedirects(response, reverse("email_unverified"))
+        follow_response = self.client.get(reverse("email_unverified"))
+        self.assertFalse(follow_response.wsgi_request.user.is_authenticated)
         self.assertEqual(len(mail.outbox), 0)
-        self.assertContains(response, "pending@gmail.com", status_code=200)
+        self.assertContains(follow_response, "Email belum terverifikasi", status_code=200)
 
     def test_verification_resend_is_rate_limited(self) -> None:
-        self.create_local_user("eve@gmail.com", "StrongPass123!")
+        user = self.create_local_user("eve@gmail.com", "StrongPass123!")
+        user.profile.email_verified = False
+        user.profile.save(update_fields=["email_verified"])
         self.client.login(username="eve@gmail.com", password="StrongPass123!")
 
         first = self.client.post(reverse("resend_verification"))
@@ -107,7 +112,7 @@ class AuthFlowTests(TestCase):
                 "password_confirm": "StrongPass123!",
             },
         )
-        self.assertRedirects(response, reverse("signin"))
+        self.assertRedirects(response, reverse("email_unverified"))
         verify_path = re.search(r"http://testserver(?P<path>/verify-email/\S+)", mail.outbox[0].body).group("path")
 
         self.assertRedirects(self.client.get(verify_path), reverse("signin"))
@@ -144,6 +149,62 @@ class AuthFlowTests(TestCase):
         self.assertFalse(response.wsgi_request.user.is_authenticated)
         usage = UserUsage.objects.get(identifier="bob@gmail.com")
         self.assertEqual(usage.failed_login_count, 5)
+
+    def test_email_unverified_rejects_arbitrary_email_lookup(self) -> None:
+        self.create_local_user("target@gmail.com", "StrongPass123!", is_active=False)
+
+        response = self.client.get(reverse("email_unverified"), {"email": "target@gmail.com"})
+
+        self.assertRedirects(response, reverse("signin"))
+
+    def test_resend_verification_requires_bound_session_or_authenticated_user(self) -> None:
+        self.create_local_user("target@gmail.com", "StrongPass123!", is_active=False)
+
+        response = self.client.post(
+            reverse("resend_verification"),
+            {"email": "target@gmail.com"},
+        )
+
+        self.assertRedirects(response, reverse("signin"))
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_inactive_login_does_not_auto_resend_verification_email(self) -> None:
+        self.client.post(
+            reverse("signup"),
+            {
+                "email": "quiet@gmail.com",
+                "password": "StrongPass123!",
+                "password_confirm": "StrongPass123!",
+            },
+        )
+
+        mail.outbox.clear()
+        response = self.client.post(
+            reverse("signin"),
+            {
+                "email": "quiet@gmail.com",
+                "password": "StrongPass123!",
+            },
+        )
+
+        self.assertRedirects(response, reverse("email_unverified"))
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_forgot_password_is_throttled_without_leaking_account_status(self) -> None:
+        self.create_local_user("reset@gmail.com", "StrongPass123!")
+
+        first = self.client.post(
+            reverse("forgot_password"),
+            {"email": "reset@gmail.com"},
+        )
+        second = self.client.post(
+            reverse("forgot_password"),
+            {"email": "reset@gmail.com"},
+        )
+
+        self.assertRedirects(first, reverse("signin"))
+        self.assertRedirects(second, reverse("signin"))
+        self.assertEqual(len(mail.outbox), 1)
 
     def test_google_user_creation_sets_username(self) -> None:
         user = get_or_create_google_user(

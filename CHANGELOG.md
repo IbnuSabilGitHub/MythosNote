@@ -2,7 +2,25 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-05-14
 
+### Summary
+Perbaikan signifikan pada Authentication Flow dan keamanan verifikasi email.
+
+### Changed
+- **Auth Flow** telah diperbaiki dan di-hardening:
+  - Tidak lagi menyimpan raw email di session `email_unverified` maupun endpoint `resend_verification`
+  - Menghapus lookup status akun berdasarkan query string atau body email (mencegah informasi bocor)
+  - Menghapus auto-resend email verifikasi saat login user yang belum verified
+  - Signup & Login sekarang hanya menyimpan akun unverified ke session (lebih aman)
+  - Password reset di-throttle berdasarkan IP dan cooldown per akun
+  - Logout dan verifikasi email sekarang membersihkan session pending verification
+
+### Files Changed
+- `accounts/views.py`
+- `accounts/utils.py`
+- `accounts/tests.py`
+- `templates/auth/email_unverified.html`
 
 ## [1.3.0] - 2026-05-13
 
