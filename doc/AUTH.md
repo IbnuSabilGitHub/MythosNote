@@ -323,7 +323,7 @@ class SignInForm(forms.Form):
 - Password tidak di-strip (preserve whitespace)
 - Custom `clean()` method:
   1. Check apakah ada user dengan `is_active=False` & email cocok & password benar:
-     - Jika YES → set `self.inactive_user = user` (untuk auto-resend verif email di view)
+     - Jika YES → set `self.inactive_user = user` (login diblokir sampai verifikasi)
      - Raise ValidationError: "Akun belum aktif. Verifikasi email dulu."
   2. Call `authenticate(request, email=email, password=password)`:
      - Backend: `EmailBackend` (custom, lihat accounts/backends.py)
@@ -756,9 +756,9 @@ Jika Anda tidak membuat akun MythosNote, abaikan email ini.
    
 5. Validasi form (SignInForm):
    a) Clean method:
-      - Check apakah ada user dengan is_active=False & email cocok & password benar
-        - YES → set self.inactive_user = user ← untuk auto-resend verif email
-        - Then raise ValidationError: "Akun belum aktif. Verifikasi email dulu."
+         - Check apakah ada user dengan is_active=False & email cocok & password benar
+            - YES → set self.inactive_user = user ← login diblokir sampai verifikasi
+            - Then raise ValidationError: "Akun belum aktif. Verifikasi email dulu."
       - authenticate(request, email=email, password=password)
         - EmailBackend backend: filter is_active=True & email iexact & password match
         - Return user jika valid, else None
@@ -780,18 +780,15 @@ Jika Anda tidak membuat akun MythosNote, abaikan email ini.
    
 7. Form invalid - user inactive tapi password benar:
    (Dari CHECK #5a di atas)
-   
-   a) Check can_send_verification_email(form.inactive_user)?
-      - Check: now() - last_verification_email_sent_at >= 5 menit
-      - YES → send_verification_email(request, form.inactive_user)
-      - messages.error: "Akun belum aktif. Link verifikasi baru sudah dikirim."
-      - Automatic resend! ← (NEW in v1.1.4)
-   
-   b) Jika cooldown belum lewat:
-      - get_verification_resend_wait_seconds(user) → e.g., 120 seconds
-      - messages.error: "Akun belum aktif. Cek email verifikasi Anda atau tunggu 120 detik untuk kirim ulang."
-   
-   c) Re-render form dengan error
+
+   a) **No automatic resend on login (v1.4.0):** sistem tidak lagi mengirim verifikasi otomatis
+      ketika user mencoba login. Ini mencegah informasi bocor dan abuse.
+
+   b) Sebagai gantinya, user diinformasikan untuk membuka inbox atau menggunakan
+      halaman verifikasi yang sesuai. Sistem hanya menyimpan *penanda akun unverified*
+      (mis. internal `unverified_user_id`) di session — **bukan** raw email address.
+
+   c) Re-render form dengan error dan instruksi untuk verifikasi.
    
 8. Form invalid - password salah atau user tidak ditemukan:
    a) record_failed_login(usage):
@@ -868,80 +865,37 @@ Jika Anda tidak membuat akun MythosNote, abaikan email ini.
 
 ---
 
-### Fitur 3.5: Resend Verification Email dengan Cooldown (v1.1.2 & v1.1.4)
+### Fitur Resend Verification Email — Hardening (v1.4.0)
 
 **URL:** `POST /resend-verification/`
 
-**⚠️ NEW:** Ada cooldown **5 menit** antar pengiriman verification email (prevent spam).
+Sejak **v1.4.0** alur pengiriman ulang verifikasi diperketat untuk mencegah
+informasi bocor dan abuse. Ringkasan perubahan:
 
-**Step-by-step:**
+- Tidak menyimpan raw email di session (`email_unverified`) lagi.
+- Endpoint `resend_verification` **tidak** lagi menerima lookup berdasarkan query
+  string atau POST body yang berisi alamat email.
+- Sistem tidak otomatis mengirim ulang verifikasi saat percobaan login gagal.
+- Resend hanya diizinkan untuk akun yang sudah terautentikasi **atau** melalui
+  mekanisme session internal yang menyimpan **penanda akun unverified** (mis.
+  `unverified_user_id`) — bukan raw email.
+- Cooldown resend (mis. 5 menit) tetap diberlakukan per akun (`last_verification_email_sent_at`).
 
-```
-1. User login tapi email belum verified → di halaman /email-unverified/
-   → Tombol "Kirim Ulang Link" ada
-   
-2. User klik tombol
-   → POST /resend-verification/
-   
-3. View resend_verification():
-   a) Check is_email_verified(request.user)? YES → redirect("home")
-   
-   b) Check can_send_verification_email(request.user)?
-      - Function cek: now() - profile.last_verification_email_sent_at >= 5 menit
-      - Jika YES (boleh kirim) → lanjut
-      - Jika NO (terlalu cepat) → error & redirect
-   
-   c) Jika boleh kirim:
-      - send_verification_email(request, request.user)
-      - Update profile.last_verification_email_sent_at = now()
-      - messages.success(...): "Link verifikasi baru sudah dikirim."
-      - redirect("email_unverified")
-   
-   d) Jika terlalu cepat (cooldown aktif):
-      - get_verification_resend_wait_seconds(request.user) → e.g., 120 seconds
-      - messages.warning(...): f"Tunggu 120 detik sebelum kirim ulang."
-      - redirect("email_unverified")
-```
+Step singkat (v1.4.0):
 
-**Frontend Countdown Timer:**
-```html
-<!-- Template: auth/email_unverified.html -->
-<button id="resend-btn" type="submit">Kirim Ulang Link</button>
-<span id="cooldown-timer" style="display: none;">
-    Tunggu <span id="seconds">120</span> detik...
-</span>
+1. Jika user sudah login dan `email_verified=False`, tombol "Kirim Ulang Link"
+   bisa tampil dan memanggil `POST /resend-verification/`.
+2. Endpoint cek bahwa request berasal dari session yang valid (authenticated
+   user atau internal unverified-account marker). Tidak melakukan lookup by email.
+3. Jika cooldown telah lewat maka `send_verification_email()` dipanggil dan
+   `last_verification_email_sent_at` diupdate; jika belum lewat, response beri
+   pesan cooldown.
 
-<script>
-// Auto-disable button jika cooldown masih aktif
-const waitSeconds = {{ resend_wait_seconds }};  // From view context
-if (waitSeconds > 0) {
-    document.getElementById('resend-btn').disabled = true;
-    document.getElementById('cooldown-timer').style.display = 'inline';
-    
-    let remaining = waitSeconds;
-    const timerInterval = setInterval(() => {
-        remaining--;
-        document.getElementById('seconds').textContent = remaining;
-        if (remaining <= 0) {
-            clearInterval(timerInterval);
-            document.getElementById('resend-btn').disabled = false;
-            document.getElementById('cooldown-timer').style.display = 'none';
-        }
-    }, 1000);
-}
-</script>
-```
+Keuntungan:
 
-**Database state:**
-```python
-profile.last_verification_email_sent_at = "2026-05-05 14:00:00"
+- Mencegah attacker mengirim verifikasi ke alamat acak.
+- Mencegah enumeration akun via endpoint resend.
 
-# User coba resend di 14:03
-# get_verification_resend_wait_seconds() → 120 seconds (cooldown masih aktif)
-
-# User coba resend di 14:05
-# get_verification_resend_wait_seconds() → 0 (boleh kirim!)
-```
 
 **Email Token Invalidation (v1.1.2):**
 ```python
@@ -1004,6 +958,9 @@ profile.last_verification_email_sent_at = "2026-05-05 14:00:00"
    c) Jika valid:
       - Set user.is_active = True ← ACTIVATE user (NEW in v1.1.4)
       - Set user.profile.email_verified = True
+      - Clear any pending unverified-account markers from session (v1.4.0):
+        setelah verifikasi berhasil server memastikan session tidak lagi menyimpan
+        penanda pending verification atau raw email.
       - user.profile.save(update_fields=["email_verified", "updated_at"])
       
       - if request.user.is_authenticated:
@@ -1445,6 +1402,11 @@ valid = default_token_generator.check_token(user, token)
 - Token tidak reusable setelah password berubah
 - Token expire otomatis
 - Tidak ada permanent reset link
+
+**Hardening (v1.4.0):**
+- Password reset requests di-throttle untuk mencegah abuse: kombinasi throttling per-IP
+   dan cooldown per-akun diterapkan. Endpoint reset tidak menerima lookup berdasarkan
+   email pada body/query tanpa kontrol untuk mencegah enumeration.
 
 ### 5. Email Verification Tokens
 
