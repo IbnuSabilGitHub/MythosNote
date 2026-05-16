@@ -2,6 +2,38 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.4.2] - 2026-05-16
+### Summary
+Penerapan SMTP menggunakan Bervo untuk pengiriman email (verifikasi & reset).
+
+### Added
+- Konfigurasi SMTP Bervo di `config/settings.py` (env vars: `BERVO_*`).
+- Utilitas pengiriman email di `accounts/utils.py` menggunakan Bervo.
+
+### Changed
+- Pengiriman email verifikasi dan reset diarahkan ke Bervo SMTP.
+
+## [1.4.1] - 2026-05-16
+### Summary
+Implementasi reusable loading button helper untuk meningkatkan UX saat submit form.
+
+### Added
+- `components.js`: Helper reusable `data-loading-button` untuk tombol loading state.
+
+### Changed
+- Menambahkan loading button behavior pada halaman:
+  - `signin.html`
+  - `signup.html`
+  - `forgot_password.html`
+  - `email_unverified.html`
+  - `password_reset_confirm.html`
+
+### Features
+- Tombol otomatis disable saat proses berjalan
+- Label tombol berubah menjadi teks loading (bisa dikustom via `data-loading-text`)
+- Mudah digunakan di tombol lain cukup dengan menambahkan atribut `data-loading-button`
+
 ## [1.4.0] - 2026-05-14
 
 ### Summary

@@ -62,6 +62,61 @@ def _get_database_config() -> dict[str, dict[str, str | Path | int]]:
     raise ValueError(f"Skema DATABASE_URL tidak didukung: {parsed_url.scheme}")
 
 
+def _env_bool(name: str, default: str = 'false') -> bool:
+    return os.getenv(name, default).strip().lower() in ('1', 'true', 'yes')
+
+
+def _get_email_mode() -> str:
+    mode = os.getenv('EMAIL_MODE', '').strip().lower()
+    if mode in ('dev', 'development'):
+        return 'console'
+    if not mode:
+        return 'smtp' if os.getenv('EMAIL_BACKEND') else 'console'
+    return mode
+
+
+def _get_email_config() -> dict[str, str | int | bool]:
+    mode = _get_email_mode()
+
+    default_from_email = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@mythosnote.local')
+
+    if mode == 'console':
+        return {
+            'EMAIL_BACKEND': 'django.core.mail.backends.console.EmailBackend',
+            'DEFAULT_FROM_EMAIL': default_from_email,
+        }
+
+    if mode == 'brevo':
+        brevo_host = os.getenv('BREVO_SMTP_HOST', 'smtp-relay.brevo.com')
+        brevo_user = os.getenv('BREVO_SMTP_USER', '')
+        if brevo_user == brevo_host:
+            raise ValueError("BREVO_SMTP_USER harus SMTP login Brevo, bukan host SMTP.")
+
+        return {
+            'EMAIL_BACKEND': 'django.core.mail.backends.smtp.EmailBackend',
+            'EMAIL_HOST': brevo_host,
+            'EMAIL_PORT': int(os.getenv('BREVO_SMTP_PORT', '587')),
+            'EMAIL_USE_TLS': _env_bool('BREVO_SMTP_USE_TLS', 'true'),
+            'EMAIL_HOST_USER': brevo_user,
+            'EMAIL_HOST_PASSWORD': os.getenv('BREVO_SMTP_KEY', ''),
+            'DEFAULT_FROM_EMAIL': default_from_email,
+        }
+
+    if mode == 'smtp':
+        return {
+            'EMAIL_BACKEND': os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend'),
+            'EMAIL_HOST': os.getenv('EMAIL_HOST', ''),
+            'EMAIL_PORT': int(os.getenv('EMAIL_PORT', '587')),
+            'EMAIL_USE_TLS': _env_bool('EMAIL_USE_TLS', 'true'),
+            'EMAIL_USE_SSL': _env_bool('EMAIL_USE_SSL'),
+            'EMAIL_HOST_USER': os.getenv('EMAIL_HOST_USER', ''),
+            'EMAIL_HOST_PASSWORD': os.getenv('EMAIL_HOST_PASSWORD', ''),
+            'DEFAULT_FROM_EMAIL': default_from_email,
+        }
+
+    raise ValueError("EMAIL_MODE harus salah satu: console, development, smtp, brevo")
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -207,14 +262,11 @@ LOGIN_URL = 'signin'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 
-# Console email keeps local WSL development dependency-free; production can
-# override EMAIL_BACKEND and SMTP settings through environment variables.
-EMAIL_BACKEND = os.getenv(
-    'EMAIL_BACKEND',
-    'django.core.mail.backends.console.EmailBackend',
-)
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@mythosnote.local')
-EMAIL_ASYNC = os.getenv('EMAIL_ASYNC', 'false').strip().lower() in ('1', 'true', 'yes')
+# EMAIL_MODE keeps switching simple:
+# console/development prints email locally, smtp uses generic SMTP, brevo uses Brevo SMTP relay.
+EMAIL_MODE = _get_email_mode()
+globals().update(_get_email_config())
+EMAIL_ASYNC = _env_bool('EMAIL_ASYNC')
 UNVERIFIED_USER_CLEANUP_DAYS = int(os.getenv('UNVERIFIED_USER_CLEANUP_DAYS', '1'))
 
 # Public Google Identity Services client id. When empty, the template keeps

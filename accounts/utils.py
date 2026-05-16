@@ -9,11 +9,13 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import PasswordResetTokenGenerator, default_token_generator
 from django.core.cache import cache
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
 from django.http import HttpRequest
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import force_bytes
+from django.utils.html import strip_tags
 from django.utils.http import urlsafe_base64_encode
 import django_rq
 
@@ -193,17 +195,30 @@ def build_absolute_auth_url(request: HttpRequest, route_name: str, **kwargs: Any
     return request.build_absolute_uri(reverse(route_name, kwargs=kwargs))
 
 
-def _send_mail_job(subject: str, message: str, recipient_list: list[str], from_email: str) -> None:
-    send_mail(
-        subject,
-        message,
-        from_email,
-        recipient_list,
-        fail_silently=False,
+def _send_mail_job(
+    subject: str,
+    message: str,
+    recipient_list: list[str],
+    from_email: str,
+    html_message: str | None = None,
+) -> None:
+    email = EmailMultiAlternatives(
+        subject=subject,
+        body=message,
+        from_email=from_email,
+        to=recipient_list,
     )
+    if html_message:
+        email.attach_alternative(html_message, "text/html")
+    email.send(fail_silently=False)
 
 
-def _dispatch_email(subject: str, message: str, recipient_list: list[str]) -> None:
+def _dispatch_email(
+    subject: str,
+    message: str,
+    recipient_list: list[str],
+    html_message: str | None = None,
+) -> None:
     if settings.EMAIL_ASYNC:
         try:
             queue = django_rq.get_queue("default")
@@ -213,6 +228,7 @@ def _dispatch_email(subject: str, message: str, recipient_list: list[str]) -> No
                 message,
                 recipient_list,
                 settings.DEFAULT_FROM_EMAIL,
+                html_message,
             )
             return
         except Exception as exc:
@@ -220,8 +236,7 @@ def _dispatch_email(subject: str, message: str, recipient_list: list[str]) -> No
                 "Async email enqueue failed; falling back to sync.",
                 exc_info=exc,
             )
-
-    _send_mail_job(subject, message, recipient_list, settings.DEFAULT_FROM_EMAIL)
+    _send_mail_job(subject, message, recipient_list, settings.DEFAULT_FROM_EMAIL, html_message)
 
 
 def send_verification_email(request: HttpRequest, user: Any) -> None:
@@ -239,15 +254,24 @@ def send_verification_email(request: HttpRequest, user: Any) -> None:
         uidb64=uid,
         token=token,
     )
+    html_message = render_to_string(
+        "auth/emails/verification_email.html",
+        {
+            "verification_url": verify_url,
+            "user_email": user.email,
+        },
+    )
+    text_message = (
+        "Halo,\n\n"
+        "Klik link berikut untuk memverifikasi email MythosNote Anda:\n"
+        f"{verify_url}\n\n"
+        "Jika Anda tidak membuat akun MythosNote, abaikan email ini."
+    )
     _dispatch_email(
         "Verifikasi email MythosNote",
-        (
-            "Halo,\n\n"
-            "Klik link berikut untuk memverifikasi email MythosNote Anda:\n"
-            f"{verify_url}\n\n"
-            "Jika Anda tidak membuat akun MythosNote, abaikan email ini."
-        ),
+        text_message if not html_message else strip_tags(html_message),
         [user.email],
+        html_message=html_message,
     )
 
 
@@ -264,15 +288,24 @@ def send_password_reset_email(request: HttpRequest, user: Any) -> None:
         uidb64=uid,
         token=token,
     )
+    html_message = render_to_string(
+        "auth/emails/password_reset_email.html",
+        {
+            "reset_url": reset_url,
+            "user_email": user.email,
+        },
+    )
+    text_message = (
+        "Halo,\n\n"
+        "Klik link berikut untuk membuat password baru:\n"
+        f"{reset_url}\n\n"
+        "Jika Anda tidak meminta reset password, abaikan email ini."
+    )
     _dispatch_email(
         "Reset password MythosNote",
-        (
-            "Halo,\n\n"
-            "Klik link berikut untuk membuat password baru:\n"
-            f"{reset_url}\n\n"
-            "Jika Anda tidak meminta reset password, abaikan email ini."
-        ),
+        text_message if not html_message else strip_tags(html_message),
         [user.email],
+        html_message=html_message,
     )
 
 
