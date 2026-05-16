@@ -22,7 +22,7 @@
         <div class="mt-8 flex flex-col gap-3 sm:flex-row">
             <form method="post" action="{% url 'resend_verification' %}" class="flex-1">
                 {% csrf_token %}
-                <button id="resend-verification-button" type="submit" data-wait-seconds="{{ resend_wait_seconds|default:0|escape }}"
+                <button id="resend-verification-button" type="submit" data-loading-button data-loading-text="Mengirim Link" data-wait-seconds="{{ resend_wait_seconds|default:0|escape }}"
                     class="w-full bg-primary px-4 py-3 font-['Manrope'] text-sm font-semibold text-yellow-950 transition hover:bg-primary/70">
                     Kirim Ulang Link
                 </button>
@@ -30,7 +30,7 @@
             {% if request.user.is_authenticated %}
             <form method="post" action="{% url 'logout' %}" class="flex-1">
                 {% csrf_token %}
-                <button type="submit"
+                <button type="submit" data-loading-button data-loading-text="Keluar"
                     class="w-full border border-stone-700 px-4 py-3 font-['Manrope'] text-sm font-semibold text-stone-300 transition hover:border-primary hover:text-primary">
                     Logout / Ganti Akun
                 </button>
