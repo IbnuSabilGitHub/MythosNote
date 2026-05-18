@@ -2,6 +2,19 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.3] - 2026-05-19
+### Summary
+Pembaruan UI halaman `/project` menjadi project hub dengan tampilan notebook yang lebih rapi. Perubahan ini masih sebatas antarmuka; aksi buat, buka, dan menu item belum terhubung ke fitur backend.
+
+### Changed
+- `templates/project.html`: mengganti layout lama menjadi grid notebook, empty state visual, dan header yang lebih fokus ke workspace.
+- `templates/base.html`: navbar dibuat mengikuti tipe halaman, termasuk avatar ringkas di halaman project.
+- `accounts/context_processors.py` dan `config/settings.py`: menambahkan context processor navbar agar template bisa membedakan tampilan home, project, dan auth.
+- `config/views.py`: menghapus flag navbar manual dari view project karena kontrol tampilan pindah ke context processor.
+
+### Notes
+- UI baru ini masih placeholder untuk alur kerja project; interaksi data dan aksi tombol belum aktif.
+
 
 ## [1.4.2] - 2026-05-16
 ### Summary

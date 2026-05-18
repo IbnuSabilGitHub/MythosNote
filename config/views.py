@@ -16,4 +16,4 @@ def home(request: HttpRequest) -> HttpResponse:
 def project(request: HttpRequest) -> HttpResponse:
     """Render halaman proyek, hanya untuk user terverifikasi."""
 
-    return render(request, "project.html", {"hide_nav": True})
+    return render(request, "project.html")

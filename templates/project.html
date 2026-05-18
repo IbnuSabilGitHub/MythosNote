@@ -1,38 +1,158 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Project Page - MythosNote{% endblock %}
+{% block title %}Projects - MythosNote{% endblock %}
 
 {% block content %}
-<!-- Project Navbar -->
-<nav class="sticky top-0 z-40 border-b border-surface-container-high bg-background/80 backdrop-blur-md">
-    <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <!-- Logo -->
-        <a href="{% url 'home' %}" class="flex items-center gap-4">
-            <img src="{% static 'svg/mythosnote-logo.svg' %}" alt="MythosNote Logo" class="h-8 w-auto" />
-            <span class="font-newsreader text-2xl italic text-primary-container">
-            MythosNote
-            </span>
-        </a>
+<!-- Project Hub Container -->
+<div class="flex flex-col min-h-screen">
+  <!-- Main Content -->
+  <div class="flex flex-col gap-6 pt-28 pb-32 max-w-7xl mx-auto w-full">
 
-        <!-- User controls: Avatar and Logout -->
-        <div class="flex items-center gap-4">
-            <span class="text-sm font-bold text-on-surface">{{ request.user.username|escape }}</span>
-            <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit" class="px-4 py-2 text-sm text-error transition hover:text-red-400">
-                    Logout
-                </button>
-            </form>
+    <!-- Search and Header Section -->
+    <div class="flex flex-col gap-1 items-start">
+      <h1 class="font-newsreader text-5xl font-normal text-on-surface tracking-[-0.8px] leading-tight">Note terbaru</h1>
+      <p class="font-manrope text-base text-on-surface-variant">Your high-precision research workspace.</p>
+    </div>
+
+
+    <!-- Notebook Grid -->
+    <div class="grid grid-cols-4 gap-4 w-full mt-6">
+      <!-- Create New Button -->
+      <div class="h-48 border border-dashed border-outline-variant bg-[rgba(31,31,35,0.5)] rounded-sm flex flex-col items-center justify-center cursor-pointer hover:border-primary-fixed-dim transition group">
+        <div class="flex items-center justify-center h-12 w-12 rounded-sm bg-surface border border-outline-variant mb-4 group-hover:border-primary-fixed-dim transition">
+            <iconify-icon icon="tabler:plus" class="text-2xl text-primary-fixed-dim"></iconify-icon>
         </div>
-    </div>
-</nav>
+        <span class="font-manrope font-semibold text-xs text-on-surface-variant uppercase tracking-wide">Buat Note Baru</span>
+      </div>
 
-<!-- Main content -->
-<div class="flex items-center justify-center min-h-[calc(100vh-80px)]">
-    <div class="text-center space-y-4">
-        <h1 class="text-4xl font-newsreader font-bold text-on-surface">Welcome to the project page!</h1>
-        <p class="text-outline-variant text-lg">Logged in as: <span class="font-bold text-primary">{{ request.user.email|escape }}</span></p>
+      <!-- Dynamic Notebook Cards -->
+      {% for notebook in notebooks %}
+      <a href="{% url 'notebook_detail' notebook.id %}" class="bg-surface-container border border-outline-variant rounded-sm overflow-hidden hover:border-primary-fixed-dim transition flex flex-col h-48">
+        <!-- Card Content -->
+        <div class="flex-1 flex flex-col gap-2 p-4">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center justify-center h-8 w-8 rounded-sm bg-surface border border-outline-variant">
+              <iconify-icon icon="tabler:folder" class="text-primary-fixed-dim"></iconify-icon>
+            </div>
+            <button class="p-1 text-on-surface-variant hover:text-primary-fixed-dim transition">
+              <iconify-icon icon="tabler:dots-vertical" class="w-4 h-4"></iconify-icon>
+            </button>
+          </div>
+          <h3 class="font-newsreader text-2xl text-on-surface font-normal line-clamp-2">{{ notebook.title }}</h3>
+        </div>
+
+        <!-- Card Footer -->
+        <div class="border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2 flex items-center justify-between">
+          <span class="font-grotesk text-sm text-on-surface-variant tracking-wide">{{ notebook.source_count|default:"0" }} sources</span>
+          <iconify-icon icon="tabler:file" class="w-4 h-4 text-on-surface-variant"></iconify-icon>
+        </div>
+      </a>
+      {% empty %}
+      <!-- Placeholder Cards -->
+      <a href="#" class="bg-surface-container border border-outline-variant rounded-sm overflow-hidden hover:border-primary-fixed-dim transition flex flex-col h-48">
+        <div class="flex-1 flex flex-col gap-2 p-4">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center justify-center h-8 w-8 rounded-sm bg-surface border border-outline-variant">
+              <iconify-icon icon="tabler:folder" class="text-primary-fixed-dim"></iconify-icon>
+            </div>
+            <button class="p-1 text-on-surface-variant hover:text-primary-fixed-dim">
+              <iconify-icon icon="tabler:dots-vertical" class="w-4 h-4"></iconify-icon>
+            </button>
+          </div>
+          <h3 class="font-newsreader text-2xl text-on-surface font-normal">Research Project Alpha</h3>
+        </div>
+        <div class="border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2 flex items-center justify-between">
+          <span class="font-grotesk text-sm text-on-surface-variant tracking-wide">12 sources</span>
+          <iconify-icon icon="tabler:file" class="w-4 h-4 text-on-surface-variant"></iconify-icon>
+        </div>
+      </a>
+
+      <a href="#" class="bg-surface-container border border-outline-variant rounded-sm overflow-hidden hover:border-primary-fixed-dim transition flex flex-col h-48">
+        <div class="flex-1 flex flex-col gap-2 p-4">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center justify-center h-8 w-8 rounded-sm bg-surface border border-outline-variant">
+              <iconify-icon icon="tabler:folder" class="text-primary-fixed-dim"></iconify-icon>
+            </div>
+            <button class="p-1 text-on-surface-variant hover:text-primary-fixed-dim">
+              <iconify-icon icon="tabler:dots-vertical" class="w-4 h-4"></iconify-icon>
+            </button>
+          </div>
+          <h3 class="font-newsreader text-2xl text-on-surface font-normal">Financial Analysis Q3</h3>
+        </div>
+        <div class="border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2 flex items-center justify-between">
+          <span class="font-grotesk text-sm text-on-surface-variant tracking-wide">3 sources</span>
+          <iconify-icon icon="tabler:file" class="w-4 h-4 text-on-surface-variant"></iconify-icon>
+        </div>
+      </a>
+
+      <a href="#" class="bg-surface-container border border-outline-variant rounded-sm overflow-hidden hover:border-primary-fixed-dim transition flex flex-col h-48">
+        <div class="flex-1 flex flex-col gap-2 p-4">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center justify-center h-8 w-8 rounded-sm bg-surface border border-outline-variant">
+              <iconify-icon icon="tabler:folder" class="text-primary-fixed-dim"></iconify-icon>
+            </div>
+            <button class="p-1 text-on-surface-variant hover:text-primary-fixed-dim">
+              <iconify-icon icon="tabler:dots-vertical" class="w-4 h-4"></iconify-icon>
+            </button>
+          </div>
+          <h3 class="font-newsreader text-2xl text-on-surface font-normal line-clamp-2">Literature Review: AI Ethics</h3>
+        </div>
+        <div class="border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2 flex items-center justify-between">
+          <span class="font-grotesk text-sm text-on-surface-variant tracking-wide">45 sources</span>
+          <iconify-icon icon="tabler:file" class="w-4 h-4 text-on-surface-variant"></iconify-icon>
+        </div>
+      </a>
+
+      <a href="#" class="bg-surface-container border border-outline-variant rounded-sm overflow-hidden hover:border-primary-fixed-dim transition flex flex-col h-48">
+        <div class="flex-1 flex flex-col gap-2 p-4">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center justify-center h-8 w-8 rounded-sm bg-surface border border-outline-variant">
+              <iconify-icon icon="tabler:folder" class="text-primary-fixed-dim"></iconify-icon>
+            </div>
+            <button class="p-1 text-on-surface-variant hover:text-primary-fixed-dim">
+              <iconify-icon icon="tabler:dots-vertical" class="w-4 h-4"></iconify-icon>
+            </button>
+          </div>
+          <h3 class="font-newsreader text-2xl text-on-surface font-normal line-clamp-2">System Architecture Specs</h3>
+        </div>
+        <div class="border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2 flex items-center justify-between">
+          <span class="font-grotesk text-sm text-on-surface-variant tracking-wide">8 sources</span>
+          <iconify-icon icon="tabler:file" class="w-4 h-4 text-on-surface-variant"></iconify-icon>
+        </div>
+      </a>
+
+      <a href="#" class="bg-surface-container border border-outline-variant rounded-sm overflow-hidden hover:border-primary-fixed-dim transition flex flex-col h-48">
+        <div class="flex-1 flex flex-col gap-2 p-4">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center justify-center h-8 w-8 rounded-sm bg-surface border border-outline-variant">
+              <iconify-icon icon="tabler:folder" class="text-primary-fixed-dim"></iconify-icon>
+            </div>
+            <button class="p-1 text-on-surface-variant hover:text-primary-fixed-dim">
+              <iconify-icon icon="tabler:dots-vertical" class="w-4 h-4"></iconify-icon>
+            </button>
+          </div>
+          <h3 class="font-newsreader text-2xl text-on-surface font-normal line-clamp-2">Market Expansion Strategy</h3>
+        </div>
+        <div class="border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2 flex items-center justify-between">
+          <span class="font-grotesk text-sm text-on-surface-variant tracking-wide">21 sources</span>
+          <iconify-icon icon="tabler:file" class="w-4 h-4 text-on-surface-variant"></iconify-icon>
+        </div>
+      </a>
+      {% endfor %}
     </div>
+  </div>
 </div>
+
+<style>
+  .font-manrope {
+    font-family: "Manrope", sans-serif;
+  }
+  .font-grotesk {
+    font-family: "Space Grotesk", sans-serif;
+  }
+  .font-newsreader {
+    font-family: "Newsreader", serif;
+  }
+</style>
 {% endblock %}

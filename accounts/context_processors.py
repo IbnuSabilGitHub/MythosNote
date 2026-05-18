@@ -20,3 +20,24 @@ def auth_settings(request: HttpRequest) -> dict[str, Any]:
         "GOOGLE_OAUTH_CLIENT_ID": settings.GOOGLE_OAUTH_CLIENT_ID,
         "AUTH_EMAIL_VERIFIED": email_verified,
     }
+
+
+def navbar_config(request: HttpRequest) -> dict[str, Any]:
+    """Sediakan konfigurasi navbar dinamis berdasarkan halaman."""
+    path = request.path
+
+    # Tentukan apakah navbar ditampilkan
+    hide_patterns = ['signin', 'signup', 'forgot-password', 'password-reset', 'email-verification']
+    show_navbar = not any(pattern in path for pattern in hide_patterns)
+
+    # Tentukan tipe navbar berdasarkan path
+    navbar_type = 'default'
+    if '/project' in path:
+        navbar_type = 'project'
+    elif path == '/' or '/home' in path:
+        navbar_type = 'home'
+
+    return {
+        'show_navbar': show_navbar,
+        'navbar_type': navbar_type,
+    }
