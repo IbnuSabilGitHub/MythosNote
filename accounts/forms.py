@@ -58,11 +58,9 @@ class SignUpForm(forms.ModelForm):
         fields = ["email"]
 
     def clean_email(self) -> str:
-        """Cek email belum terdaftar."""
-        email = validate_real_email(self.cleaned_data["email"])
-        if User.objects.filter(email__iexact=email).exists():
-            raise forms.ValidationError("Email sudah terdaftar.")
-        return email
+        """Validasi format email tanpa membocorkan status akun."""
+
+        return validate_real_email(self.cleaned_data["email"])
 
     def clean(self) -> dict[str, Any]:
         """Cek konfirmasi password dan kekuatan password."""

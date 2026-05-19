@@ -10,6 +10,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import PasswordResetTokenGenerator, default_token_generator
 from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
+from django.db import transaction
+from django.db.models import F
 from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -63,6 +65,14 @@ def get_client_ip(request: HttpRequest) -> str | None:
     return request.META.get("REMOTE_ADDR")
 
 
+def increment_cache_counter(cache_key: str, timeout: int) -> int:
+    """Increment with TTL while keeping first-write behavior atomic."""
+
+    if cache.add(cache_key, 1, timeout):
+        return 1
+    return cache.incr(cache_key)
+
+
 def get_verification_resend_wait_seconds(user: Any) -> int:
     profile, _ = UserProfile.objects.get_or_create(user=user)
     if not profile.last_verification_email_sent_at:
@@ -80,11 +90,8 @@ def can_send_verification_email(user: Any) -> bool:
 def is_google_oauth_rate_limited(request: HttpRequest) -> bool:
     ip_address = get_client_ip(request) or "unknown"
     cache_key = f"google-oauth-rate:{ip_address}"
-    attempts = cache.get(cache_key, 0)
-    if attempts >= GOOGLE_OAUTH_RATE_LIMIT_ATTEMPTS:
-        return True
-    cache.set(cache_key, attempts + 1, GOOGLE_OAUTH_RATE_LIMIT_WINDOW)
-    return False
+    attempts = increment_cache_counter(cache_key, GOOGLE_OAUTH_RATE_LIMIT_WINDOW)
+    return attempts > GOOGLE_OAUTH_RATE_LIMIT_ATTEMPTS
 
 
 def is_password_reset_rate_limited(request: HttpRequest) -> bool:
@@ -92,11 +99,8 @@ def is_password_reset_rate_limited(request: HttpRequest) -> bool:
 
     ip_address = get_client_ip(request) or "unknown"
     cache_key = f"password-reset-rate:{ip_address}"
-    attempts = cache.get(cache_key, 0)
-    if attempts >= PASSWORD_RESET_RATE_LIMIT_ATTEMPTS:
-        return True
-    cache.set(cache_key, attempts + 1, PASSWORD_RESET_RATE_LIMIT_WINDOW)
-    return False
+    attempts = increment_cache_counter(cache_key, PASSWORD_RESET_RATE_LIMIT_WINDOW)
+    return attempts > PASSWORD_RESET_RATE_LIMIT_ATTEMPTS
 
 
 def can_send_password_reset_email(user: Any) -> bool:
@@ -114,11 +118,14 @@ def get_login_usage(request: HttpRequest, identifier: str) -> UserUsage:
     if normalized:
         user = get_user_model().objects.filter(email__iexact=normalized).first()
 
+    ip_address = get_client_ip(request)
+    usage_identifier = f"{normalized}|{ip_address or 'unknown'}"
+
     usage, _ = UserUsage.objects.get_or_create(
         user=user,
-        identifier=normalized,
+        identifier=usage_identifier,
         date=today,
-        defaults={"ip_address": get_client_ip(request)},
+        defaults={"ip_address": ip_address},
     )
     return usage
 
@@ -149,20 +156,18 @@ def is_login_rate_limited(usage: UserUsage) -> bool:
 def record_failed_login(usage: UserUsage) -> None:
     """Tambah hitungan gagal untuk jendela lock saat ini."""
 
-    now = timezone.now()
-    if not usage.failed_login_window_started_at:
-        usage.failed_login_window_started_at = now
-        usage.failed_login_count = 0
+    with transaction.atomic():
+        locked_usage = UserUsage.objects.select_for_update().get(pk=usage.pk)
+        now = timezone.now()
+        if not locked_usage.failed_login_window_started_at:
+            locked_usage.failed_login_window_started_at = now
+            locked_usage.failed_login_count = 0
+            locked_usage.save(update_fields=["failed_login_count", "failed_login_window_started_at"])
 
-    usage.failed_login_count += 1
-    usage.last_failed_login_at = now
-    usage.save(
-        update_fields=[
-            "failed_login_count",
-            "failed_login_window_started_at",
-            "last_failed_login_at",
-        ]
-    )
+        UserUsage.objects.filter(pk=locked_usage.pk).update(
+            failed_login_count=F("failed_login_count") + 1,
+            last_failed_login_at=now,
+        )
 
 
 def clear_failed_login_tracking(usage: UserUsage) -> None:

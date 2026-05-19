@@ -2,6 +2,37 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.4] - 2026-05-14
+
+### Summary
+Implementasi perbaikan keamanan Authentication Flow (Anti-Enumeration & Rate Limiting).
+
+### Fixed / Improved
+- Signup enumeration protection: response signup dibuat generic
+- Resend verification button disembunyikan setelah signup (mencegah user enumeration)
+- Login timing padding untuk mengurangi timing attack
+- Rate limiting counters dibuat lebih atomic
+- Login lockout per IP address
+- Failed login counter di-lock setelah batas tertentu
+- Production cookies di-hardening (security improvement)
+- Penambahan unique constraint pada field email (migration 0004)
+
+### Files Changed
+- `accounts/forms.py`
+- `accounts/views.py`
+- `accounts/backends.py`
+- `accounts/utils.py`
+- `templates/auth/email_unverified.html`
+- `config/settings.py`
+- Migration `0004_auth_user_email_unique_ci.py`
+
+### Tradeoffs / Catatan
+- Resend verifikasi disembunyikan setelah signup untuk mencegah enumeration
+- User masih bisa melakukan resend setelah login
+- Cookies di-prod menggunakan setting keamanan ketat (HTTPS strict)
+- Migration email unique akan gagal jika ada duplikat email → harus dibersihkan dulu
+- Lockout per-IP efektif mengurangi brute force, namun serangan terdistribusi tetap memerlukan rate limit di layer edge (nginx/cloudflare)
+
 ## [1.4.3] - 2026-05-19
 ### Summary
 Pembaruan UI halaman `/project` menjadi project hub dengan tampilan notebook yang lebih rapi. Perubahan ini masih sebatas antarmuka; aksi buat, buka, dan menu item belum terhubung ke fitur backend.

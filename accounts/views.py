@@ -34,6 +34,7 @@ from .utils import (
 
 User = get_user_model()
 PENDING_VERIFICATION_SESSION_KEY = "pending_verification_user_id"
+SIGNUP_CONFIRMATION_SESSION_KEY = "signup_verification_submitted"
 
 
 def set_pending_verification_user(request: HttpRequest, user: Any) -> None:
@@ -46,6 +47,18 @@ def clear_pending_verification_user(request: HttpRequest) -> None:
     """Hapus target verifikasi tersimpan dari session."""
 
     request.session.pop(PENDING_VERIFICATION_SESSION_KEY, None)
+
+
+def set_signup_confirmation(request: HttpRequest) -> None:
+    """Tandai signup selesai tanpa membuka status akun."""
+
+    request.session[SIGNUP_CONFIRMATION_SESSION_KEY] = True
+
+
+def clear_signup_confirmation(request: HttpRequest) -> None:
+    """Hapus mode konfirmasi signup generik."""
+
+    request.session.pop(SIGNUP_CONFIRMATION_SESSION_KEY, None)
 
 
 def get_pending_verification_user(request: HttpRequest) -> Any | None:
@@ -78,10 +91,12 @@ def sign_in(request: HttpRequest) -> HttpResponse:
             login(request, form.user)
             clear_failed_login_tracking(usage)
             clear_pending_verification_user(request)
+            clear_signup_confirmation(request)
             if not is_email_verified(form.user):
                 return redirect("email_unverified")
             return redirect("home")
         elif form.inactive_user is not None:
+            clear_signup_confirmation(request)
             set_pending_verification_user(request, form.inactive_user)
             messages.error(request, "Akun belum aktif. Cek email verifikasi Anda atau kirim ulang dari halaman berikut.")
             return redirect("email_unverified")
@@ -99,14 +114,27 @@ def sign_up(request: HttpRequest) -> HttpResponse:
 
     form = SignUpForm(data=request.POST or None)
     if request.method == "POST" and form.is_valid():
-        user = form.save(commit=False)
-        user.is_active = False
-        user.save()
-        user.profile.email_verified = False
-        user.profile.save(update_fields=["email_verified", "updated_at"])
-        send_verification_email(request, user)
-        set_pending_verification_user(request, user)
-        messages.success(request, "Akun berhasil dibuat. Cek email verifikasi Anda.")
+        user = None
+        email = form.cleaned_data["email"]
+        try:
+            with transaction.atomic():
+                if not User.objects.filter(email__iexact=email).exists():
+                    user = form.save(commit=False)
+                    user.is_active = False
+                    user.save()
+                    user.profile.email_verified = False
+                    user.profile.save(update_fields=["email_verified", "updated_at"])
+        except IntegrityError:
+            user = None
+
+        if user is not None:
+            send_verification_email(request, user)
+            set_pending_verification_user(request, user)
+        else:
+            clear_pending_verification_user(request)
+
+        set_signup_confirmation(request)
+        messages.success(request, "Jika email dapat digunakan, link verifikasi sudah dikirim.")
         return redirect("email_unverified")
 
     if request.method == "POST" and not form.is_valid():
@@ -143,6 +171,7 @@ def google_sign_in(request: HttpRequest) -> HttpResponse:
         return redirect("signin")
 
     login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+    clear_signup_confirmation(request)
     if not is_email_verified(user):
         return redirect("email_unverified")
     return redirect("home")
@@ -183,25 +212,45 @@ def email_unverified(request: HttpRequest) -> HttpResponse:
     """
 
     user = get_verification_target_user(request)
+    if request.session.get(SIGNUP_CONFIRMATION_SESSION_KEY):
+        return render(
+            request,
+            "auth/email_unverified.html",
+            {
+                "resend_wait_seconds": 0,
+                "can_resend_verification": False,
+                "hide_nav": True,
+            },
+        )
+
     if not user:
         messages.warning(request, "Sesi verifikasi tidak ditemukan. Silakan login lagi.")
         return redirect("signin")
 
     if is_email_verified(user):
         clear_pending_verification_user(request)
+        clear_signup_confirmation(request)
         return redirect("home")
 
     resend_wait_seconds = get_verification_resend_wait_seconds(user)
     return render(
         request,
         "auth/email_unverified.html",
-        {"resend_wait_seconds": resend_wait_seconds, "hide_nav": not request.user.is_authenticated},
+        {
+            "resend_wait_seconds": resend_wait_seconds,
+            "can_resend_verification": True,
+            "hide_nav": not request.user.is_authenticated,
+        },
     )
 
 
 @require_POST
 def resend_verification(request: HttpRequest) -> HttpResponse:
     """Kirim ulang email verifikasi untuk user terikat session/login."""
+
+    if request.session.get(SIGNUP_CONFIRMATION_SESSION_KEY):
+        messages.success(request, "Jika email dapat digunakan, link verifikasi sudah dikirim.")
+        return redirect("email_unverified")
 
     target_user = get_verification_target_user(request)
     if not target_user:
@@ -210,6 +259,7 @@ def resend_verification(request: HttpRequest) -> HttpResponse:
 
     if is_email_verified(target_user):
         clear_pending_verification_user(request)
+        clear_signup_confirmation(request)
         return redirect("home")
 
     if not can_send_verification_email(target_user):
@@ -233,6 +283,7 @@ def verify_email(request: HttpRequest, uidb64: str, token: str) -> HttpResponse:
         if request.user.is_authenticated:
             logout(request)
         clear_pending_verification_user(request)
+        clear_signup_confirmation(request)
         messages.success(request, "Email berhasil diverifikasi. Silakan login.")
         return redirect("signin")
 
@@ -255,6 +306,7 @@ def sign_out(request: HttpRequest) -> HttpResponse:
     """Hapus sesi Django dan kembali ke landing page."""
 
     clear_pending_verification_user(request)
+    clear_signup_confirmation(request)
     logout(request)
     return redirect("home")
 

@@ -19,6 +19,9 @@ from .models import UserUsage
 @override_settings(
     ALLOWED_HOSTS=["testserver"],
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    SECURE_SSL_REDIRECT=False,
+    SESSION_COOKIE_SECURE=False,
+    CSRF_COOKIE_SECURE=False,
 )
 class AuthFlowTests(TestCase):
     """Cakup alur auth sesi tanpa fitur workspace."""
@@ -147,8 +150,26 @@ class AuthFlowTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.wsgi_request.user.is_authenticated)
-        usage = UserUsage.objects.get(identifier="bob@gmail.com")
+        usage = UserUsage.objects.get(identifier__startswith="bob@gmail.com|")
         self.assertEqual(usage.failed_login_count, 5)
+
+    def test_signup_existing_email_uses_generic_confirmation(self) -> None:
+        self.create_local_user("known@gmail.com", "StrongPass123!")
+
+        response = self.client.post(
+            reverse("signup"),
+            {
+                "email": "known@gmail.com",
+                "password": "StrongPass123!",
+                "password_confirm": "StrongPass123!",
+            },
+        )
+
+        self.assertRedirects(response, reverse("email_unverified"))
+        follow_response = self.client.get(reverse("email_unverified"))
+        self.assertContains(follow_response, "Jika email dapat digunakan", status_code=200)
+        self.assertNotContains(follow_response, 'id="resend-verification-button"')
+        self.assertEqual(len(mail.outbox), 0)
 
     def test_email_unverified_rejects_arbitrary_email_lookup(self) -> None:
         self.create_local_user("target@gmail.com", "StrongPass123!", is_active=False)

@@ -14,12 +14,18 @@
         <div class="space-y-4">
             <h1 class="font-newsreader text-3xl text-on-surface">Email belum terverifikasi</h1>
             <p class="font-['Manrope'] text-base leading-6 text-on-surface-variant">
+                {% if not can_resend_verification %}
+                Jika email dapat digunakan, link verifikasi sudah dikirim.
+                Cek inbox Anda untuk langkah berikutnya.
+                {% else %}
                 Akses penuh dibuka setelah email diverifikasi.
                 Cek inbox Anda atau kirim ulang link verifikasi baru.
+                {% endif %}
             </p>
         </div>
 
         <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+            {% if can_resend_verification %}
             <form method="post" action="{% url 'resend_verification' %}" class="flex-1">
                 {% csrf_token %}
                 <button id="resend-verification-button" type="submit" data-loading-button data-loading-text="Mengirim Link" data-wait-seconds="{{ resend_wait_seconds|default:0|escape }}"
@@ -27,6 +33,7 @@
                     Kirim Ulang Link
                 </button>
             </form>
+            {% endif %}
             {% if request.user.is_authenticated %}
             <form method="post" action="{% url 'logout' %}" class="flex-1">
                 {% csrf_token %}

@@ -275,3 +275,15 @@ UNVERIFIED_USER_CLEANUP_DAYS = int(os.getenv('UNVERIFIED_USER_CLEANUP_DAYS', '1'
 GOOGLE_OAUTH_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID', '')
 # Security settings for modern browsers to mitigate certain types of attacks. Adjust as needed.
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
+
+# Production cookie/transport defaults stay strict, while DEBUG keeps local
+# HTTP development usable unless explicitly overridden.
+SESSION_COOKIE_SECURE = _env_bool('SESSION_COOKIE_SECURE', 'false' if DEBUG else 'true')
+CSRF_COOKIE_SECURE = _env_bool('CSRF_COOKIE_SECURE', 'false' if DEBUG else 'true')
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
+CSRF_COOKIE_SAMESITE = os.getenv('CSRF_COOKIE_SAMESITE', 'Lax')
+SECURE_SSL_REDIRECT = _env_bool('SECURE_SSL_REDIRECT', 'false' if DEBUG else 'true')
+SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '0' if DEBUG else '31536000'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'false' if DEBUG else 'true')
+SECURE_HSTS_PRELOAD = _env_bool('SECURE_HSTS_PRELOAD', 'false' if DEBUG else 'true')
