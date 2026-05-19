@@ -66,10 +66,27 @@
       <div class="flex items-center gap-4">
         {% if request.user.is_authenticated %}
           {% if navbar_type == 'project' %}
-          <!-- User Avatar for Project -->
-          <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-on-primary">
-            {{ request.user.email|first|upper }}
+          <!-- User menu for Project -->
+          <div class="relative">
+            <button id="userMenuButton" data-dropdown-toggle="userDropdown" class="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-on-primary focus:outline-none" type="button" aria-expanded="false">
+              {{ request.user.email|first|upper }}
+            </button>
+
+            <!-- Dropdown (Flowbite) -->
+            <div id="userDropdown" class="z-50 hidden bg-surface-container border border-outline-variant rounded-sm shadow-lg w-44 right-0 mt-2">
+              <ul class="p-2 text-sm text-body font-medium">
+                <li>
+                  <a href="{% url 'project' %}" class="block w-full p-2 hover:bg-neutral-tertiary-medium rounded">Project</a>
+                </li>
+                <li>
+                  <button id="logoutButton" type="button" class="w-full text-left block p-2 hover:bg-neutral-tertiary-medium rounded">Logout</button>
+                </li>
+              </ul>
+            </div>
           </div>
+          <form id="logoutForm" action="{% url 'logout' %}" method="post" class="hidden">
+            {% csrf_token %}
+          </form>
           {% else %}
           <a class="rounded bg-primary-container px-5 py-2 text-sm font-bold text-on-primary-container transition hover:bg-primary"
             href="{% url 'project' %}">
@@ -105,9 +122,23 @@
   {% include "components/toast.html" %}
 
   <!-- Custom Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/flowbite@4.0.1/dist/flowbite.min.js"></script>
+
   <script src="{% static 'js/toast.js' %}"></script>
   <script src="{% static 'js/messages.js' %}"></script>
   <script src="{% static 'js/components.js' %}"></script>
+
+  <script>
+    (function(){
+      var logoutBtn = document.getElementById('logoutButton');
+      if (!logoutBtn) return;
+      logoutBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        var f = document.getElementById('logoutForm');
+        if (f) f.submit();
+      });
+    })();
+  </script>
 
   <!-- Pass Django Messages to JavaScript -->
   {% if messages %}
