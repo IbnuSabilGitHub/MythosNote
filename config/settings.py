@@ -142,7 +142,6 @@ AUTHENTICATION_BACKENDS = [
 # Application definition
 
 INSTALLED_APPS = [
-    'project_commands',
     'apps.accounts.apps.AccountsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
