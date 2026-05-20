@@ -244,6 +244,10 @@ def _dispatch_email(
     _send_mail_job(subject, message, recipient_list, settings.DEFAULT_FROM_EMAIL, html_message)
 
 
+def _is_console_email_backend() -> bool:
+    return settings.EMAIL_BACKEND == "django.core.mail.backends.console.EmailBackend"
+
+
 def send_verification_email(request: HttpRequest, user: Any) -> None:
     """Kirim link verifikasi bertanda lewat backend email Django."""
 
@@ -259,22 +263,24 @@ def send_verification_email(request: HttpRequest, user: Any) -> None:
         uidb64=uid,
         token=token,
     )
-    html_message = render_to_string(
-        "auth/emails/verification_email.html",
-        {
-            "verification_url": verify_url,
-            "user_email": user.email,
-        },
-    )
     text_message = (
         "Halo,\n\n"
         "Klik link berikut untuk memverifikasi email MythosNote Anda:\n"
         f"{verify_url}\n\n"
         "Jika Anda tidak membuat akun MythosNote, abaikan email ini."
     )
+    html_message = None
+    if not _is_console_email_backend():
+        html_message = render_to_string(
+            "auth/emails/verification_email.html",
+            {
+                "verification_url": verify_url,
+                "user_email": user.email,
+            },
+        )
     _dispatch_email(
         "Verifikasi email MythosNote",
-        text_message if not html_message else strip_tags(html_message),
+        text_message,
         [user.email],
         html_message=html_message,
     )
