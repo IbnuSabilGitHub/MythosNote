@@ -2,6 +2,31 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.6] - 2026-05-20
+
+### Summary
+Refactor struktur direktori project — Memindahkan app `accounts` ke dalam folder `apps/`.
+
+### Changed
+- **Directory Structure Refactor**:
+  - Memindahkan seluruh aplikasi `accounts` dari root project ke `apps/accounts/`
+  - Menghapus folder `accounts/` lama (semua file di-move)
+  - Memperbarui semua import dan referensi ke app accounts
+
+### Files Affected
+**Modified:**
+- `config/settings.py` (update `INSTALLED_APPS`, import paths, dll)
+- `config/urls.py`
+- `config/views.py`
+
+**Moved:**
+- `accounts/` → `apps/accounts/`
+
+### Notes
+- Semua import lama sudah diperbarui
+- Struktur project sekarang lebih rapi dan scalable (mengikuti best practice Django untuk multiple apps)
+- Siap menampung app baru di dalam folder `apps/` (contoh: `sources`, `workspaces`, dll)
+
 ## [1.4.5] - 2026-05-20
 ### Summary
 Implementasi model utama `Source` dan `SourceChunk` untuk sistem manajemen dokumen dan RAG.
