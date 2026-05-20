@@ -3,7 +3,7 @@
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 
-from accounts.decorators import verified_email_required
+from apps.accounts.decorators import verified_email_required
 
 
 def home(request: HttpRequest) -> HttpResponse:

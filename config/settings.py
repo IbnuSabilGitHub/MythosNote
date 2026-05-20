@@ -134,7 +134,7 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "").strip()
 CSRF_TRUSTED_ORIGINS = [FRONTEND_URL] if FRONTEND_URL else []
 
 AUTHENTICATION_BACKENDS = [
-    "accounts.backends.EmailBackend",
+    "apps.accounts.backends.EmailBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
 
@@ -143,7 +143,7 @@ AUTHENTICATION_BACKENDS = [
 
 INSTALLED_APPS = [
     'project_commands',
-    'accounts.apps.AccountsConfig',
+    'apps.accounts.apps.AccountsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -176,8 +176,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'accounts.context_processors.auth_settings',
-                'accounts.context_processors.navbar_config',
+                'apps.accounts.context_processors.auth_settings',
+                'apps.accounts.context_processors.navbar_config',
             ],
         },
     },
@@ -258,7 +258,7 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Session-based auth defaults. Workspace/core feature views can use
-# accounts.decorators.verified_email_required when those apps are added.
+# apps.accounts.decorators.verified_email_required when those apps are added.
 LOGIN_URL = 'signin'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
