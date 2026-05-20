@@ -2,6 +2,15 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.5] - 2026-05-20
+### Summary
+Implementasi model utama `Source` dan `SourceChunk` untuk sistem manajemen dokumen dan RAG.
+
+### Added
+- `apps/sources/models.py`:
+  - Model **Source**: Menyimpan informasi file sumber (dokumen) yang diupload user
+  - Model **SourceChunk**: Menyimpan potongan-potongan teks (chunk) beserta embedding vector
+
 ## [1.4.4] - 2026-05-14
 
 ### Summary
