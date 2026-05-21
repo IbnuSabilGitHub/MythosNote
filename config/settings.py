@@ -143,12 +143,15 @@ AUTHENTICATION_BACKENDS = [
 
 INSTALLED_APPS = [
     'apps.accounts.apps.AccountsConfig',
+    'apps.sources.apps.SourcesConfig',
+    'apps.workspaces.apps.WorkspacesConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'django_rq',
 ]
 
