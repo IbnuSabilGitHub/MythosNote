@@ -2,7 +2,35 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+#### [1.4.8] - 2026-05-21
+##### Summary
+Implementasi background worker untuk ekstraksi teks, chunking, dan embedding dokumen menggunakan RQ task (Branch: `feat/sources-worker-chunking`).
+
+##### Added
+-  **Fungsi Utama**: `process_source(source_id)` diimplementasikan sebagai RQ task dengan alur kerja berikut:
+    -  Mengambil objek `Source` berdasarkan ID.
+    -  Update state dokumen secara real-time (set `status='processing'`, `progress=0`, dan update persentase seiring berjalannya chunking).
+    -  Mengunduh file dari storage menggunakan `default_storage`.
+    -  Ekstraksi teks spesifik format: menggunakan PyMuPDF (fitz) untuk PDF, dan pembacaan teks langsung untuk .md dan .txt.
+    -  Membuat objek `SourceChunk` (awal `status='pending'`, kemudian `ready`) yang memuat hasil chunking teks dan vektor embedding.
+    -  Menyimpan traceback string ke `error_message` dan menetapkan `status='failed'` jika terjadi kegagalan sistem.
+    -  Menambahkan blok guard `if __name__ == '__main__':` dengan `django.setup()` agar task bisa dites secara standalone.
+-  **Helper Functions**: 
+    -  `EmbeddingProvider.get_embedding()`: Menghasilkan 768-dimensi embedding (saat ini menggunakan *placeholder* berbasis hash).
+    -  `normalize_text()`: Berfungsi untuk menormalisasi teks dengan menghapus whitespace ganda.
+    -  `count_tokens_approx()`: Melakukan estimasi jumlah token secara kasar (panjang karakter / 4).
+    -  `chunk_text(text, max_tokens=500, overlap=50)`: Algoritma pemecah teks hierarkis berdasarkan paragraf → kalimat → kata.
+    -  `extract_text_from_file()`: Melakukan ekstraksi teks dengan validasi berbasis MIME type.
+
+##### Files Changed
+-  `/workspace/apps/sources/tasks.py`
+
+##### Notes
+-  Sistem sengaja **tidak menghapus** file mentah dari storage setelah proses ekstraksi selesai.
+-  Format file yang tidak dikenali atau aneh akan dicatat melalui penanganan error (error logging).
+-  Penghitungan token (tokenization) masih berupa estimasi kasar dan generator embedding masih menggunakan placeholder yang nantinya perlu diganti dengan API/Model Embedding yang sesungguhnya.
+
+## [1.4.7] - 2026-06-21
 
 ### Added
 - **Source Upload API**: Endpoint `POST /api/sources/upload/` untuk upload file source ke workspace.
