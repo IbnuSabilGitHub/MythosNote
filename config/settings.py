@@ -278,6 +278,14 @@ GOOGLE_OAUTH_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID', '')
 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '').strip()
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip()
+DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY', '').strip()
+DEEPSEEK_BASE_URL = os.getenv('DEEPSEEK_BASE_URL', 'https://api.deepseek.com/v1').strip()
+
+# AI Provider options and validation
+AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini').strip().lower()
+if AI_PROVIDER not in ('gemini', 'openai', 'deepseek'):
+    raise ValueError(f"Unsupported AI_PROVIDER: {AI_PROVIDER!r}. Use 'gemini', 'openai', or 'deepseek'.")
+
 EMBEDDING_PROVIDER = os.getenv('EMBEDDING_PROVIDER', 'openai').strip().lower()
 # Security settings for modern browsers to mitigate certain types of attacks. Adjust as needed.
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
