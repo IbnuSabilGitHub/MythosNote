@@ -2,6 +2,15 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Source Upload API**: Endpoint `POST /api/sources/upload/` untuk upload file source ke workspace.
+  - Validasi: workspace ownership, ekstensi file (.pdf/.md/.txt), maks 20MB, penolakan duplikat nama file.
+  - File disimpan ke Django storage, objek Source dibuat dengan status `pending`.
+  - Enqueue job RQ (`apps.sources.tasks.process_source`) untuk pemrosesan async.
+  - Serializer Source, task RQ placeholder, app configs untuk sources/workspaces.
+
 ## [1.4.6] - 2026-05-20
 
 ### Summary
