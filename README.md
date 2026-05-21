@@ -446,9 +446,11 @@ GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
 # Download dari GCP Console
 
 # AI PROVIDER
-AI_PROVIDER=gemini  # atau 'openai'
+AI_PROVIDER=gemini  # atau 'openai', 'deepseek'
 GEMINI_API_KEY=your-gemini-api-key
 OPENAI_API_KEY=your-openai-api-key
+DEEPSEEK_API_KEY=your-deepseek-api-key
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
 
 # EMBEDDING
 EMBEDDING_MODEL=text-embedding-3-small
@@ -527,6 +529,12 @@ send_mail("SMTP test", "Email MythosNote aktif.", None, ["you@example.com"])
 #### Gemini API
 1. Dapatkan di [Google AI Studio](https://makersuite.google.com/app/apikey)
 2. Copy API key ke `GEMINI_API_KEY`
+
+#### DeepSeek API
+1. Dapatkan di [DeepSeek Platform](https://platform.deepseek.com/)
+2. Buat API key di API Keys
+3. Copy API key ke `DEEPSEEK_API_KEY`
+4. Set `DEEPSEEK_BASE_URL=https://api.deepseek.com/v1`
 
 ---
 

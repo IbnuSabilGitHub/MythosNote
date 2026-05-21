@@ -2,6 +2,29 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+#### [1.4.10] - 2026-05-21
+##### Summary
+Penambahan dukungan `DeepSeek` sebagai opsi Chat/Completion provider (kompatibel dengan SDK OpenAI via `base_url`).
+
+##### Added
+*  **Chat Provider** (`apps/sources/providers.py`):
+  - `DeepSeekChatProvider`: Chat/completion provider yang membungkus SDK `openai.OpenAI` dengan `base_url` yang dapat dikonfigurasi untuk endpoint DeepSeek.
+*  **Environment variables**: `DEEPSEEK_API_KEY` dan `DEEPSEEK_BASE_URL` ditambahkan ke `.env.example` dan `config/settings.py`.
+*  **Tests**: Penambahan test untuk pemilihan provider `deepseek` dan validasi `DEEPSEEK_API_KEY`.
+
+##### Changed
+*  `config/settings.py`: Menambahkan pembacaan `DEEPSEEK_API_KEY` dan `DEEPSEEK_BASE_URL`, serta validasi `AI_PROVIDER` untuk menerima `deepseek`.
+*  `README.md` & `Architecture.md`: Dokumentasi konfigurasi DeepSeek ditambahkan.
+
+##### Files Affected
+**Added / Modified:**
+*  `apps/sources/providers.py`
+*  `config/settings.py`
+*  `.env.example` / `.env`
+*  `README.md`
+*  `apps/sources/tests.py`
+
+
 #### [1.4.9] - 2026-05-21
 ##### Summary
 Implementasi sistem Embedding Provider (OpenAI & Gemini) untuk menggantikan placeholder dan mendukung integrasi pembuatan vektor dokumen.
