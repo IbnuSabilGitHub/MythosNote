@@ -9,34 +9,8 @@ import fitz  # PyMuPDF
 from django.conf import settings
 from django.core.files.storage import default_storage
 
+from apps.sources.embeddings import EmbeddingProvider
 from apps.sources.models import Source, SourceChunk
-
-
-class EmbeddingProvider:
-    """Provider untuk menghasilkan embedding vector dari teks."""
-
-    @staticmethod
-    def get_embedding(text: str) -> List[float]:
-        """Menghasilkan embedding vector dari teks."""
-        # Placeholder implementation - generate dummy embedding
-        # In production, replace with actual embedding API call (e.g., OpenAI, HuggingFace)
-        # Using a simple hash-based approach for demonstration
-        import hashlib
-
-        # Generate a deterministic pseudo-embedding based on text hash
-        # This creates a 768-dimensional vector (common embedding size)
-        hash_obj = hashlib.sha256(text.encode('utf-8'))
-        hash_bytes = hash_obj.digest()
-
-        # Extend hash to create 768 dimensions (32 bytes * 24 = 768)
-        embedding = []
-        for i in range(768):
-            byte_idx = i % len(hash_bytes)
-            # Convert byte to float in range [-1, 1]
-            value = (hash_bytes[byte_idx] / 127.5) - 1.0
-            embedding.append(value)
-
-        return embedding
 
 
 def normalize_text(text: str) -> str:
