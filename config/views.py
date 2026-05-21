@@ -17,3 +17,10 @@ def project(request: HttpRequest) -> HttpResponse:
     """Render halaman proyek, hanya untuk user terverifikasi."""
 
     return render(request, "project.html")
+
+
+@verified_email_required
+def workspace(request: HttpRequest) -> HttpResponse:
+    """Render halaman workspace."""
+
+    return render(request, "workspace.html", {"show_navbar": False})
