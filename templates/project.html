@@ -19,16 +19,20 @@
     <!-- Notebook Grid -->
     <div class="grid grid-cols-4 gap-4 w-full mt-6">
       <!-- Create New Button -->
-      <div class="h-48 border border-dashed border-outline-variant bg-[rgba(31,31,35,0.5)] rounded-sm flex flex-col items-center justify-center cursor-pointer hover:border-primary-fixed-dim transition group">
-        <div class="flex items-center justify-center h-12 w-12 rounded-sm bg-surface border border-outline-variant mb-4 group-hover:border-primary-fixed-dim transition">
-            <iconify-icon icon="tabler:plus" class="text-2xl text-primary-fixed-dim"></iconify-icon>
+      <div
+        class="h-48 border border-dashed border-outline-variant bg-[rgba(31,31,35,0.5)] rounded-sm flex flex-col items-center justify-center cursor-pointer hover:border-primary-fixed-dim transition group">
+        <div
+          class="flex items-center justify-center h-12 w-12 rounded-sm bg-surface border border-outline-variant mb-4 group-hover:border-primary-fixed-dim transition">
+          <iconify-icon icon="tabler:plus" class="text-2xl text-primary-fixed-dim"></iconify-icon>
         </div>
-        <span class="font-manrope font-semibold text-xs text-on-surface-variant uppercase tracking-wide">Buat Note Baru</span>
+        <span class="font-manrope font-semibold text-xs text-on-surface-variant uppercase tracking-wide">Buat Note
+          Baru</span>
       </div>
 
       <!-- Dynamic Notebook Cards -->
       {% for notebook in notebooks %}
-      <a href="{% url 'notebook_detail' notebook.id %}" class="bg-surface-container border border-outline-variant rounded-sm overflow-hidden hover:border-primary-fixed-dim transition flex flex-col h-48">
+      <a href="{% url 'notebook_detail' notebook.id %}"
+        class="bg-surface-container border border-outline-variant rounded-sm overflow-hidden hover:border-primary-fixed-dim transition flex flex-col h-48">
         <!-- Card Content -->
         <div class="flex-1 flex flex-col gap-2 p-4">
           <div class="flex items-start justify-between">
@@ -43,14 +47,17 @@
         </div>
 
         <!-- Card Footer -->
-        <div class="border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2 flex items-center justify-between">
-          <span class="font-grotesk text-sm text-on-surface-variant tracking-wide">{{ notebook.source_count|default:"0" }} sources</span>
+        <div
+          class="border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2 flex items-center justify-between">
+          <span class="font-grotesk text-sm text-on-surface-variant tracking-wide">{{ notebook.source_count|default:"0"
+            }} sources</span>
           <iconify-icon icon="tabler:file" class="w-4 h-4 text-on-surface-variant"></iconify-icon>
         </div>
       </a>
       {% empty %}
       <!-- Placeholder Cards -->
-      <a href="#" class="bg-surface-container border border-outline-variant rounded-sm overflow-hidden hover:border-primary-fixed-dim transition flex flex-col h-48">
+      <a href="{% url 'workspace' %}"
+        class="bg-surface-container border border-outline-variant rounded-sm overflow-hidden hover:border-primary-fixed-dim transition flex flex-col h-48">
         <div class="flex-1 flex flex-col gap-2 p-4">
           <div class="flex items-start justify-between">
             <div class="flex items-center justify-center h-8 w-8 rounded-sm bg-surface border border-outline-variant">
@@ -62,13 +69,15 @@
           </div>
           <h3 class="font-newsreader text-2xl text-on-surface font-normal">Research Project Alpha</h3>
         </div>
-        <div class="border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2 flex items-center justify-between">
+        <div
+          class="border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2 flex items-center justify-between">
           <span class="font-grotesk text-sm text-on-surface-variant tracking-wide">12 sources</span>
           <iconify-icon icon="tabler:file" class="w-4 h-4 text-on-surface-variant"></iconify-icon>
         </div>
       </a>
 
-      <a href="#" class="bg-surface-container border border-outline-variant rounded-sm overflow-hidden hover:border-primary-fixed-dim transition flex flex-col h-48">
+      <a href="#"
+        class="bg-surface-container border border-outline-variant rounded-sm overflow-hidden hover:border-primary-fixed-dim transition flex flex-col h-48">
         <div class="flex-1 flex flex-col gap-2 p-4">
           <div class="flex items-start justify-between">
             <div class="flex items-center justify-center h-8 w-8 rounded-sm bg-surface border border-outline-variant">
@@ -80,13 +89,15 @@
           </div>
           <h3 class="font-newsreader text-2xl text-on-surface font-normal">Financial Analysis Q3</h3>
         </div>
-        <div class="border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2 flex items-center justify-between">
+        <div
+          class="border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2 flex items-center justify-between">
           <span class="font-grotesk text-sm text-on-surface-variant tracking-wide">3 sources</span>
           <iconify-icon icon="tabler:file" class="w-4 h-4 text-on-surface-variant"></iconify-icon>
         </div>
       </a>
 
-      <a href="#" class="bg-surface-container border border-outline-variant rounded-sm overflow-hidden hover:border-primary-fixed-dim transition flex flex-col h-48">
+      <a href="#"
+        class="bg-surface-container border border-outline-variant rounded-sm overflow-hidden hover:border-primary-fixed-dim transition flex flex-col h-48">
         <div class="flex-1 flex flex-col gap-2 p-4">
           <div class="flex items-start justify-between">
             <div class="flex items-center justify-center h-8 w-8 rounded-sm bg-surface border border-outline-variant">
@@ -96,15 +107,18 @@
               <iconify-icon icon="tabler:dots-vertical" class="w-4 h-4"></iconify-icon>
             </button>
           </div>
-          <h3 class="font-newsreader text-2xl text-on-surface font-normal line-clamp-2">Literature Review: AI Ethics</h3>
+          <h3 class="font-newsreader text-2xl text-on-surface font-normal line-clamp-2">Literature Review: AI Ethics
+          </h3>
         </div>
-        <div class="border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2 flex items-center justify-between">
+        <div
+          class="border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2 flex items-center justify-between">
           <span class="font-grotesk text-sm text-on-surface-variant tracking-wide">45 sources</span>
           <iconify-icon icon="tabler:file" class="w-4 h-4 text-on-surface-variant"></iconify-icon>
         </div>
       </a>
 
-      <a href="#" class="bg-surface-container border border-outline-variant rounded-sm overflow-hidden hover:border-primary-fixed-dim transition flex flex-col h-48">
+      <a href="#"
+        class="bg-surface-container border border-outline-variant rounded-sm overflow-hidden hover:border-primary-fixed-dim transition flex flex-col h-48">
         <div class="flex-1 flex flex-col gap-2 p-4">
           <div class="flex items-start justify-between">
             <div class="flex items-center justify-center h-8 w-8 rounded-sm bg-surface border border-outline-variant">
@@ -116,13 +130,15 @@
           </div>
           <h3 class="font-newsreader text-2xl text-on-surface font-normal line-clamp-2">System Architecture Specs</h3>
         </div>
-        <div class="border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2 flex items-center justify-between">
+        <div
+          class="border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2 flex items-center justify-between">
           <span class="font-grotesk text-sm text-on-surface-variant tracking-wide">8 sources</span>
           <iconify-icon icon="tabler:file" class="w-4 h-4 text-on-surface-variant"></iconify-icon>
         </div>
       </a>
 
-      <a href="#" class="bg-surface-container border border-outline-variant rounded-sm overflow-hidden hover:border-primary-fixed-dim transition flex flex-col h-48">
+      <a href="#"
+        class="bg-surface-container border border-outline-variant rounded-sm overflow-hidden hover:border-primary-fixed-dim transition flex flex-col h-48">
         <div class="flex-1 flex flex-col gap-2 p-4">
           <div class="flex items-start justify-between">
             <div class="flex items-center justify-center h-8 w-8 rounded-sm bg-surface border border-outline-variant">
@@ -134,7 +150,8 @@
           </div>
           <h3 class="font-newsreader text-2xl text-on-surface font-normal line-clamp-2">Market Expansion Strategy</h3>
         </div>
-        <div class="border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2 flex items-center justify-between">
+        <div
+          class="border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2 flex items-center justify-between">
           <span class="font-grotesk text-sm text-on-surface-variant tracking-wide">21 sources</span>
           <iconify-icon icon="tabler:file" class="w-4 h-4 text-on-surface-variant"></iconify-icon>
         </div>
@@ -149,9 +166,11 @@
   .font-manrope {
     font-family: "Manrope", sans-serif;
   }
+
   .font-grotesk {
     font-family: "Space Grotesk", sans-serif;
   }
+
   .font-newsreader {
     font-family: "Newsreader", serif;
   }

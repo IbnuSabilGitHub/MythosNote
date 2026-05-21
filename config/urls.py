@@ -21,6 +21,7 @@ from . import views
 urlpatterns = [
     path('', views.home, name='home'),
     path('project/', views.project, name='project'),
+    path('workspace/', views.workspace, name='workspace'),
     path('', include('accounts.urls')),
     path('admin/', admin.site.urls),
     path('django-rq/', include('django_rq.urls')),
