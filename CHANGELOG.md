@@ -2,6 +2,33 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+#### [1.4.9] - 2026-05-21
+##### Summary
+Implementasi sistem Embedding Provider (OpenAI & Gemini) untuk menggantikan placeholder dan mendukung integrasi pembuatan vektor dokumen.
+
+##### Added
+*  **Modul Embeddings** (`apps/sources/embeddings.py`):
+    *  `BaseEmbeddingProvider`: Abstract Base Class (ABC) yang mendefinisikan interface standar `get_embedding(text) -> list[float]`.
+    *  `OpenAIEmbeddingProvider`: Implementasi provider menggunakan model `text-embedding-3-small` (membutuhkan `OPENAI_API_KEY`).
+    *  `GeminiEmbeddingProvider`: Implementasi provider menggunakan model `models/embedding-001` (membutuhkan `GEMINI_API_KEY`).
+    *  `EmbeddingProvider`: *Lazy default instance* yang memuat provider secara dinamis berdasarkan konfigurasi `EMBEDDING_PROVIDER` (pilihan: `openai` atau `gemini`, default: `openai`).
+*  Variabel environment pendukung ditambahkan ke `.env.example` (`EMBEDDING_PROVIDER=openai`).
+
+##### Changed
+*  `config/settings.py`: Menambahkan pemuatan konfigurasi `OPENAI_API_KEY`, `GEMINI_API_KEY`, dan `EMBEDDING_PROVIDER` dari environment variables.
+*  `apps/sources/tasks.py`: Menghapus fungsi generator embedding *placeholder* lama dan menggantinya dengan import `EmbeddingProvider` langsung dari modul `embeddings`.
+*  `requirements.txt`: Menambahkan pustaka resmi `openai` dan `google-generativeai` ke dalam daftar dependensi proyek.
+
+##### Files Affected
+**Added:**
+*  `apps/sources/embeddings.py`
+
+**Modified:**
+*  `config/settings.py`
+*  `apps/sources/tasks.py`
+*  `requirements.txt`
+*  `.env.example`
+
 #### [1.4.8] - 2026-05-21
 ##### Summary
 Implementasi background worker untuk ekstraksi teks, chunking, dan embedding dokumen menggunakan RQ task (Branch: `feat/sources-worker-chunking`).
