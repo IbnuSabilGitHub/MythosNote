@@ -2,7 +2,85 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+#### [1.4.10] - 2026-05-21
+##### Summary
+Penambahan dukungan `DeepSeek` sebagai opsi Chat/Completion provider (kompatibel dengan SDK OpenAI via `base_url`).
+
+##### Added
+*  **Chat Provider** (`apps/sources/providers.py`):
+  - `DeepSeekChatProvider`: Chat/completion provider yang membungkus SDK `openai.OpenAI` dengan `base_url` yang dapat dikonfigurasi untuk endpoint DeepSeek.
+*  **Environment variables**: `DEEPSEEK_API_KEY` dan `DEEPSEEK_BASE_URL` ditambahkan ke `.env.example` dan `config/settings.py`.
+*  **Tests**: Penambahan test untuk pemilihan provider `deepseek` dan validasi `DEEPSEEK_API_KEY`.
+
+##### Changed
+*  `config/settings.py`: Menambahkan pembacaan `DEEPSEEK_API_KEY` dan `DEEPSEEK_BASE_URL`, serta validasi `AI_PROVIDER` untuk menerima `deepseek`.
+*  `README.md` & `Architecture.md`: Dokumentasi konfigurasi DeepSeek ditambahkan.
+
+##### Files Affected
+**Added / Modified:**
+*  `apps/sources/providers.py`
+*  `config/settings.py`
+*  `.env.example` / `.env`
+*  `README.md`
+*  `apps/sources/tests.py`
+
+
+#### [1.4.9] - 2026-05-21
+##### Summary
+Implementasi sistem Embedding Provider (OpenAI & Gemini) untuk menggantikan placeholder dan mendukung integrasi pembuatan vektor dokumen.
+
+##### Added
+*  **Modul Embeddings** (`apps/sources/embeddings.py`):
+    *  `BaseEmbeddingProvider`: Abstract Base Class (ABC) yang mendefinisikan interface standar `get_embedding(text) -> list[float]`.
+    *  `OpenAIEmbeddingProvider`: Implementasi provider menggunakan model `text-embedding-3-small` (membutuhkan `OPENAI_API_KEY`).
+    *  `GeminiEmbeddingProvider`: Implementasi provider menggunakan model `models/embedding-001` (membutuhkan `GEMINI_API_KEY`).
+    *  `EmbeddingProvider`: *Lazy default instance* yang memuat provider secara dinamis berdasarkan konfigurasi `EMBEDDING_PROVIDER` (pilihan: `openai` atau `gemini`, default: `openai`).
+*  Variabel environment pendukung ditambahkan ke `.env.example` (`EMBEDDING_PROVIDER=openai`).
+
+##### Changed
+*  `config/settings.py`: Menambahkan pemuatan konfigurasi `OPENAI_API_KEY`, `GEMINI_API_KEY`, dan `EMBEDDING_PROVIDER` dari environment variables.
+*  `apps/sources/tasks.py`: Menghapus fungsi generator embedding *placeholder* lama dan menggantinya dengan import `EmbeddingProvider` langsung dari modul `embeddings`.
+*  `requirements.txt`: Menambahkan pustaka resmi `openai` dan `google-generativeai` ke dalam daftar dependensi proyek.
+
+##### Files Affected
+**Added:**
+*  `apps/sources/embeddings.py`
+
+**Modified:**
+*  `config/settings.py`
+*  `apps/sources/tasks.py`
+*  `requirements.txt`
+*  `.env.example`
+
+#### [1.4.8] - 2026-05-21
+##### Summary
+Implementasi background worker untuk ekstraksi teks, chunking, dan embedding dokumen menggunakan RQ task (Branch: `feat/sources-worker-chunking`).
+
+##### Added
+-  **Fungsi Utama**: `process_source(source_id)` diimplementasikan sebagai RQ task dengan alur kerja berikut:
+    -  Mengambil objek `Source` berdasarkan ID.
+    -  Update state dokumen secara real-time (set `status='processing'`, `progress=0`, dan update persentase seiring berjalannya chunking).
+    -  Mengunduh file dari storage menggunakan `default_storage`.
+    -  Ekstraksi teks spesifik format: menggunakan PyMuPDF (fitz) untuk PDF, dan pembacaan teks langsung untuk .md dan .txt.
+    -  Membuat objek `SourceChunk` (awal `status='pending'`, kemudian `ready`) yang memuat hasil chunking teks dan vektor embedding.
+    -  Menyimpan traceback string ke `error_message` dan menetapkan `status='failed'` jika terjadi kegagalan sistem.
+    -  Menambahkan blok guard `if __name__ == '__main__':` dengan `django.setup()` agar task bisa dites secara standalone.
+-  **Helper Functions**: 
+    -  `EmbeddingProvider.get_embedding()`: Menghasilkan 768-dimensi embedding (saat ini menggunakan *placeholder* berbasis hash).
+    -  `normalize_text()`: Berfungsi untuk menormalisasi teks dengan menghapus whitespace ganda.
+    -  `count_tokens_approx()`: Melakukan estimasi jumlah token secara kasar (panjang karakter / 4).
+    -  `chunk_text(text, max_tokens=500, overlap=50)`: Algoritma pemecah teks hierarkis berdasarkan paragraf → kalimat → kata.
+    -  `extract_text_from_file()`: Melakukan ekstraksi teks dengan validasi berbasis MIME type.
+
+##### Files Changed
+-  `/workspace/apps/sources/tasks.py`
+
+##### Notes
+-  Sistem sengaja **tidak menghapus** file mentah dari storage setelah proses ekstraksi selesai.
+-  Format file yang tidak dikenali atau aneh akan dicatat melalui penanganan error (error logging).
+-  Penghitungan token (tokenization) masih berupa estimasi kasar dan generator embedding masih menggunakan placeholder yang nantinya perlu diganti dengan API/Model Embedding yang sesungguhnya.
+
+## [1.4.7] - 2026-06-21
 
 ### Added
 - **Source Upload API**: Endpoint `POST /api/sources/upload/` untuk upload file source ke workspace.
