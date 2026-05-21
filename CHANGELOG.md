@@ -2,6 +2,31 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+#### [1.4.11] - 2026-05-21
+##### Summary
+Implementasi API endpoint untuk membaca daftar, detail, dan status `Source` (dokumen) beserta fungsionalitas penghapusan file.
+
+##### Added
+*  **Views API Manajemen Source** (`apps/sources/views.py`):
+    *  `SourceListView`: Endpoint untuk menampilkan daftar *source* milik pengguna (*user-filtered*). Mendukung paginasi (10 item per halaman) dan filter tambahan berdasarkan `workspace_id` dan `status`.
+    *  `SourceDetailView`: Endpoint untuk mengambil informasi detail (`GET`) dan menghapus (`DELETE`) *source*. Aksi `DELETE` secara otomatis akan menghapus file *raw* mentah dari sistem *storage*.
+    *  `SourceStatusView`: Endpoint spesifik untuk mengecek status pemrosesan dokumen.
+*  **Serializers** (`apps/sources/serializers.py`):
+    *  Menambahkan serializer dengan format ringkas (summary).
+    *  Menambahkan serializer khusus untuk memuat status dokumen.
+*  **Routing URL**:
+    *  Menambahkan URL *routes* baru untuk view di atas pada `apps/sources/urls.py`.
+
+##### Changed
+*  Memperbarui `urls.py` utama proyek untuk me-*mount* URL aplikasi `sources`.
+
+##### Files Affected
+**Modified:**
+*  `apps/sources/views.py`
+*  `apps/sources/serializers.py`
+*  `apps/sources/urls.py`
+*  `config/urls.py` *(atau file root urls tempat mount dilakukan)*
+
 #### [1.4.10] - 2026-05-21
 ##### Summary
 Penambahan dukungan `DeepSeek` sebagai opsi Chat/Completion provider (kompatibel dengan SDK OpenAI via `base_url`).
