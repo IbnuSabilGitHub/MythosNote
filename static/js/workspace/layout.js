@@ -57,7 +57,13 @@
       if (!tabName) return;
       activeMobileTab = tabName;
       mobilePanels.forEach((panel) => {
-        panel.classList.toggle("hidden", panel.dataset.mobilePanel !== tabName);
+        const isHidden = panel.dataset.mobilePanel !== tabName;
+        panel.classList.toggle("hidden", isHidden);
+        if (isHidden) {
+          panel.classList.remove("flex");
+        } else {
+          panel.classList.add("flex");
+        }
       });
       mobileTabButtons.forEach((button) => {
         const isActive = button.dataset.mobileTab === tabName;
@@ -157,6 +163,11 @@
       if (isDesktop()) {
         mobilePanels.forEach((panel) => {
           panel.classList.remove("hidden");
+          if (panel.dataset.mobilePanel === 'generate') {
+            panel.classList.remove("flex");
+          } else {
+            panel.classList.add("flex");
+          }
         });
       } else {
         if (sourcesShell) {
