@@ -2,6 +2,29 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+#### [1.4.13] - 2026-05-22
+##### Summary
+Implementasi *frontend* `WorkspaceUI` untuk mendukung interaksi manajemen dokumen (*source*) secara *real-time* di antarmuka pengguna.
+
+##### Added
+*  **Frontend Class** (`workspace.js`):
+    *  Membuat *class* terpadu `WorkspaceUI` yang akan diinisialisasi otomatis saat halaman dimuat (sebagai global instance `workspaceUI`).
+    *  Membaca `workspaceId` secara otomatis dari atribut `data-workspace-id` pada DOM atau melalui parameter URL.
+*  **Metode Utama (`WorkspaceUI`)**:
+    *  `fetchSources()`: Mengambil daftar *source* (GET) dan meneruskannya ke fungsi render.
+    *  `renderSourceList()`: Membuat elemen daftar dokumen yang dilengkapi dengan badge status dan tombol hapus.
+    *  `uploadSource(formData)`: Mengirim file via POST, memperbarui daftar, dan langsung memicu proses *polling* status.
+    *  `pollSourceStatus(sourceId)`: Melakukan *polling* status setiap 2 detik hingga dokumen berstatus `ready` atau `failed`. Mencegah duplikasi *polling* menggunakan struktur data `Map`.
+    *  `deleteSource(sourceId)`: Mengirim permintaan DELETE dengan UX animasi penghapusan yang mulus (*smooth removal*), disertai fitur *rollback* (mengembalikan elemen) jika permintaan gagal.
+*  **Fitur & Penanganan State (UI/UX)**:
+    *  **States**: Penanganan state dinamis mencakup *Loading* (dengan animasi *spinner*), *Empty* (pesan "No sources uploaded"), dan *Error* (tombol *retry* beserta notifikasi *toast*).
+    *  **Styling**: Kelas CSS dinamis berdasarkan status (`.status-pending`, `.status-ready`, `.status-failed`).
+    *  **Keamanan**: Implementasi *HTML escaping* secara internal untuk menghindari kerentanan XSS pada render data pengguna.
+
+##### Files Affected
+**Added/Modified:**
+*  `static/js/workspace.js` *(atau path javascript terkait)*
+
 #### [1.4.12] - 2026-05-22
 ##### Summary
 Penyempurnaan API `sources` untuk list, upload, delete, dan status pemrosesan.
