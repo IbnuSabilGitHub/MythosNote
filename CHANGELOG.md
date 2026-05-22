@@ -2,6 +2,16 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+#### [1.4.12] - 2026-05-22
+##### Summary
+Penyempurnaan API `sources` untuk list, upload, delete, dan status pemrosesan.
+
+##### Changed
+*  `apps/sources/views.py`: Alur upload, list, status, dan delete dirapikan; validasi upload dibuat lebih ketat dan antrian task ditangani lebih aman.
+*  `apps/sources/serializers.py`: Serializer dibuat lebih ringkas untuk respons daftar dan detail source.
+*  `apps/sources/tasks.py`: Proses pemrosesan source diperkuat agar lebih aman untuk storage lokal maupun remote.
+*  `apps/sources/urls.py`: Routing disesuaikan dengan struktur endpoint baru.
+
 #### [1.4.11] - 2026-05-21
 ##### Summary
 Implementasi API endpoint untuk membaca daftar, detail, dan status `Source` (dokumen) beserta fungsionalitas penghapusan file.
