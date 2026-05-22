@@ -2,12 +2,15 @@
 
 import os
 import re
+import tempfile
 import traceback
-from typing import List, Tuple
+from contextlib import contextmanager
+from typing import List
 
 import fitz  # PyMuPDF
-from django.conf import settings
 from django.core.files.storage import default_storage
+from django.db import transaction
+from django.utils import timezone
 
 from apps.sources.embeddings import EmbeddingProvider
 from apps.sources.models import Source, SourceChunk
@@ -182,40 +185,56 @@ def extract_text_from_file(file_path: str, mime_type: str) -> str:
         raise ValueError(f"Format file tidak didukung: {mime_type} (extension: {ext})")
 
 
+@contextmanager
+def source_file_path(storage_path: str):
+    """Yield a local path for local and remote Django storage backends."""
+
+    try:
+        yield default_storage.path(storage_path)
+        return
+    except NotImplementedError:
+        pass
+
+    _, extension = os.path.splitext(storage_path)
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=extension)
+    temp_name = temp_file.name
+
+    try:
+        with temp_file, default_storage.open(storage_path, 'rb') as stored_file:
+            for chunk in iter(lambda: stored_file.read(1024 * 1024), b''):
+                temp_file.write(chunk)
+        yield temp_name
+    finally:
+        try:
+            os.unlink(temp_name)
+        except FileNotFoundError:
+            pass
+
+
 def process_source(source_id: str) -> None:
     """Task RQ untuk memproses file source."""
     source = None
     try:
-        # 1. Ambil objek Source berdasarkan ID
-        source = Source.objects.get(id=source_id)
+        with transaction.atomic():
+            source = Source.objects.select_for_update().get(id=source_id)
+            if source.status != 'pending':
+                return
 
-        # 2. Set status='processing', progress=0
-        source.status = 'processing'
-        source.progress = 0
-        source.save(update_fields=['status', 'progress', 'updated_at'])
+            source.status = 'processing'
+            source.progress = 0
+            source.error_message = ''
+            source.save(update_fields=['status', 'progress', 'error_message', 'updated_at'])
+            source.chunks.all().delete()
 
-        # 3. Download file dari storage
-        file_path = default_storage.path(source.storage_path)
-        if not os.path.exists(file_path):
-            # Try to access via storage's open method for remote storage
-            try:
-                with default_storage.open(source.storage_path, 'rb') as f:
-                    # Read content to temporary location if needed
-                    # For local storage, path() should work
-                    pass
-            except Exception as e:
+        with source_file_path(source.storage_path) as file_path:
+            if not os.path.exists(file_path):
                 raise ValueError(f"File tidak ditemukan di storage: {source.storage_path}")
-
-        # 4. Ekstrak teks dari file
-        raw_text = extract_text_from_file(file_path, source.mime_type)
+            raw_text = extract_text_from_file(file_path, source.mime_type)
 
         if not raw_text or not raw_text.strip():
             raise ValueError("File kosong atau tidak mengandung teks yang dapat diekstrak")
 
-        # 5. Normalisasi teks
         normalized_text = normalize_text(raw_text)
-
-        # 6. Chunking teks
         chunks = chunk_text(normalized_text, max_tokens=500, overlap=50)
 
         if not chunks:
@@ -224,37 +243,31 @@ def process_source(source_id: str) -> None:
         total_chunks = len(chunks)
         processed_chunks = 0
 
-        # 7. Proses setiap chunk
         for idx, chunk_text_content in enumerate(chunks):
-            # Buat objek SourceChunk dengan status='pending'
-            chunk = SourceChunk(
+            embedding = EmbeddingProvider.get_embedding(chunk_text_content)
+
+            SourceChunk.objects.create(
                 source=source,
                 chunk_index=idx,
                 text_content=chunk_text_content,
                 token_count=count_tokens_approx(chunk_text_content),
-                metadata={'status': 'pending'}
+                embedding=embedding,
+                metadata={'status': 'ready'},
             )
-            chunk.save()
 
-            # Dapatkan embedding
-            embedding = EmbeddingProvider.get_embedding(chunk_text_content)
-
-            # Simpan embedding ke chunk, set status='ready'
-            chunk.embedding = embedding
-            chunk.metadata['status'] = 'ready'
-            chunk.save(update_fields=['embedding', 'metadata'])
-
-            # Update progress Source
             processed_chunks += 1
             progress_percentage = int((processed_chunks / total_chunks) * 100)
-            source.progress = progress_percentage
-            source.save(update_fields=['progress', 'updated_at'])
+            Source.objects.filter(id=source.id, status='processing').update(
+                progress=progress_percentage,
+                updated_at=timezone.now(),
+            )
 
-        # 8. Semua sukses, set status='ready'
-        source.status = 'ready'
-        source.progress = 100
-        source.error_message = ''
-        source.save(update_fields=['status', 'progress', 'error_message', 'updated_at'])
+        with transaction.atomic():
+            source = Source.objects.select_for_update().get(id=source_id)
+            source.status = 'ready'
+            source.progress = 100
+            source.error_message = ''
+            source.save(update_fields=['status', 'progress', 'error_message', 'updated_at'])
 
     except Source.DoesNotExist:
         # Source tidak ditemukan
@@ -268,10 +281,11 @@ def process_source(source_id: str) -> None:
         print(f"ERROR processing source {source_id}: {error_traceback}")
 
         if source is not None:
-            source.status = 'failed'
-            source.error_message = error_traceback
-            # Jangan reset progress, biarkan menunjukkan seberapa jauh proses berjalan
-            source.save(update_fields=['status', 'error_message', 'updated_at'])
+            with transaction.atomic():
+                source = Source.objects.select_for_update().get(id=source.id)
+                source.status = 'failed'
+                source.error_message = error_traceback
+                source.save(update_fields=['status', 'error_message', 'updated_at'])
 
         # Jangan hapus file mentah - file tetap di storage
 
