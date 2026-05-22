@@ -2,7 +2,33 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-05-22
+#### [1.4.15] - 2026-05-22
+##### Summary
+Implementasi API endpoint untuk fitur Chat (berbasis *Retrieval-Augmented Generation*/RAG) dan fungsi Generate secara asinkron (*background jobs*), beserta model dan worker task terkait [1, 2].
+
+##### Added
+*  **API Endpoints** (`views.py` & `urls.py`):
+    *  **Chat API** (`POST /api/workspace/<id>/chat/`): Endpoint untuk percakapan AI. Menerima pesan pengguna, membangun konteks secara dinamis dari *source chunks* yang berstatus `ready`, memanggil `ChatProvider.chat_complete`, dan mengembalikan respons [3].
+    *  **Generate API** (`POST /api/workspace/<id>/generate/`): Endpoint untuk memicu aksi *quick generate* (seperti ringkasan, tabel, kuis, atau mindmap). Melakukan validasi *action*, membuat objek `GenerateJob` dengan status `queued`, memasukkannya ke antrean RQ (enqueue), dan langsung mengembalikan respons berisi `id` dan `status` dari job tersebut [2, 3].
+*  **Model Database** (`models.py`):
+    *  Menambahkan model *job* (seperti `GenerateJob`) untuk melacak status eksekusi tugas asinkron (misalnya: *queued*, *processing*, *success*, *failed*) [3].
+*  **Async Background Tasks** (`tasks.py`):
+    *  Implementasi fungsi `process_generate_job(job_id, prompt)` sebagai antrean pekerja (worker) dengan alur kerja berikut:
+        *  Mengubah status `GenerateJob` menjadi `processing`.
+        *  Memanggil `ChatProvider.chat_complete` dengan *prompt* yang telah disiapkan.
+        *  Memperbarui status job menjadi `success` beserta hasil akhirnya, atau menjadi `failed` beserta `error_message` jika terjadi kegagalan [2].
+
+##### Files Affected
+**Modified/Added:**
+*  `views.py` *(modul terkait workspace/chat)*
+*  `urls.py` *(penambahan routing endpoint baru)*
+*  `models.py` *(penambahan job model)*
+*  `tasks.py` *(implementasi async processing untuk generate)*
+
+##### Notes
+*  Proses chat dengan konteks dokumen berjalan secara sinkron/langsung memanggil provider, 
+
+## [1.4.14] - 2026-05-22
 
 ### Changed
 - Refactor: Pisahkan berkas JavaScript di `static/js/` berdasarkan tanggung jawab (Separation of Concerns). Perubahan utama:
@@ -12,12 +38,6 @@ Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a 
   - Pindah `static/js/messages.js` → `static/js/toast/django-messages.js`
   - Memecah `static/js/workspace.js` menjadi modul: `static/js/workspace/sources.js`, `static/js/workspace/layout.js`, `static/js/workspace/selection.js`, `static/js/workspace/index.js`
   - Memperbarui template untuk memuat jalur skrip baru dan menghapus pemanggilan berkas lama.
-
-  ### Added
-  - Feature: Add workspace Chat and Generate endpoints that use processed source chunks as context. Async generate jobs tracked via `GenerateJob` model and processed by RQ worker (`process_generate_job`).
-
-  ### Fixed
-  - Ensure generate endpoints validate presence of ready source chunks and return 400 when none are selected.
 
 
 #### [1.4.13] - 2026-05-22
