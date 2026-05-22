@@ -13,6 +13,12 @@ Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a 
   - Memecah `static/js/workspace.js` menjadi modul: `static/js/workspace/sources.js`, `static/js/workspace/layout.js`, `static/js/workspace/selection.js`, `static/js/workspace/index.js`
   - Memperbarui template untuk memuat jalur skrip baru dan menghapus pemanggilan berkas lama.
 
+  ### Added
+  - Feature: Add workspace Chat and Generate endpoints that use processed source chunks as context. Async generate jobs tracked via `GenerateJob` model and processed by RQ worker (`process_generate_job`).
+
+  ### Fixed
+  - Ensure generate endpoints validate presence of ready source chunks and return 400 when none are selected.
+
 
 #### [1.4.13] - 2026-05-22
 ##### Summary

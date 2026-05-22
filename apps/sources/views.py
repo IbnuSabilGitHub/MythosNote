@@ -14,7 +14,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.sources.models import Source
+from apps.sources.models import GenerateJob, Source, SourceChunk
+from apps.sources.providers import ChatProvider
 from apps.sources.serializers import SourceDetailSerializer, SourceListSerializer
 from apps.workspaces.models import Workspace
 
@@ -159,3 +160,104 @@ class SourceStatusView(APIView):
         )
         serializer = SourceDetailSerializer(source)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+def _get_workspace_ready_chunks(request, workspace_id: str):
+    workspace = get_object_or_404(
+        Workspace.objects.filter(user=request.user),
+        id=workspace_id,
+    )
+
+    chunks = SourceChunk.objects.filter(
+        source__workspace=workspace,
+        source__user=request.user,
+        source__status="ready",
+    ).values_list("text_content", flat=True)
+
+    if not chunks.exists():
+        return None, Response(
+            {"detail": "No ready source chunks found for this workspace."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    return chunks, None
+
+
+class ChatView(APIView):
+    """Chat endpoint using workspace source chunks as context."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, id):
+        message = (request.data.get("message") or "").strip()
+        if not message:
+            return Response(
+                {"message": "This field is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        chunks, error_response = _get_workspace_ready_chunks(request, id)
+        if error_response:
+            return error_response
+
+        context_text = "\n\n".join(chunks)
+        prompt = f"{context_text}\n\n{message}"
+
+        response_text = ChatProvider.chat_complete(
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        return Response({"response": response_text}, status=status.HTTP_200_OK)
+
+
+class GenerateView(APIView):
+    """Generate summary/mindmap/quiz/table from workspace source chunks."""
+
+    permission_classes = [IsAuthenticated]
+
+    PROMPT_TEMPLATES = {
+        "summary": "Summarize the following context into concise bullet points.",
+        "mindmap": "Create a mindmap outline with clear main branches and sub-branches.",
+        "quiz": "Create a quiz with questions and answers based on the context.",
+        "table": "Create a structured table with key entities and attributes.",
+    }
+
+    def post(self, request, id):
+        action = (request.data.get("action") or "").strip().lower()
+        if action not in self.PROMPT_TEMPLATES:
+            return Response(
+                {"action": "Invalid action. Use summary, mindmap, quiz, or table."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        chunks, error_response = _get_workspace_ready_chunks(request, id)
+        if error_response:
+            return error_response
+
+        context_text = "\n\n".join(chunks)
+        instruction = self.PROMPT_TEMPLATES[action]
+        prompt = f"{context_text}\n\nTask: {instruction}"
+
+        job = GenerateJob.objects.create(
+            user=request.user,
+            workspace_id=id,
+            action=action,
+            status="queued",
+        )
+
+        try:
+            queue = django_rq.get_queue("default")
+            queue.enqueue("apps.sources.tasks.process_generate_job", str(job.id), prompt)
+        except Exception as exc:
+            job.status = "failed"
+            job.error_message = f"Failed to queue generate job: {exc}"
+            job.save(update_fields=["status", "error_message", "updated_at"])
+            return Response(
+                {"detail": "Failed to queue generate job."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        return Response(
+            {"generate_job": {"id": str(job.id), "status": job.status}},
+            status=status.HTTP_202_ACCEPTED,
+        )
