@@ -10,8 +10,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const type = msg.tags || 'info';
             const text = msg.text || '';
             
-            if (text && typeof ToastManager !== 'undefined') {
-                ToastManager[type](text);
+            if (text && window.ToastManager && typeof window.ToastManager[type] === 'function') {
+                window.ToastManager[type](text);
             }
         });
     }

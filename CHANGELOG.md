@@ -2,6 +2,18 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-05-22
+
+### Changed
+- Refactor: Pisahkan berkas JavaScript di `static/js/` berdasarkan tanggung jawab (Separation of Concerns). Perubahan utama:
+  - Pindah `static/js/auth-validation.js` → `static/js/auth/validation.js`
+  - Pindah `static/js/components.js` → `static/js/ui/loading-button.js`
+  - Pindah `static/js/toast.js` → `static/js/toast/manager.js`
+  - Pindah `static/js/messages.js` → `static/js/toast/django-messages.js`
+  - Memecah `static/js/workspace.js` menjadi modul: `static/js/workspace/sources.js`, `static/js/workspace/layout.js`, `static/js/workspace/selection.js`, `static/js/workspace/index.js`
+  - Memperbarui template untuk memuat jalur skrip baru dan menghapus pemanggilan berkas lama.
+
+
 #### [1.4.13] - 2026-05-22
 ##### Summary
 Implementasi *frontend* `WorkspaceUI` untuk mendukung interaksi manajemen dokumen (*source*) secara *real-time* di antarmuka pengguna.
