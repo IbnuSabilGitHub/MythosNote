@@ -8,7 +8,13 @@ from django.urls import reverse
 
 from apps.accounts.decorators import verified_email_required
 from apps.workspaces.models import Workspace
-from apps.workspaces.utils import WORKSPACE_LIMIT, get_workspace_quota
+from apps.workspaces.utils import (
+    WORKSPACE_LIMIT,
+    WorkspaceQuotaExceeded,
+    create_workspace_for_user,
+    get_workspace_quota,
+    is_workspace_mutation_rate_limited,
+)
 
 
 def home(request: HttpRequest) -> HttpResponse:
@@ -21,20 +27,30 @@ def home(request: HttpRequest) -> HttpResponse:
 def project(request: HttpRequest) -> HttpResponse:
     """Render halaman proyek, hanya untuk user terverifikasi."""
 
-    workspace_quota = get_workspace_quota(request.user)
-
     if request.method == "POST":
-        if not workspace_quota["can_create"]:
+        if is_workspace_mutation_rate_limited(request, "create"):
+            messages.warning(request, "Terlalu banyak request. Coba lagi sebentar.")
+            return _render_project(request, status_code=429)
+
+        workspace_name = (request.POST.get("name") or "").strip() or "Untitled Note"
+
+        try:
+            workspace = create_workspace_for_user(request.user, workspace_name)
+        except WorkspaceQuotaExceeded:
             messages.warning(
                 request,
                 f"Batas workspace per user adalah {WORKSPACE_LIMIT}. Hapus workspace dulu untuk membuat yang baru.",
             )
-            return redirect("project")
+            return _render_project(request, status_code=409)
 
-        workspace_name = (request.POST.get("name") or "").strip() or "Untitled Note"
-        workspace = Workspace.objects.create(user=request.user, name=workspace_name)
         messages.success(request, f"Workspace '{workspace.name}' berhasil dibuat.")
         return redirect(f"{reverse('workspace')}?workspace_id={workspace.id}")
+
+    return _render_project(request)
+
+
+def _render_project(request: HttpRequest, *, status_code: int = 200) -> HttpResponse:
+    workspace_quota = get_workspace_quota(request.user)
 
     workspaces = (
         Workspace.objects.filter(user=request.user)
@@ -49,6 +65,7 @@ def project(request: HttpRequest) -> HttpResponse:
             "workspaces": workspaces,
             "workspace_quota": workspace_quota,
         },
+        status=status_code,
     )
 
 
