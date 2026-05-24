@@ -2,6 +2,31 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.18] - 2026-05-24
+
+### Summary
+Implementasi batas maksimal workspace (Quota Limit) per user — maksimal 10 workspace.
+
+### Added
+- Sistem Workspace Quota di server-side
+- Validasi dan penolakan create workspace jika limit tercapai
+- Tampilan sisa slot workspace di UI
+
+### Changed
+- **Server Side** (`apps/workspaces/utils.py` & `config/views.py`):
+  - Aturan quota maksimal 10 workspace per user
+  - Project view menolak create workspace baru jika limit tercapai
+  - Mengirim toast warning via Django messages
+
+- **Frontend / UI**:
+  - `templates/project.html`: Tombol create, kartu create, dan indikator kuota otomatis disable saat limit tercapai
+  - `templates/components/workspace_create_modal.html`: Modal create workspace juga terkunci jika kuota habis
+  - Menampilkan informasi **sisa slot workspace** yang tersedia
+
+### Notes
+- Batas quota diputuskan dan divalidasi di **server-side** (aman dari bypass)
+- User mendapat feedback yang jelas baik melalui toast maupun disabled UI
+- Pengalaman pengguna lebih terarah dan mencegah penyalahgunaan
 
 ## [1.4.17] - 2026-05-24
 
