@@ -2,6 +2,31 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.19] - 2026-05-24
+
+### Summary
+Mitigasi race condition pada sistem Workspace Quota — Membuat proses create workspace menjadi atomic dan thread-safe.
+
+### Fixed
+- Race condition pada pengecekan quota workspace per user
+
+### Changed
+- Create workspace dipindahkan ke **service atomik**
+- Menggunakan `select_for_update()` untuk lock row user saat pengecekan quota
+- Quota direcheck ulang di dalam transaksi database
+- Jika quota sudah penuh, mengembalikan status **409 Conflict**
+- Operasi create, rename, dan delete workspace sekarang dikenakan **rate limiting** (return **429 Too Many Requests**)
+
+### Technical Improvements
+- Proses create workspace menjadi fully atomic
+- Mencegah user membuat lebih dari 10 workspace meskipun dilakukan secara bersamaan (race condition)
+- Branch: `fix/workspace-quota-race`
+
+### Notes
+- Keamanan quota workspace jauh lebih baik
+- User experience tetap terjaga dengan response yang jelas (409 & 429)
+- Perlindungan terhadap concurrent request dan potensi abuse
+
 ## [1.4.18] - 2026-05-24
 
 ### Summary
