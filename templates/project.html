@@ -66,7 +66,7 @@
                     </button>
                   </li>
                   <li role="none">
-                    <button type="button" data-action="delete" data-workspace-id="{{ workspace.id }}"
+                    <button type="button" data-action="delete" data-workspace-id="{{ workspace.id }}" data-workspace-name="{{ workspace.name|escapejs }}"
                       class="w-full flex items-center gap-2 px-4 py-2 text-left text-red-400 hover:bg-surface/40">
                       <iconify-icon icon="tabler:trash" class="text-md text-red-400"></iconify-icon>
                       Delete
@@ -104,6 +104,8 @@
   {% include "components/workspace_create_modal.html" %}
 
   {% include "components/workspace_rename_modal.html" %}
+
+  {% include "components/workspace_delete_modal.html" %}
 
 <style>
   .font-manrope {

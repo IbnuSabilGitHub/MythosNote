@@ -13,7 +13,7 @@
         </button>
       </div>
 
-      <form method="post" class="mt-8 flex flex-col gap-6" onsubmit="return false;">
+      <form id="renameWorkspaceForm" method="post" class="mt-8 flex flex-col gap-6">
         {% csrf_token %}
         <input type="hidden" id="rename-workspace-id" name="id" value="" />
         <div class="flex flex-col gap-2">
@@ -27,7 +27,7 @@
             class="rounded border border-surface-container-high px-5 py-2.5 font-manrope text-sm font-medium text-on-surface-varian transition hover:border-outline hover:text-[#e4e1e7]">
             Cancel
           </button>
-          <button type="button" id="renameSave"
+          <button type="submit" id="renameSave"
             class="rounded bg-primary-container px-5 py-2.5 font-manrope text-sm font-semibold text-on-primary transition hover:brightness-110 active:scale-[0.98]">
             Save Changes
           </button>
