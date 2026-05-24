@@ -2,6 +2,62 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.4.17] - 2026-05-24
+
+### Summary
+Peningkatan UX pada Workspace Dashboard — Delete menggunakan modal custom dan implementasi Toast Notification.
+
+### Changed
+- Delete workspace sekarang menggunakan **modal custom** (bukan `confirm()` browser)
+- Toast notification diaktifkan untuk operasi **Create**, **Rename**, dan **Delete** workspace
+- Rename workspace memperbarui kartu secara dinamis tanpa reload halaman
+
+### Files Changed
+- `base.html`: Load script toast dengan benar (line 149) agar flash message muncul setelah redirect
+- `project.html`: Tombol delete membawa nama workspace dan include modal delete baru (line 69)
+- `workspace_delete_modal.html`: Modal delete dengan UI destructive yang lebih baik
+- `project.js`: Logic rename & delete menggunakan toast sukses/gagal
+
+### Improvements
+- Pengalaman pengguna lebih modern dan konsisten
+- Delete action lebih aman dengan konfirmasi modal custom
+- Feedback sukses/gagal langsung ditampilkan via toast
+- Rename workspace terasa lebih responsif (tanpa reload)
+
+
+## [1.4.16] - 2026-05-23
+
+### Summary
+Transformasi halaman Project menjadi **Workspace Dashboard** dengan fitur manajemen workspace lengkap (Create, Rename, Delete).
+
+### Added
+- Workspace API endpoints untuk rename dan delete workspace (`views.py` & `urls.py`)
+- Frontend logic baru di `project.js` untuk handle aksi rename & delete workspace
+- Modal UI baru:
+  - `workspace_create_modal.html`
+  - `workspace_rename_modal.html`
+- Migration baru untuk mendukung model Workspace
+
+### Changed
+- Routing: Menambahkan halaman workspace baru di `urls.py`
+- `views.py` (Project View):
+  - Bisa membuat workspace baru
+  - Redirect otomatis setelah create
+  - Mengambil daftar workspace beserta `source_count`
+- `project.html` (Template):
+  - Diubah menjadi **Workspace Dashboard**
+  - Menampilkan kartu workspace dengan informasi nama, tanggal dibuat, dan jumlah source
+  - Tombol Create Workspace
+  - Menu Rename & Delete per workspace
+  - Include modal create & rename
+  - Load JavaScript `project.js` baru
+
+### Notes
+- Halaman Project sekarang berfungsi sebagai pusat manajemen workspace
+- User experience jauh lebih baik dengan antarmuka yang lebih kaya dan interaktif
+- Data workspace ditampilkan lebih informatif (termasuk jumlah source di dalamnya)
+
 #### [1.4.15] - 2026-05-22
 ##### Summary
 Implementasi API endpoint untuk fitur Chat (berbasis *Retrieval-Augmented Generation*/RAG) dan fungsi Generate secara asinkron (*background jobs*), beserta model dan worker task terkait [1, 2].
