@@ -35,10 +35,9 @@
 
       {% for workspace in workspaces %}
       <div class="group relative flex h-48 flex-col overflow-hidden rounded-sm border border-outline-variant bg-surface-container transition hover:border-primary-fixed-dim"
-        data-workspace-card data-workspace-id="{{ workspace.id }}" data-workspace-name="{{ workspace.name|escapejs }}">
-        <a href="{% url 'workspace' %}?workspace_id={{ workspace.id }}"
-          class="absolute inset-0 z-0 rounded-sm"
-          aria-label="Open workspace {{ workspace.name }}"></a>
+        data-workspace-card data-workspace-id="{{ workspace.id }}" data-workspace-name="{{ workspace.name|escapejs }}"
+        data-workspace-url="{% url 'workspace' %}?workspace_id={{ workspace.id }}" role="link" tabindex="0"
+        aria-label="Open workspace {{ workspace.name }}">
 
         <div class="relative z-10 flex flex-1 flex-col gap-3 p-4">
           <div class="flex items-start justify-between">

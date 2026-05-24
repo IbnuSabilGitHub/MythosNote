@@ -3,7 +3,7 @@
 from django.http import HttpRequest, HttpResponse
 from django.contrib import messages
 from django.db.models import Count
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from apps.accounts.decorators import verified_email_required
@@ -39,4 +39,17 @@ def project(request: HttpRequest) -> HttpResponse:
 def workspace(request: HttpRequest) -> HttpResponse:
     """Render halaman workspace."""
 
-    return render(request, "workspace.html", {"show_navbar": False})
+    workspace_id = request.GET.get("workspace_id")
+    active_workspace = None
+
+    if workspace_id:
+        active_workspace = get_object_or_404(Workspace.objects.filter(user=request.user), id=workspace_id)
+
+    return render(
+        request,
+        "workspace.html",
+        {
+            "show_navbar": False,
+            "active_workspace": active_workspace,
+        },
+    )

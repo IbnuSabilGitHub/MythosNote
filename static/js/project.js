@@ -87,6 +87,7 @@ function updateWorkspaceCard(workspaceId, newName) {
   }
 
   card.dataset.workspaceName = newName;
+  card.setAttribute('aria-label', `Open workspace ${newName}`);
 
   const renameButton = card.querySelector('[data-action="rename"]');
   if (renameButton) {
@@ -197,6 +198,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (action === 'delete') {
       openDeleteModal(actionButton);
+    }
+  });
+
+  document.addEventListener('click', (event) => {
+    const card = event.target.closest('[data-workspace-card]');
+    if (!card) return;
+
+    if (event.target.closest('button, a, [role="menuitem"]')) return;
+
+    const targetUrl = card.dataset.workspaceUrl;
+    if (targetUrl) {
+      window.location.href = targetUrl;
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    const card = event.target.closest('[data-workspace-card]');
+    if (!card) return;
+
+    if (event.target.closest('button, a, [role="menuitem"]')) return;
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+
+    event.preventDefault();
+    const targetUrl = card.dataset.workspaceUrl;
+    if (targetUrl) {
+      window.location.href = targetUrl;
     }
   });
 
