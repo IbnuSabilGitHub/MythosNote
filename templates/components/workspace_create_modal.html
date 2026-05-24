@@ -20,6 +20,9 @@
           <input id="workspace-name" name="name" type="text" maxlength="255" placeholder="Example: Research Project Alpha"
             class="rounded border border-outline-variant bg-background px-4 py-3 font-manrope text-sm text-[#e4e1e7] outline-none transition placeholder:text-outline-variant focus:border-primary-container" />
           <p class="font-manrope text-[12px] text-outline">Leave empty to use the default name.</p>
+          <p class="font-manrope text-[12px] text-outline">
+            Sisa {{ workspace_quota.remaining }} dari {{ workspace_quota.limit }} workspace.
+          </p>
         </div>
 
         <div class="mt-2 flex items-center justify-end gap-3">
@@ -27,10 +30,17 @@
             class="rounded border border-surface-container-high px-5 py-2.5 font-manrope text-sm font-medium text-on-surface-varian transition hover:border-outline hover:text-[#e4e1e7]">
             Cancel
           </button>
+          {% if workspace_quota.can_create %}
           <button type="submit"
             class="rounded bg-primary-container px-5 py-2.5 font-manrope text-sm font-semibold text-on-primary transition hover:brightness-110 active:scale-[0.98]">
             Create Workspace
           </button>
+          {% else %}
+          <button type="button" disabled
+            class="rounded bg-primary-container px-5 py-2.5 font-manrope text-sm font-semibold text-on-primary opacity-60 cursor-not-allowed">
+            Limit Tercapai
+          </button>
+          {% endif %}
         </div>
       </form>
     </div>

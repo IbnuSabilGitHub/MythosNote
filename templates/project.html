@@ -15,22 +15,46 @@
         <p class="font-manrope text-base text-on-surface-variant">Buat workspace baru untuk mulai kumpulkan sumber, lalu masuk ke layar kerja.</p>
       </div>
 
-      <button type="button" data-modal-target="createWorkspaceModal" data-modal-toggle="createWorkspaceModal"
-        class="inline-flex items-center gap-2 self-start rounded-sm border border-primary-fixed-dim/40 bg-primary-fixed-dim px-5 py-3 font-manrope text-sm font-semibold text-neutral-950 transition hover:bg-primary-fixed-dim/90">
-        <iconify-icon icon="tabler:plus" class="text-base"></iconify-icon>
-        Buat Note Baru
-      </button>
+      <div class="flex flex-col items-start gap-3 self-start lg:items-end">
+        <div class="rounded-full border border-outline-variant bg-surface-container/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+          {{ workspace_quota.count }}/{{ workspace_quota.limit }} workspace
+        </div>
+        <div class="font-manrope text-xs text-on-surface-variant">
+          Sisa {{ workspace_quota.remaining }} slot
+        </div>
+        {% if workspace_quota.can_create %}
+        <button type="button" data-modal-target="createWorkspaceModal" data-modal-toggle="createWorkspaceModal"
+          class="inline-flex items-center gap-2 rounded-sm border border-primary-fixed-dim/40 bg-primary-fixed-dim px-5 py-3 font-manrope text-sm font-semibold text-neutral-950 transition hover:bg-primary-fixed-dim/90">
+          <iconify-icon icon="tabler:plus" class="text-base"></iconify-icon>
+          Buat Note Baru
+        </button>
+        {% else %}
+        <button type="button" disabled
+          class="inline-flex items-center gap-2 rounded-sm border border-outline-variant bg-surface-container px-5 py-3 font-manrope text-sm font-semibold text-on-surface-variant opacity-60 cursor-not-allowed">
+          <iconify-icon icon="tabler:plus" class="text-base"></iconify-icon>
+          Batas Tercapai
+        </button>
+        {% endif %}
+      </div>
     </div>
 
+    {% if not workspace_quota.can_create %}
+    <div class="rounded-lg border border-error/25 bg-error/10 px-4 py-3 font-manrope text-sm text-error/90">
+      Kamu sudah mencapai batas 10 workspace. Hapus satu workspace untuk membuat workspace baru.
+    </div>
+    {% endif %}
+
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <button type="button" data-modal-target="createWorkspaceModal" data-modal-toggle="createWorkspaceModal"
-        class="group flex h-48 flex-col items-center justify-center rounded-sm border border-dashed border-outline-variant bg-[rgba(31,31,35,0.45)] transition hover:border-primary-fixed-dim hover:bg-[rgba(31,31,35,0.68)]">
+      <button type="button"
+        {% if workspace_quota.can_create %}data-modal-target="createWorkspaceModal" data-modal-toggle="createWorkspaceModal"{% else %}disabled{% endif %}
+        class="group flex h-48 flex-col items-center justify-center rounded-sm border border-dashed border-outline-variant bg-[rgba(31,31,35,0.45)] transition {% if workspace_quota.can_create %}hover:border-primary-fixed-dim hover:bg-[rgba(31,31,35,0.68)]{% else %}opacity-55 cursor-not-allowed{% endif %}">
         <div
           class="mb-4 flex h-12 w-12 items-center justify-center rounded-sm border border-outline-variant bg-surface transition group-hover:border-primary-fixed-dim">
           <iconify-icon icon="tabler:plus" class="text-2xl text-primary-fixed-dim"></iconify-icon>
         </div>
-        <span class="font-manrope text-xs font-semibold uppercase tracking-[0.22em] text-on-surface-variant">Buat Note
-          Baru</span>
+        <span class="font-manrope text-xs font-semibold uppercase tracking-[0.22em] text-on-surface-variant">
+          {% if workspace_quota.can_create %}Buat Note Baru{% else %}Limit Tercapai{% endif %}
+        </span>
       </button>
 
       {% for workspace in workspaces %}

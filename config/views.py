@@ -8,6 +8,7 @@ from django.urls import reverse
 
 from apps.accounts.decorators import verified_email_required
 from apps.workspaces.models import Workspace
+from apps.workspaces.utils import WORKSPACE_LIMIT, get_workspace_quota
 
 
 def home(request: HttpRequest) -> HttpResponse:
@@ -20,7 +21,16 @@ def home(request: HttpRequest) -> HttpResponse:
 def project(request: HttpRequest) -> HttpResponse:
     """Render halaman proyek, hanya untuk user terverifikasi."""
 
+    workspace_quota = get_workspace_quota(request.user)
+
     if request.method == "POST":
+        if not workspace_quota["can_create"]:
+            messages.warning(
+                request,
+                f"Batas workspace per user adalah {WORKSPACE_LIMIT}. Hapus workspace dulu untuk membuat yang baru.",
+            )
+            return redirect("project")
+
         workspace_name = (request.POST.get("name") or "").strip() or "Untitled Note"
         workspace = Workspace.objects.create(user=request.user, name=workspace_name)
         messages.success(request, f"Workspace '{workspace.name}' berhasil dibuat.")
@@ -32,7 +42,14 @@ def project(request: HttpRequest) -> HttpResponse:
         .order_by("-created_at")
     )
 
-    return render(request, "project.html", {"workspaces": workspaces})
+    return render(
+        request,
+        "project.html",
+        {
+            "workspaces": workspaces,
+            "workspace_quota": workspace_quota,
+        },
+    )
 
 
 @verified_email_required
