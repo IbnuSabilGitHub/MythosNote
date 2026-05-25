@@ -20,7 +20,7 @@
             <div class="inline-flex flex-col justify-start items-start">
                 <div
                     class="h-3 justify-center text-stone-300/80 text-xs font-semibold font-['Manrope'] uppercase leading-3 tracking-wide">
-                    PROJECT ALPHA</div>
+                    {{ active_workspace.name|default:"PROJECT ALPHA"|upper }}</div>
             </div>
         </div>
         <div class="flex justify-start items-center gap-2">

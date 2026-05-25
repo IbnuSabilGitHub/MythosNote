@@ -22,6 +22,7 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('project/', views.project, name='project'),
     path('workspace/', views.workspace, name='workspace'),
+    path('', include('apps.workspaces.urls')),
     path('', include('apps.accounts.urls')),
     path('', include('apps.sources.urls')),
     path('admin/', admin.site.urls),

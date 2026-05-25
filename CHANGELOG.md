@@ -2,6 +2,137 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.10] - 2026-05-14
+
+### Summary
+Penambahan limit panjang nama workspace menjadi maksimal 40 karakter pada fitur Create dan Rename.
+
+### Added
+- Validasi panjang nama workspace (max 40 karakter) di backend dan frontend
+- Test baru untuk validasi nama workspace
+
+### Changed
+- **Backend Validation**:
+  - `apps/workspaces/utils.py`
+  - `config/views.py` (atau workspace views)
+
+- **Frontend Validation**:
+  - `project.js`
+  - `templates/components/workspace_create_modal.html`
+  - `templates/components/workspace_rename_modal.html`
+
+### Improvements
+- User tidak dapat membuat atau mengubah nama workspace melebihi 40 karakter
+- Validasi dilakukan baik di sisi server maupun client-side (lebih responsif)
+- Pesan error yang jelas jika melebihi batas
+- Unit test ditambahkan untuk memastikan validasi berjalan dengan baik
+
+## [1.4.19] - 2026-05-24
+
+### Summary
+Mitigasi race condition pada sistem Workspace Quota — Membuat proses create workspace menjadi atomic dan thread-safe.
+
+### Fixed
+- Race condition pada pengecekan quota workspace per user
+
+### Changed
+- Create workspace dipindahkan ke **service atomik**
+- Menggunakan `select_for_update()` untuk lock row user saat pengecekan quota
+- Quota direcheck ulang di dalam transaksi database
+- Jika quota sudah penuh, mengembalikan status **409 Conflict**
+- Operasi create, rename, dan delete workspace sekarang dikenakan **rate limiting** (return **429 Too Many Requests**)
+
+### Technical Improvements
+- Proses create workspace menjadi fully atomic
+- Mencegah user membuat lebih dari 10 workspace meskipun dilakukan secara bersamaan (race condition)
+- Branch: `fix/workspace-quota-race`
+
+### Notes
+- Keamanan quota workspace jauh lebih baik
+- User experience tetap terjaga dengan response yang jelas (409 & 429)
+- Perlindungan terhadap concurrent request dan potensi abuse
+
+## [1.4.18] - 2026-05-24
+
+### Summary
+Implementasi batas maksimal workspace (Quota Limit) per user — maksimal 10 workspace.
+
+### Added
+- Sistem Workspace Quota di server-side
+- Validasi dan penolakan create workspace jika limit tercapai
+- Tampilan sisa slot workspace di UI
+
+### Changed
+- **Server Side** (`apps/workspaces/utils.py` & `config/views.py`):
+  - Aturan quota maksimal 10 workspace per user
+  - Project view menolak create workspace baru jika limit tercapai
+  - Mengirim toast warning via Django messages
+
+- **Frontend / UI**:
+  - `templates/project.html`: Tombol create, kartu create, dan indikator kuota otomatis disable saat limit tercapai
+  - `templates/components/workspace_create_modal.html`: Modal create workspace juga terkunci jika kuota habis
+  - Menampilkan informasi **sisa slot workspace** yang tersedia
+
+### Notes
+- Batas quota diputuskan dan divalidasi di **server-side** (aman dari bypass)
+- User mendapat feedback yang jelas baik melalui toast maupun disabled UI
+- Pengalaman pengguna lebih terarah dan mencegah penyalahgunaan
+
+## [1.4.17] - 2026-05-24
+
+### Summary
+Peningkatan UX pada Workspace Dashboard — Delete menggunakan modal custom dan implementasi Toast Notification.
+
+### Changed
+- Delete workspace sekarang menggunakan **modal custom** (bukan `confirm()` browser)
+- Toast notification diaktifkan untuk operasi **Create**, **Rename**, dan **Delete** workspace
+- Rename workspace memperbarui kartu secara dinamis tanpa reload halaman
+
+### Files Changed
+- `base.html`: Load script toast dengan benar (line 149) agar flash message muncul setelah redirect
+- `project.html`: Tombol delete membawa nama workspace dan include modal delete baru (line 69)
+- `workspace_delete_modal.html`: Modal delete dengan UI destructive yang lebih baik
+- `project.js`: Logic rename & delete menggunakan toast sukses/gagal
+
+### Improvements
+- Pengalaman pengguna lebih modern dan konsisten
+- Delete action lebih aman dengan konfirmasi modal custom
+- Feedback sukses/gagal langsung ditampilkan via toast
+- Rename workspace terasa lebih responsif (tanpa reload)
+
+
+## [1.4.16] - 2026-05-23
+
+### Summary
+Transformasi halaman Project menjadi **Workspace Dashboard** dengan fitur manajemen workspace lengkap (Create, Rename, Delete).
+
+### Added
+- Workspace API endpoints untuk rename dan delete workspace (`views.py` & `urls.py`)
+- Frontend logic baru di `project.js` untuk handle aksi rename & delete workspace
+- Modal UI baru:
+  - `workspace_create_modal.html`
+  - `workspace_rename_modal.html`
+- Migration baru untuk mendukung model Workspace
+
+### Changed
+- Routing: Menambahkan halaman workspace baru di `urls.py`
+- `views.py` (Project View):
+  - Bisa membuat workspace baru
+  - Redirect otomatis setelah create
+  - Mengambil daftar workspace beserta `source_count`
+- `project.html` (Template):
+  - Diubah menjadi **Workspace Dashboard**
+  - Menampilkan kartu workspace dengan informasi nama, tanggal dibuat, dan jumlah source
+  - Tombol Create Workspace
+  - Menu Rename & Delete per workspace
+  - Include modal create & rename
+  - Load JavaScript `project.js` baru
+
+### Notes
+- Halaman Project sekarang berfungsi sebagai pusat manajemen workspace
+- User experience jauh lebih baik dengan antarmuka yang lebih kaya dan interaktif
+- Data workspace ditampilkan lebih informatif (termasuk jumlah source di dalamnya)
+
 #### [1.4.15] - 2026-05-22
 ##### Summary
 Implementasi API endpoint untuk fitur Chat (berbasis *Retrieval-Augmented Generation*/RAG) dan fungsi Generate secara asinkron (*background jobs*), beserta model dan worker task terkait [1, 2].
