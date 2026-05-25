@@ -11,9 +11,12 @@ from apps.workspaces.models import Workspace
 from apps.workspaces.utils import (
     WORKSPACE_LIMIT,
     WorkspaceQuotaExceeded,
+    WorkspaceNameValidationError,
+    clean_workspace_name,
     create_workspace_for_user,
     get_workspace_quota,
     is_workspace_mutation_rate_limited,
+    WORKSPACE_NAME_MAX_LENGTH,
 )
 
 
@@ -32,7 +35,11 @@ def project(request: HttpRequest) -> HttpResponse:
             messages.warning(request, "Terlalu banyak request. Coba lagi sebentar.")
             return _render_project(request, status_code=429)
 
-        workspace_name = (request.POST.get("name") or "").strip() or "Untitled Note"
+        try:
+            workspace_name = clean_workspace_name(request.POST.get("name"), default_if_blank="Untitled Note")
+        except WorkspaceNameValidationError as exc:
+            messages.error(request, exc.messages[0])
+            return _render_project(request, status_code=400)
 
         try:
             workspace = create_workspace_for_user(request.user, workspace_name)
@@ -64,6 +71,7 @@ def _render_project(request: HttpRequest, *, status_code: int = 200) -> HttpResp
         {
             "workspaces": workspaces,
             "workspace_quota": workspace_quota,
+            "workspace_name_max_length": WORKSPACE_NAME_MAX_LENGTH,
         },
         status=status_code,
     )

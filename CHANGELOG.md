@@ -2,6 +2,31 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.10] - 2026-05-14
+
+### Summary
+Penambahan limit panjang nama workspace menjadi maksimal 40 karakter pada fitur Create dan Rename.
+
+### Added
+- Validasi panjang nama workspace (max 40 karakter) di backend dan frontend
+- Test baru untuk validasi nama workspace
+
+### Changed
+- **Backend Validation**:
+  - `apps/workspaces/utils.py`
+  - `config/views.py` (atau workspace views)
+
+- **Frontend Validation**:
+  - `project.js`
+  - `templates/components/workspace_create_modal.html`
+  - `templates/components/workspace_rename_modal.html`
+
+### Improvements
+- User tidak dapat membuat atau mengubah nama workspace melebihi 40 karakter
+- Validasi dilakukan baik di sisi server maupun client-side (lebih responsif)
+- Pesan error yang jelas jika melebihi batas
+- Unit test ditambahkan untuk memastikan validasi berjalan dengan baik
+
 ## [1.4.19] - 2026-05-24
 
 ### Summary

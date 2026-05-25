@@ -14,6 +14,61 @@ async function readJsonResponse(response) {
   }
 }
 
+function getWorkspaceNameFields() {
+  return Array.from(document.querySelectorAll('[data-workspace-name-input]')).map((input) => ({
+    input,
+    mode: input.dataset.workspaceNameMode || 'rename',
+    counter: input.parentElement?.querySelector('[data-workspace-name-counter]') || null,
+  }));
+}
+
+function getWorkspaceNameMaxLength(input) {
+  const parsed = Number.parseInt(input?.getAttribute('maxlength') || '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed :40;
+}
+
+function getWorkspaceNameValidationMessage(limit) {
+  return `Nama workspace maksimal ${limit} karakter.`;
+}
+
+function syncWorkspaceNameField(field) {
+  const { input, mode, counter } = field;
+  if (!input) return true;
+
+  const limit = getWorkspaceNameMaxLength(input);
+  const value = input.value.trim();
+  const isBlank = value.length === 0;
+  const isOverLimit = value.length > limit;
+
+  if (counter) {
+    counter.textContent = `${value.length}`;
+  }
+
+  if (isOverLimit) {
+    input.setCustomValidity(getWorkspaceNameValidationMessage(limit));
+    return false;
+  }
+
+  if (mode === 'rename' && isBlank) {
+    input.setCustomValidity('Nama workspace wajib diisi.');
+    return false;
+  }
+
+  input.setCustomValidity('');
+  return true;
+}
+
+function bindWorkspaceNameValidation() {
+  getWorkspaceNameFields().forEach((field) => {
+    const { input } = field;
+    if (!input) return;
+
+    syncWorkspaceNameField(field);
+    input.addEventListener('input', () => syncWorkspaceNameField(field));
+    input.addEventListener('blur', () => syncWorkspaceNameField(field));
+  });
+}
+
 function getRenameModalFields() {
   return {
     modal: document.getElementById('renameWorkspaceModal'),
@@ -106,6 +161,11 @@ function populateRenameModal(button) {
 
   fields.id.value = button.dataset.workspaceId || '';
   fields.name.value = button.dataset.workspaceName || '';
+
+  const renameField = getWorkspaceNameFields().find((field) => field.mode === 'rename');
+  if (renameField) {
+    syncWorkspaceNameField(renameField);
+  }
 }
 
 function closeRenameModal() {
@@ -182,6 +242,8 @@ async function renameWorkspace() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  bindWorkspaceNameValidation();
+
   document.addEventListener('click', async (event) => {
     const actionButton = event.target.closest('[data-action]');
     if (!actionButton) return;
@@ -227,7 +289,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  document.getElementById('createWorkspaceForm')?.addEventListener('submit', (event) => {
+    const createField = getWorkspaceNameFields().find((field) => field.mode === 'create');
+    if (createField && !syncWorkspaceNameField(createField)) {
+      event.preventDefault();
+      createField.input.reportValidity();
+    }
+  });
+
   document.getElementById('renameWorkspaceForm')?.addEventListener('submit', async (event) => {
+    const renameField = getWorkspaceNameFields().find((field) => field.mode === 'rename');
+    if (renameField && !syncWorkspaceNameField(renameField)) {
+      event.preventDefault();
+      renameField.input.reportValidity();
+      return;
+    }
+
     event.preventDefault();
     await renameWorkspace();
   });

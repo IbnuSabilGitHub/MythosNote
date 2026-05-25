@@ -13,13 +13,16 @@
         </button>
       </div>
 
-      <form method="post" class="mt-8 flex flex-col gap-6">
+      <form id="createWorkspaceForm" method="post" class="mt-8 flex flex-col gap-6">
         {% csrf_token %}
         <div class="flex flex-col gap-2">
           <label for="workspace-name" class="font-manrope text-sm font-medium text-on-surface-varian">Workspace Name</label>
-          <input id="workspace-name" name="name" type="text" maxlength="255" placeholder="Example: Research Project Alpha"
+          <input id="workspace-name" name="name" type="text" maxlength="{{ workspace_name_max_length }}" data-workspace-name-input data-workspace-name-mode="create" placeholder="Example: Research Project Alpha"
             class="rounded border border-outline-variant bg-background px-4 py-3 font-manrope text-sm text-[#e4e1e7] outline-none transition placeholder:text-outline-variant focus:border-primary-container" />
           <p class="font-manrope text-[12px] text-outline">Leave empty to use the default name.</p>
+          <p class="font-manrope text-[12px] text-outline">
+            <span data-workspace-name-counter>0</span>/{{ workspace_name_max_length }} characters.
+          </p>
           <p class="font-manrope text-[12px] text-outline">
             Sisa {{ workspace_quota.remaining }} dari {{ workspace_quota.limit }} workspace.
           </p>

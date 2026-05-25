@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 
 from .models import Workspace
-from .utils import is_workspace_mutation_rate_limited
+from .utils import WorkspaceNameValidationError, clean_workspace_name, is_workspace_mutation_rate_limited
 
 
 class WorkspaceRenameView(APIView):
@@ -15,9 +15,10 @@ class WorkspaceRenameView(APIView):
         if is_workspace_mutation_rate_limited(request, "rename"):
             return Response({"detail": "Too many requests."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
-        name = (request.data.get("name") or "").strip()
-        if not name:
-            return Response({"name": "This field is required."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            name = clean_workspace_name(request.data.get("name"))
+        except WorkspaceNameValidationError as exc:
+            return Response({"name": exc.messages[0]}, status=status.HTTP_400_BAD_REQUEST)
 
         workspace = get_object_or_404(Workspace.objects.filter(user=request.user), id=id)
         workspace.name = name
