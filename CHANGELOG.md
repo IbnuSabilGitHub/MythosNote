@@ -2,7 +2,24 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.10] - 2026-05-14
+## [1.4.11] - 2026-05-26
+
+### Summary
+Perbaikan konfigurasi Docker dan database untuk mendukung pgvector dengan lebih stabil.
+
+### Fixed
+- `docker-compose.yml`: Menggunakan image resmi `pgvector/pgvector:pg16`
+- `apps/sources/migrations/0001_initial.py`: Mengaktifkan `VectorExtension` secara benar
+- `Dockerfile`: 
+  - Menggunakan `package-lock.json` + `npm ci` untuk instalasi dependencies frontend yang lebih konsisten
+  - Menghapus comment yang rusak pada bagian ENV
+
+### Improvements
+- Docker setup untuk PostgreSQL dengan pgvector menjadi lebih reliable
+- Proses build frontend lebih stabil dan reproducible
+- Migration vector extension berjalan sesuai best practice
+
+## [1.4.10] - 2026-05-25
 
 ### Summary
 Penambahan limit panjang nama workspace menjadi maksimal 40 karakter pada fitur Create dan Rename.
