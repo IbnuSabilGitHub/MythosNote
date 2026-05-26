@@ -75,7 +75,7 @@ graph TB
 
 | Kebutuhan | Saran | Alasan |
 |---|---|---|
-| **LLM** | Google Gemini API (gemini-2.0-flash) | Murah, konteks panjang, ada free tier |
+| **LLM** | Google Gemini API (gemini-2.0-flash), DeepSeek API (deepseek-chat) | Murah, konteks panjang, ada free tier / cost-effective |
 | **Embedding** | `text-embedding-3-small` (OpenAI) atau Gemini Embedding | Murah, performa baik |
 | **Vector Search** | **pgvector** (PostgreSQL extension) | ⭐ Tidak perlu infra tambahan |
 | **PDF Parsing** | `PyMuPDF` (fitz) | Cepat dan akurat |
@@ -509,7 +509,9 @@ DATABASE_URL=...           # otomatis dari Railway
 REDIS_URL=...              # otomatis dari Railway
 GCS_BUCKET_NAME=...
 GOOGLE_APPLICATION_CREDENTIALS_JSON=...
-AI_API_KEY=...             # Gemini / OpenAI
+AI_API_KEY=...             # Gemini / OpenAI / DeepSeek
+DEEPSEEK_API_KEY=...       # DeepSeek API Key
+DEEPSEEK_BASE_URL=...      # DeepSeek base URL (OpenAI-compatible)
 ALLOWED_HOSTS=yourdomain.railway.app
 ```
 

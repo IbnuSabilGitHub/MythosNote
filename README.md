@@ -415,10 +415,29 @@ DATABASE_URL=postgresql://mythosnote_user:your_secure_password@localhost:5432/my
 REDIS_URL=redis://localhost:6379/0
 # Untuk production: redis://:password@host:port/db
 
-# EMAIL (Optional untuk dev)
-EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
-# Production: django.core.mail.backends.smtp.EmailBackend
+# EMAIL
+EMAIL_MODE=console
+# Pilihan: console/development, smtp, brevo
 DEFAULT_FROM_EMAIL=no-reply@mythosnote.local
+EMAIL_ASYNC=false
+
+# BREVO SMTP
+# EMAIL_MODE=brevo
+# DEFAULT_FROM_EMAIL=no-reply@yourdomain.com
+# BREVO_SMTP_USER=your-brevo-smtp-login
+# BREVO_SMTP_KEY=your-brevo-smtp-key
+# BREVO_SMTP_HOST=smtp-relay.brevo.com
+# BREVO_SMTP_PORT=587
+# BREVO_SMTP_USE_TLS=true
+
+# SMTP GENERIK
+# EMAIL_MODE=smtp
+# EMAIL_HOST=smtp.example.com
+# EMAIL_PORT=587
+# EMAIL_USE_TLS=true
+# EMAIL_USE_SSL=false
+# EMAIL_HOST_USER=your-smtp-user
+# EMAIL_HOST_PASSWORD=your-smtp-password
 
 # GOOGLE CLOUD
 GCS_BUCKET_NAME=your-bucket-name
@@ -427,9 +446,11 @@ GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
 # Download dari GCP Console
 
 # AI PROVIDER
-AI_PROVIDER=gemini  # atau 'openai'
+AI_PROVIDER=gemini  # atau 'openai', 'deepseek'
 GEMINI_API_KEY=your-gemini-api-key
 OPENAI_API_KEY=your-openai-api-key
+DEEPSEEK_API_KEY=your-deepseek-api-key
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
 
 # EMBEDDING
 EMBEDDING_MODEL=text-embedding-3-small
@@ -437,6 +458,59 @@ EMBEDDING_MODEL=text-embedding-3-small
 # RATE LIMITING
 MAX_PROMPTS_PER_DAY=50
 MAX_GENERATES_PER_DAY=20
+```
+
+### Setup Email SMTP
+
+Project memakai `EMAIL_MODE` agar mudah pindah mode tanpa ubah kode.
+
+#### Development
+```bash
+EMAIL_MODE=console
+DEFAULT_FROM_EMAIL=no-reply@mythosnote.local
+```
+
+Email dicetak ke console terminal. Alias yang juga valid: `EMAIL_MODE=development`.
+
+#### Brevo
+```bash
+EMAIL_MODE=brevo
+DEFAULT_FROM_EMAIL=no-reply@yourdomain.com
+BREVO_SMTP_USER=your-brevo-smtp-login
+BREVO_SMTP_KEY=your-brevo-smtp-key
+BREVO_SMTP_HOST=smtp-relay.brevo.com
+BREVO_SMTP_PORT=587
+BREVO_SMTP_USE_TLS=true
+```
+
+Langkah setup Brevo:
+1. Login ke dashboard Brevo.
+2. Buka **SMTP & API**.
+3. Copy SMTP login ke `BREVO_SMTP_USER`, bukan `smtp-relay.brevo.com`.
+4. Generate SMTP key, lalu isi `BREVO_SMTP_KEY`.
+5. Pastikan sender/domain sudah verified.
+6. Set `DEFAULT_FROM_EMAIL` memakai sender yang verified.
+
+#### SMTP generik
+```bash
+EMAIL_MODE=smtp
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=true
+EMAIL_USE_SSL=false
+EMAIL_HOST_USER=your-smtp-user
+EMAIL_HOST_PASSWORD=your-smtp-password
+DEFAULT_FROM_EMAIL=no-reply@yourdomain.com
+```
+
+#### Test kirim email
+```bash
+python manage.py shell
+```
+
+```python
+from django.core.mail import send_mail
+send_mail("SMTP test", "Email MythosNote aktif.", None, ["you@example.com"])
 ```
 
 ### Mendapatkan API Keys
@@ -455,6 +529,12 @@ MAX_GENERATES_PER_DAY=20
 #### Gemini API
 1. Dapatkan di [Google AI Studio](https://makersuite.google.com/app/apikey)
 2. Copy API key ke `GEMINI_API_KEY`
+
+#### DeepSeek API
+1. Dapatkan di [DeepSeek Platform](https://platform.deepseek.com/)
+2. Buat API key di API Keys
+3. Copy API key ke `DEEPSEEK_API_KEY`
+4. Set `DEEPSEEK_BASE_URL=https://api.deepseek.com/v1`
 
 ---
 

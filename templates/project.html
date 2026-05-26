@@ -1,38 +1,149 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Project Page - MythosNote{% endblock %}
+{% block title %}Projects - MythosNote{% endblock %}
 
 {% block content %}
-<!-- Project Navbar -->
-<nav class="sticky top-0 z-40 border-b border-surface-container-high bg-background/80 backdrop-blur-md">
-    <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <!-- Logo -->
-        <a href="{% url 'home' %}" class="flex items-center gap-4">
-            <img src="{% static 'svg/mythosnote-logo.svg' %}" alt="MythosNote Logo" class="h-8 w-auto" />
-            <span class="font-newsreader text-2xl italic text-primary-container">
-            MythosNote
-            </span>
-        </a>
+<!-- Project Hub Container -->
+<div class="min-h-screen">
+<!-- Main Content -->
+  <div class="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 pb-24 pt-28">
+    <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+    
+      <div class="flex flex-col gap-1 items-start">
+        <h1 class="font-newsreader text-5xl font-normal text-on-surface tracking-[-0.8px] leading-tight">Note terbaru</h1>
+        <p class="font-manrope text-base text-on-surface-variant">Buat workspace baru untuk mulai kumpulkan sumber, lalu masuk ke layar kerja.</p>
+      </div>
 
-        <!-- User controls: Avatar and Logout -->
-        <div class="flex items-center gap-4">
-            <span class="text-sm font-bold text-on-surface">{{ request.user.username|escape }}</span>
-            <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit" class="px-4 py-2 text-sm text-error transition hover:text-red-400">
-                    Logout
-                </button>
-            </form>
+      <div class="flex flex-col items-start gap-3 self-start lg:items-end">
+        <div class="rounded-full border border-outline-variant bg-surface-container/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+          {{ workspace_quota.count }}/{{ workspace_quota.limit }} workspace
         </div>
+        <div class="font-manrope text-xs text-on-surface-variant">
+          Sisa {{ workspace_quota.remaining }} slot
+        </div>
+        {% if workspace_quota.can_create %}
+        <button type="button" data-modal-target="createWorkspaceModal" data-modal-toggle="createWorkspaceModal"
+          class="inline-flex items-center gap-2 rounded-sm border border-primary-fixed-dim/40 bg-primary-fixed-dim px-5 py-3 font-manrope text-sm font-semibold text-neutral-950 transition hover:bg-primary-fixed-dim/90">
+          <iconify-icon icon="tabler:plus" class="text-base"></iconify-icon>
+          Buat Note Baru
+        </button>
+        {% else %}
+        <button type="button" disabled
+          class="inline-flex items-center gap-2 rounded-sm border border-outline-variant bg-surface-container px-5 py-3 font-manrope text-sm font-semibold text-on-surface-variant opacity-60 cursor-not-allowed">
+          <iconify-icon icon="tabler:plus" class="text-base"></iconify-icon>
+          Batas Tercapai
+        </button>
+        {% endif %}
+      </div>
     </div>
-</nav>
 
-<!-- Main content -->
-<div class="flex items-center justify-center min-h-[calc(100vh-80px)]">
-    <div class="text-center space-y-4">
-        <h1 class="text-4xl font-newsreader font-bold text-on-surface">Welcome to the project page!</h1>
-        <p class="text-outline-variant text-lg">Logged in as: <span class="font-bold text-primary">{{ request.user.email|escape }}</span></p>
+    {% if not workspace_quota.can_create %}
+    <div class="rounded-lg border border-error/25 bg-error/10 px-4 py-3 font-manrope text-sm text-error/90">
+      Kamu sudah mencapai batas 10 workspace. Hapus satu workspace untuk membuat workspace baru.
     </div>
-</div>
+    {% endif %}
+
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <button type="button"
+        {% if workspace_quota.can_create %}data-modal-target="createWorkspaceModal" data-modal-toggle="createWorkspaceModal"{% else %}disabled{% endif %}
+        class="group flex h-48 flex-col items-center justify-center rounded-sm border border-dashed border-outline-variant bg-[rgba(31,31,35,0.45)] transition {% if workspace_quota.can_create %}hover:border-primary-fixed-dim hover:bg-[rgba(31,31,35,0.68)]{% else %}opacity-55 cursor-not-allowed{% endif %}">
+        <div
+          class="mb-4 flex h-12 w-12 items-center justify-center rounded-sm border border-outline-variant bg-surface transition group-hover:border-primary-fixed-dim">
+          <iconify-icon icon="tabler:plus" class="text-2xl text-primary-fixed-dim"></iconify-icon>
+        </div>
+        <span class="font-manrope text-xs font-semibold uppercase tracking-[0.22em] text-on-surface-variant">
+          {% if workspace_quota.can_create %}Buat Note Baru{% else %}Limit Tercapai{% endif %}
+        </span>
+      </button>
+
+      {% for workspace in workspaces %}
+      <div class="group relative flex h-48 flex-col overflow-hidden rounded-sm border border-outline-variant bg-surface-container transition hover:border-primary-fixed-dim"
+        data-workspace-card data-workspace-id="{{ workspace.id }}" data-workspace-name="{{ workspace.name|escapejs }}"
+        data-workspace-url="{% url 'workspace' %}?workspace_id={{ workspace.id }}" role="link" tabindex="0"
+        aria-label="Open workspace {{ workspace.name }}">
+
+        <div class="relative z-10 flex flex-1 flex-col gap-3 p-4">
+          <div class="flex items-start justify-between">
+            <div class="flex h-8 w-8 items-center justify-center rounded-sm border border-outline-variant bg-surface">
+              <iconify-icon icon="tabler:folder" class="text-primary-fixed-dim"></iconify-icon>
+            </div>
+            <div class="relative z-20">
+              <button type="button"
+                class="p-1 text-on-surface-variant hover:text-primary-fixed-dim"
+                data-dropdown-toggle="workspaceMenu-{{ workspace.id }}"
+                data-dropdown-placement="bottom-end"
+                aria-expanded="false">
+                <iconify-icon icon="tabler:dots-vertical" class="w-4 h-4"></iconify-icon>
+              </button>
+
+              <div id="workspaceMenu-{{ workspace.id }}"
+                class="z-50 hidden w-44 rounded-lg border border-outline-variant bg-surface-container py-1 shadow-lg"
+                role="menu" aria-hidden="true">
+                <ul class="py-1 text-sm text-on-surface-variant" role="none">
+                  <li role="none">
+                    <button type="button" data-action="rename" data-workspace-id="{{ workspace.id }}" data-workspace-name="{{ workspace.name|escapejs }}" data-modal-target="renameWorkspaceModal" data-modal-toggle="renameWorkspaceModal"
+                      class="w-full flex items-center gap-2 px-4 py-2 text-left hover:bg-surface/40 ">
+                      <iconify-icon icon="tabler:edit" class="text-md text-on-surface-variant"></iconify-icon>
+                      Rename
+                    </button>
+                  </li>
+                  <li role="none">
+                    <button type="button" data-action="delete" data-workspace-id="{{ workspace.id }}" data-workspace-name="{{ workspace.name|escapejs }}"
+                      class="w-full flex items-center gap-2 px-4 py-2 text-left text-red-400 hover:bg-surface/40">
+                      <iconify-icon icon="tabler:trash" class="text-md text-red-400"></iconify-icon>
+                      Delete
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <h3 class="line-clamp-2 font-newsreader text-2xl font-normal text-on-surface">
+            {{ workspace.name }}
+          </h3>
+        </div>
+
+        <div class="relative z-10 flex items-center justify-between border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2">
+          <span class="rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+            {{ workspace.created_at|date:"d M" }} - {{ workspace.source_count|default:"0" }} sources
+          </span>
+          <iconify-icon icon="tabler:arrow-right" class="h-4 w-4 text-on-surface-variant transition group-hover:text-primary-fixed-dim"></iconify-icon>
+        </div>
+      </div>
+
+      {% empty %}
+      <div class="flex h-48 flex-col items-center justify-center rounded-sm border border-dashed border-outline-variant bg-surface-container/50 px-6 text-center">
+        <div class="mb-3 flex h-12 w-12 items-center justify-center rounded-sm border border-outline-variant bg-surface">
+          <iconify-icon icon="tabler:book-2" class="text-primary-fixed-dim"></iconify-icon>
+        </div>
+        <p class="font-newsreader text-2xl font-normal text-on-surface">Belum ada note</p>
+        <p class="mt-2 font-manrope text-sm text-on-surface-variant">Klik tombol buat note untuk mulai workspace pertama.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% include "components/workspace_create_modal.html" %}
+
+  {% include "components/workspace_rename_modal.html" %}
+
+  {% include "components/workspace_delete_modal.html" %}
+
+<style>
+  .font-manrope {
+    font-family: "Manrope", sans-serif;
+  }
+
+  .font-grotesk {
+    font-family: "Space Grotesk", sans-serif;
+  }
+
+  .font-newsreader {
+    font-family: "Newsreader", serif;
+  }
+</style>
+{% block extra_js %}
+<script src="{% static 'js/project.js' %}"></script>
+{% endblock %}
 {% endblock %}

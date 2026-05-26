@@ -1796,7 +1796,7 @@ Jika ingin menghindari blocking saat kirim email (signup, resend verification, r
    python manage.py rqworker
    ```
 
-3. Pastikan backend email sudah valid (SMTP/SendGrid/Console backend).
+3. Pastikan mode email sudah valid (`console`, `smtp`, atau `brevo`).
 
 **Catatan:**
 - Mode async tetap memakai isi email yang sama; hanya cara pengirimannya yang dipindah ke queue.
@@ -1810,18 +1810,29 @@ Jika ingin menghindari blocking saat kirim email (signup, resend verification, r
 
 **Possible causes:**
 
-1. **Email backend tidak dikonfigurasi**
-   ```python
-   # settings.py
-   EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Development
-   # atau
-   EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Production
-   EMAIL_HOST = 'smtp.gmail.com'
-   EMAIL_PORT = 587
-   EMAIL_USE_TLS = True
-   EMAIL_HOST_USER = 'your-email@gmail.com'
-   EMAIL_HOST_PASSWORD = 'your-app-password'
-   DEFAULT_FROM_EMAIL = 'noreply@mythosnote.com'
+1. **Email mode tidak dikonfigurasi**
+   ```bash
+   # Development: print email ke console
+   EMAIL_MODE=console
+   DEFAULT_FROM_EMAIL=no-reply@mythosnote.local
+
+   # Brevo SMTP
+   EMAIL_MODE=brevo
+   DEFAULT_FROM_EMAIL=no-reply@yourdomain.com
+   BREVO_SMTP_USER=your-brevo-smtp-login
+   BREVO_SMTP_KEY=your-brevo-smtp-key
+   BREVO_SMTP_HOST=smtp-relay.brevo.com
+   BREVO_SMTP_PORT=587
+   BREVO_SMTP_USE_TLS=true
+
+   # SMTP generik
+   EMAIL_MODE=smtp
+   EMAIL_HOST=smtp.gmail.com
+   EMAIL_PORT=587
+   EMAIL_USE_TLS=true
+   EMAIL_HOST_USER=your-email@gmail.com
+   EMAIL_HOST_PASSWORD=your-app-password
+   DEFAULT_FROM_EMAIL=noreply@mythosnote.com
    ```
 
 2. **Redis/RQ tidak running (jika pakai async email)**

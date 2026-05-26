@@ -2,6 +2,447 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.11] - 2026-05-26
+
+### Summary
+Perbaikan konfigurasi Docker dan database untuk mendukung pgvector dengan lebih stabil.
+
+### Fixed
+- `docker-compose.yml`: Menggunakan image resmi `pgvector/pgvector:pg16`
+- `apps/sources/migrations/0001_initial.py`: Mengaktifkan `VectorExtension` secara benar
+- `Dockerfile`: 
+  - Menggunakan `package-lock.json` + `npm ci` untuk instalasi dependencies frontend yang lebih konsisten
+  - Menghapus comment yang rusak pada bagian ENV
+
+### Improvements
+- Docker setup untuk PostgreSQL dengan pgvector menjadi lebih reliable
+- Proses build frontend lebih stabil dan reproducible
+- Migration vector extension berjalan sesuai best practice
+
+## [1.4.10] - 2026-05-25
+
+### Summary
+Penambahan limit panjang nama workspace menjadi maksimal 40 karakter pada fitur Create dan Rename.
+
+### Added
+- Validasi panjang nama workspace (max 40 karakter) di backend dan frontend
+- Test baru untuk validasi nama workspace
+
+### Changed
+- **Backend Validation**:
+  - `apps/workspaces/utils.py`
+  - `config/views.py` (atau workspace views)
+
+- **Frontend Validation**:
+  - `project.js`
+  - `templates/components/workspace_create_modal.html`
+  - `templates/components/workspace_rename_modal.html`
+
+### Improvements
+- User tidak dapat membuat atau mengubah nama workspace melebihi 40 karakter
+- Validasi dilakukan baik di sisi server maupun client-side (lebih responsif)
+- Pesan error yang jelas jika melebihi batas
+- Unit test ditambahkan untuk memastikan validasi berjalan dengan baik
+
+## [1.4.19] - 2026-05-24
+
+### Summary
+Mitigasi race condition pada sistem Workspace Quota — Membuat proses create workspace menjadi atomic dan thread-safe.
+
+### Fixed
+- Race condition pada pengecekan quota workspace per user
+
+### Changed
+- Create workspace dipindahkan ke **service atomik**
+- Menggunakan `select_for_update()` untuk lock row user saat pengecekan quota
+- Quota direcheck ulang di dalam transaksi database
+- Jika quota sudah penuh, mengembalikan status **409 Conflict**
+- Operasi create, rename, dan delete workspace sekarang dikenakan **rate limiting** (return **429 Too Many Requests**)
+
+### Technical Improvements
+- Proses create workspace menjadi fully atomic
+- Mencegah user membuat lebih dari 10 workspace meskipun dilakukan secara bersamaan (race condition)
+- Branch: `fix/workspace-quota-race`
+
+### Notes
+- Keamanan quota workspace jauh lebih baik
+- User experience tetap terjaga dengan response yang jelas (409 & 429)
+- Perlindungan terhadap concurrent request dan potensi abuse
+
+## [1.4.18] - 2026-05-24
+
+### Summary
+Implementasi batas maksimal workspace (Quota Limit) per user — maksimal 10 workspace.
+
+### Added
+- Sistem Workspace Quota di server-side
+- Validasi dan penolakan create workspace jika limit tercapai
+- Tampilan sisa slot workspace di UI
+
+### Changed
+- **Server Side** (`apps/workspaces/utils.py` & `config/views.py`):
+  - Aturan quota maksimal 10 workspace per user
+  - Project view menolak create workspace baru jika limit tercapai
+  - Mengirim toast warning via Django messages
+
+- **Frontend / UI**:
+  - `templates/project.html`: Tombol create, kartu create, dan indikator kuota otomatis disable saat limit tercapai
+  - `templates/components/workspace_create_modal.html`: Modal create workspace juga terkunci jika kuota habis
+  - Menampilkan informasi **sisa slot workspace** yang tersedia
+
+### Notes
+- Batas quota diputuskan dan divalidasi di **server-side** (aman dari bypass)
+- User mendapat feedback yang jelas baik melalui toast maupun disabled UI
+- Pengalaman pengguna lebih terarah dan mencegah penyalahgunaan
+
+## [1.4.17] - 2026-05-24
+
+### Summary
+Peningkatan UX pada Workspace Dashboard — Delete menggunakan modal custom dan implementasi Toast Notification.
+
+### Changed
+- Delete workspace sekarang menggunakan **modal custom** (bukan `confirm()` browser)
+- Toast notification diaktifkan untuk operasi **Create**, **Rename**, dan **Delete** workspace
+- Rename workspace memperbarui kartu secara dinamis tanpa reload halaman
+
+### Files Changed
+- `base.html`: Load script toast dengan benar (line 149) agar flash message muncul setelah redirect
+- `project.html`: Tombol delete membawa nama workspace dan include modal delete baru (line 69)
+- `workspace_delete_modal.html`: Modal delete dengan UI destructive yang lebih baik
+- `project.js`: Logic rename & delete menggunakan toast sukses/gagal
+
+### Improvements
+- Pengalaman pengguna lebih modern dan konsisten
+- Delete action lebih aman dengan konfirmasi modal custom
+- Feedback sukses/gagal langsung ditampilkan via toast
+- Rename workspace terasa lebih responsif (tanpa reload)
+
+
+## [1.4.16] - 2026-05-23
+
+### Summary
+Transformasi halaman Project menjadi **Workspace Dashboard** dengan fitur manajemen workspace lengkap (Create, Rename, Delete).
+
+### Added
+- Workspace API endpoints untuk rename dan delete workspace (`views.py` & `urls.py`)
+- Frontend logic baru di `project.js` untuk handle aksi rename & delete workspace
+- Modal UI baru:
+  - `workspace_create_modal.html`
+  - `workspace_rename_modal.html`
+- Migration baru untuk mendukung model Workspace
+
+### Changed
+- Routing: Menambahkan halaman workspace baru di `urls.py`
+- `views.py` (Project View):
+  - Bisa membuat workspace baru
+  - Redirect otomatis setelah create
+  - Mengambil daftar workspace beserta `source_count`
+- `project.html` (Template):
+  - Diubah menjadi **Workspace Dashboard**
+  - Menampilkan kartu workspace dengan informasi nama, tanggal dibuat, dan jumlah source
+  - Tombol Create Workspace
+  - Menu Rename & Delete per workspace
+  - Include modal create & rename
+  - Load JavaScript `project.js` baru
+
+### Notes
+- Halaman Project sekarang berfungsi sebagai pusat manajemen workspace
+- User experience jauh lebih baik dengan antarmuka yang lebih kaya dan interaktif
+- Data workspace ditampilkan lebih informatif (termasuk jumlah source di dalamnya)
+
+#### [1.4.15] - 2026-05-22
+##### Summary
+Implementasi API endpoint untuk fitur Chat (berbasis *Retrieval-Augmented Generation*/RAG) dan fungsi Generate secara asinkron (*background jobs*), beserta model dan worker task terkait [1, 2].
+
+##### Added
+*  **API Endpoints** (`views.py` & `urls.py`):
+    *  **Chat API** (`POST /api/workspace/<id>/chat/`): Endpoint untuk percakapan AI. Menerima pesan pengguna, membangun konteks secara dinamis dari *source chunks* yang berstatus `ready`, memanggil `ChatProvider.chat_complete`, dan mengembalikan respons [3].
+    *  **Generate API** (`POST /api/workspace/<id>/generate/`): Endpoint untuk memicu aksi *quick generate* (seperti ringkasan, tabel, kuis, atau mindmap). Melakukan validasi *action*, membuat objek `GenerateJob` dengan status `queued`, memasukkannya ke antrean RQ (enqueue), dan langsung mengembalikan respons berisi `id` dan `status` dari job tersebut [2, 3].
+*  **Model Database** (`models.py`):
+    *  Menambahkan model *job* (seperti `GenerateJob`) untuk melacak status eksekusi tugas asinkron (misalnya: *queued*, *processing*, *success*, *failed*) [3].
+*  **Async Background Tasks** (`tasks.py`):
+    *  Implementasi fungsi `process_generate_job(job_id, prompt)` sebagai antrean pekerja (worker) dengan alur kerja berikut:
+        *  Mengubah status `GenerateJob` menjadi `processing`.
+        *  Memanggil `ChatProvider.chat_complete` dengan *prompt* yang telah disiapkan.
+        *  Memperbarui status job menjadi `success` beserta hasil akhirnya, atau menjadi `failed` beserta `error_message` jika terjadi kegagalan [2].
+
+##### Files Affected
+**Modified/Added:**
+*  `views.py` *(modul terkait workspace/chat)*
+*  `urls.py` *(penambahan routing endpoint baru)*
+*  `models.py` *(penambahan job model)*
+*  `tasks.py` *(implementasi async processing untuk generate)*
+
+##### Notes
+*  Proses chat dengan konteks dokumen berjalan secara sinkron/langsung memanggil provider, 
+
+## [1.4.14] - 2026-05-22
+
+### Changed
+- Refactor: Pisahkan berkas JavaScript di `static/js/` berdasarkan tanggung jawab (Separation of Concerns). Perubahan utama:
+  - Pindah `static/js/auth-validation.js` → `static/js/auth/validation.js`
+  - Pindah `static/js/components.js` → `static/js/ui/loading-button.js`
+  - Pindah `static/js/toast.js` → `static/js/toast/manager.js`
+  - Pindah `static/js/messages.js` → `static/js/toast/django-messages.js`
+  - Memecah `static/js/workspace.js` menjadi modul: `static/js/workspace/sources.js`, `static/js/workspace/layout.js`, `static/js/workspace/selection.js`, `static/js/workspace/index.js`
+  - Memperbarui template untuk memuat jalur skrip baru dan menghapus pemanggilan berkas lama.
+
+
+#### [1.4.13] - 2026-05-22
+##### Summary
+Implementasi *frontend* `WorkspaceUI` untuk mendukung interaksi manajemen dokumen (*source*) secara *real-time* di antarmuka pengguna.
+
+##### Added
+*  **Frontend Class** (`workspace.js`):
+    *  Membuat *class* terpadu `WorkspaceUI` yang akan diinisialisasi otomatis saat halaman dimuat (sebagai global instance `workspaceUI`).
+    *  Membaca `workspaceId` secara otomatis dari atribut `data-workspace-id` pada DOM atau melalui parameter URL.
+*  **Metode Utama (`WorkspaceUI`)**:
+    *  `fetchSources()`: Mengambil daftar *source* (GET) dan meneruskannya ke fungsi render.
+    *  `renderSourceList()`: Membuat elemen daftar dokumen yang dilengkapi dengan badge status dan tombol hapus.
+    *  `uploadSource(formData)`: Mengirim file via POST, memperbarui daftar, dan langsung memicu proses *polling* status.
+    *  `pollSourceStatus(sourceId)`: Melakukan *polling* status setiap 2 detik hingga dokumen berstatus `ready` atau `failed`. Mencegah duplikasi *polling* menggunakan struktur data `Map`.
+    *  `deleteSource(sourceId)`: Mengirim permintaan DELETE dengan UX animasi penghapusan yang mulus (*smooth removal*), disertai fitur *rollback* (mengembalikan elemen) jika permintaan gagal.
+*  **Fitur & Penanganan State (UI/UX)**:
+    *  **States**: Penanganan state dinamis mencakup *Loading* (dengan animasi *spinner*), *Empty* (pesan "No sources uploaded"), dan *Error* (tombol *retry* beserta notifikasi *toast*).
+    *  **Styling**: Kelas CSS dinamis berdasarkan status (`.status-pending`, `.status-ready`, `.status-failed`).
+    *  **Keamanan**: Implementasi *HTML escaping* secara internal untuk menghindari kerentanan XSS pada render data pengguna.
+
+##### Files Affected
+**Added/Modified:**
+*  `static/js/workspace.js` *(atau path javascript terkait)*
+
+#### [1.4.12] - 2026-05-22
+##### Summary
+Penyempurnaan API `sources` untuk list, upload, delete, dan status pemrosesan.
+
+##### Changed
+*  `apps/sources/views.py`: Alur upload, list, status, dan delete dirapikan; validasi upload dibuat lebih ketat dan antrian task ditangani lebih aman.
+*  `apps/sources/serializers.py`: Serializer dibuat lebih ringkas untuk respons daftar dan detail source.
+*  `apps/sources/tasks.py`: Proses pemrosesan source diperkuat agar lebih aman untuk storage lokal maupun remote.
+*  `apps/sources/urls.py`: Routing disesuaikan dengan struktur endpoint baru.
+
+#### [1.4.11] - 2026-05-21
+##### Summary
+Implementasi API endpoint untuk membaca daftar, detail, dan status `Source` (dokumen) beserta fungsionalitas penghapusan file.
+
+##### Added
+*  **Views API Manajemen Source** (`apps/sources/views.py`):
+    *  `SourceListView`: Endpoint untuk menampilkan daftar *source* milik pengguna (*user-filtered*). Mendukung paginasi (10 item per halaman) dan filter tambahan berdasarkan `workspace_id` dan `status`.
+    *  `SourceDetailView`: Endpoint untuk mengambil informasi detail (`GET`) dan menghapus (`DELETE`) *source*. Aksi `DELETE` secara otomatis akan menghapus file *raw* mentah dari sistem *storage*.
+    *  `SourceStatusView`: Endpoint spesifik untuk mengecek status pemrosesan dokumen.
+*  **Serializers** (`apps/sources/serializers.py`):
+    *  Menambahkan serializer dengan format ringkas (summary).
+    *  Menambahkan serializer khusus untuk memuat status dokumen.
+*  **Routing URL**:
+    *  Menambahkan URL *routes* baru untuk view di atas pada `apps/sources/urls.py`.
+
+##### Changed
+*  Memperbarui `urls.py` utama proyek untuk me-*mount* URL aplikasi `sources`.
+
+##### Files Affected
+**Modified:**
+*  `apps/sources/views.py`
+*  `apps/sources/serializers.py`
+*  `apps/sources/urls.py`
+*  `config/urls.py` *(atau file root urls tempat mount dilakukan)*
+
+#### [1.4.10] - 2026-05-21
+##### Summary
+Penambahan dukungan `DeepSeek` sebagai opsi Chat/Completion provider (kompatibel dengan SDK OpenAI via `base_url`).
+
+##### Added
+*  **Chat Provider** (`apps/sources/providers.py`):
+  - `DeepSeekChatProvider`: Chat/completion provider yang membungkus SDK `openai.OpenAI` dengan `base_url` yang dapat dikonfigurasi untuk endpoint DeepSeek.
+*  **Environment variables**: `DEEPSEEK_API_KEY` dan `DEEPSEEK_BASE_URL` ditambahkan ke `.env.example` dan `config/settings.py`.
+*  **Tests**: Penambahan test untuk pemilihan provider `deepseek` dan validasi `DEEPSEEK_API_KEY`.
+
+##### Changed
+*  `config/settings.py`: Menambahkan pembacaan `DEEPSEEK_API_KEY` dan `DEEPSEEK_BASE_URL`, serta validasi `AI_PROVIDER` untuk menerima `deepseek`.
+*  `README.md` & `Architecture.md`: Dokumentasi konfigurasi DeepSeek ditambahkan.
+
+##### Files Affected
+**Added / Modified:**
+*  `apps/sources/providers.py`
+*  `config/settings.py`
+*  `.env.example` / `.env`
+*  `README.md`
+*  `apps/sources/tests.py`
+
+
+#### [1.4.9] - 2026-05-21
+##### Summary
+Implementasi sistem Embedding Provider (OpenAI & Gemini) untuk menggantikan placeholder dan mendukung integrasi pembuatan vektor dokumen.
+
+##### Added
+*  **Modul Embeddings** (`apps/sources/embeddings.py`):
+    *  `BaseEmbeddingProvider`: Abstract Base Class (ABC) yang mendefinisikan interface standar `get_embedding(text) -> list[float]`.
+    *  `OpenAIEmbeddingProvider`: Implementasi provider menggunakan model `text-embedding-3-small` (membutuhkan `OPENAI_API_KEY`).
+    *  `GeminiEmbeddingProvider`: Implementasi provider menggunakan model `models/embedding-001` (membutuhkan `GEMINI_API_KEY`).
+    *  `EmbeddingProvider`: *Lazy default instance* yang memuat provider secara dinamis berdasarkan konfigurasi `EMBEDDING_PROVIDER` (pilihan: `openai` atau `gemini`, default: `openai`).
+*  Variabel environment pendukung ditambahkan ke `.env.example` (`EMBEDDING_PROVIDER=openai`).
+
+##### Changed
+*  `config/settings.py`: Menambahkan pemuatan konfigurasi `OPENAI_API_KEY`, `GEMINI_API_KEY`, dan `EMBEDDING_PROVIDER` dari environment variables.
+*  `apps/sources/tasks.py`: Menghapus fungsi generator embedding *placeholder* lama dan menggantinya dengan import `EmbeddingProvider` langsung dari modul `embeddings`.
+*  `requirements.txt`: Menambahkan pustaka resmi `openai` dan `google-generativeai` ke dalam daftar dependensi proyek.
+
+##### Files Affected
+**Added:**
+*  `apps/sources/embeddings.py`
+
+**Modified:**
+*  `config/settings.py`
+*  `apps/sources/tasks.py`
+*  `requirements.txt`
+*  `.env.example`
+
+#### [1.4.8] - 2026-05-21
+##### Summary
+Implementasi background worker untuk ekstraksi teks, chunking, dan embedding dokumen menggunakan RQ task (Branch: `feat/sources-worker-chunking`).
+
+##### Added
+-  **Fungsi Utama**: `process_source(source_id)` diimplementasikan sebagai RQ task dengan alur kerja berikut:
+    -  Mengambil objek `Source` berdasarkan ID.
+    -  Update state dokumen secara real-time (set `status='processing'`, `progress=0`, dan update persentase seiring berjalannya chunking).
+    -  Mengunduh file dari storage menggunakan `default_storage`.
+    -  Ekstraksi teks spesifik format: menggunakan PyMuPDF (fitz) untuk PDF, dan pembacaan teks langsung untuk .md dan .txt.
+    -  Membuat objek `SourceChunk` (awal `status='pending'`, kemudian `ready`) yang memuat hasil chunking teks dan vektor embedding.
+    -  Menyimpan traceback string ke `error_message` dan menetapkan `status='failed'` jika terjadi kegagalan sistem.
+    -  Menambahkan blok guard `if __name__ == '__main__':` dengan `django.setup()` agar task bisa dites secara standalone.
+-  **Helper Functions**: 
+    -  `EmbeddingProvider.get_embedding()`: Menghasilkan 768-dimensi embedding (saat ini menggunakan *placeholder* berbasis hash).
+    -  `normalize_text()`: Berfungsi untuk menormalisasi teks dengan menghapus whitespace ganda.
+    -  `count_tokens_approx()`: Melakukan estimasi jumlah token secara kasar (panjang karakter / 4).
+    -  `chunk_text(text, max_tokens=500, overlap=50)`: Algoritma pemecah teks hierarkis berdasarkan paragraf → kalimat → kata.
+    -  `extract_text_from_file()`: Melakukan ekstraksi teks dengan validasi berbasis MIME type.
+
+##### Files Changed
+-  `/workspace/apps/sources/tasks.py`
+
+##### Notes
+-  Sistem sengaja **tidak menghapus** file mentah dari storage setelah proses ekstraksi selesai.
+-  Format file yang tidak dikenali atau aneh akan dicatat melalui penanganan error (error logging).
+-  Penghitungan token (tokenization) masih berupa estimasi kasar dan generator embedding masih menggunakan placeholder yang nantinya perlu diganti dengan API/Model Embedding yang sesungguhnya.
+
+## [1.4.7] - 2026-06-21
+
+### Added
+- **Source Upload API**: Endpoint `POST /api/sources/upload/` untuk upload file source ke workspace.
+  - Validasi: workspace ownership, ekstensi file (.pdf/.md/.txt), maks 20MB, penolakan duplikat nama file.
+  - File disimpan ke Django storage, objek Source dibuat dengan status `pending`.
+  - Enqueue job RQ (`apps.sources.tasks.process_source`) untuk pemrosesan async.
+  - Serializer Source, task RQ placeholder, app configs untuk sources/workspaces.
+
+## [1.4.6] - 2026-05-20
+
+### Summary
+Refactor struktur direktori project — Memindahkan app `accounts` ke dalam folder `apps/`.
+
+### Changed
+- **Directory Structure Refactor**:
+  - Memindahkan seluruh aplikasi `accounts` dari root project ke `apps/accounts/`
+  - Menghapus folder `accounts/` lama (semua file di-move)
+  - Memperbarui semua import dan referensi ke app accounts
+
+### Files Affected
+**Modified:**
+- `config/settings.py` (update `INSTALLED_APPS`, import paths, dll)
+- `config/urls.py`
+- `config/views.py`
+
+**Moved:**
+- `accounts/` → `apps/accounts/`
+
+### Notes
+- Semua import lama sudah diperbarui
+- Struktur project sekarang lebih rapi dan scalable (mengikuti best practice Django untuk multiple apps)
+- Siap menampung app baru di dalam folder `apps/` (contoh: `sources`, `workspaces`, dll)
+
+## [1.4.5] - 2026-05-20
+### Summary
+Implementasi model utama `Source` dan `SourceChunk` untuk sistem manajemen dokumen dan RAG.
+
+### Added
+- `apps/sources/models.py`:
+  - Model **Source**: Menyimpan informasi file sumber (dokumen) yang diupload user
+  - Model **SourceChunk**: Menyimpan potongan-potongan teks (chunk) beserta embedding vector
+
+## [1.4.4] - 2026-05-14
+
+### Summary
+Implementasi perbaikan keamanan Authentication Flow (Anti-Enumeration & Rate Limiting).
+
+### Fixed / Improved
+- Signup enumeration protection: response signup dibuat generic
+- Resend verification button disembunyikan setelah signup (mencegah user enumeration)
+- Login timing padding untuk mengurangi timing attack
+- Rate limiting counters dibuat lebih atomic
+- Login lockout per IP address
+- Failed login counter di-lock setelah batas tertentu
+- Production cookies di-hardening (security improvement)
+- Penambahan unique constraint pada field email (migration 0004)
+
+### Files Changed
+- `accounts/forms.py`
+- `accounts/views.py`
+- `accounts/backends.py`
+- `accounts/utils.py`
+- `templates/auth/email_unverified.html`
+- `config/settings.py`
+- Migration `0004_auth_user_email_unique_ci.py`
+
+### Tradeoffs / Catatan
+- Resend verifikasi disembunyikan setelah signup untuk mencegah enumeration
+- User masih bisa melakukan resend setelah login
+- Cookies di-prod menggunakan setting keamanan ketat (HTTPS strict)
+- Migration email unique akan gagal jika ada duplikat email → harus dibersihkan dulu
+- Lockout per-IP efektif mengurangi brute force, namun serangan terdistribusi tetap memerlukan rate limit di layer edge (nginx/cloudflare)
+
+## [1.4.3] - 2026-05-19
+### Summary
+Pembaruan UI halaman `/project` menjadi project hub dengan tampilan notebook yang lebih rapi. Perubahan ini masih sebatas antarmuka; aksi buat, buka, dan menu item belum terhubung ke fitur backend.
+
+### Changed
+- `templates/project.html`: mengganti layout lama menjadi grid notebook, empty state visual, dan header yang lebih fokus ke workspace.
+- `templates/base.html`: navbar dibuat mengikuti tipe halaman, termasuk avatar ringkas di halaman project.
+- `accounts/context_processors.py` dan `config/settings.py`: menambahkan context processor navbar agar template bisa membedakan tampilan home, project, dan auth.
+- `config/views.py`: menghapus flag navbar manual dari view project karena kontrol tampilan pindah ke context processor.
+
+### Notes
+- UI baru ini masih placeholder untuk alur kerja project; interaksi data dan aksi tombol belum aktif.
+
+
+## [1.4.2] - 2026-05-16
+### Summary
+Penerapan SMTP menggunakan Bervo untuk pengiriman email (verifikasi & reset).
+
+### Added
+- Konfigurasi SMTP Bervo di `config/settings.py` (env vars: `BERVO_*`).
+- Utilitas pengiriman email di `accounts/utils.py` menggunakan Bervo.
+
+### Changed
+- Pengiriman email verifikasi dan reset diarahkan ke Bervo SMTP.
+
+## [1.4.1] - 2026-05-16
+### Summary
+Implementasi reusable loading button helper untuk meningkatkan UX saat submit form.
+
+### Added
+- `components.js`: Helper reusable `data-loading-button` untuk tombol loading state.
+
+### Changed
+- Menambahkan loading button behavior pada halaman:
+  - `signin.html`
+  - `signup.html`
+  - `forgot_password.html`
+  - `email_unverified.html`
+  - `password_reset_confirm.html`
+
+### Features
+- Tombol otomatis disable saat proses berjalan
+- Label tombol berubah menjadi teks loading (bisa dikustom via `data-loading-text`)
+- Mudah digunakan di tombol lain cukup dengan menambahkan atribut `data-loading-button`
+
 ## [1.4.0] - 2026-05-14
 
 ### Summary

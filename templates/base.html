@@ -6,6 +6,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="MythosNote - AI-powered note-taking application" />
+  <link rel="icon" type="image/svg+xml" href="{% static 'svg/mythosnote-logo.svg' %}?v=1" sizes="any">
   <title>{% block title %}MythosNote - AI Notes{% endblock %}</title>
 
   <!-- Google Fonts -->
@@ -41,7 +42,7 @@
 
 <body class="bg-background text-on-background antialiased">
   <!-- Navigation -->
-  {% if not hide_nav %}
+  {% if show_navbar %}
   <nav class="sticky top-0 z-40 border-b border-surface-container-high bg-background/80 backdrop-blur-md">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
 
@@ -54,22 +55,69 @@
       </a>
 
       <!-- Desktop Navigation (hidden on mobile) -->
+      {% if navbar_type == 'home' %}
       <div class="hidden items-center gap-6 text-sm text-outline md:flex">
         <a class="transition hover:text-primary" href="#features">Features</a>
         <a class="transition hover:text-primary" href="#how">How It Works</a>
         <a class="transition hover:text-primary" href="#start">Start Free</a>
       </div>
+      {% endif %}
 
       <!-- Auth Buttons: Desktop & Mobile -->
       <div class="flex items-center gap-4">
         {% if request.user.is_authenticated %}
+        {% if navbar_type == 'project' %}
+        <!-- Avatar menu -->
+        <div class="relative">
+          <button id="userMenuButton" data-dropdown-toggle="userDropdown" data-dropdown-placement="bottom-end"
+            class="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-on-primary focus:outline-none"
+            type="button" aria-expanded="false">
+            {{ request.user.email|first|upper }}
+          </button>
+
+          <div id="userDropdown"
+            class="z-50 hidden w-48 rounded-lg border border-outline-variant bg-surface-container shadow-lg overflow-hidden"
+            role="menu" aria-labelledby="userMenuButton" aria-hidden="true">
+            <ul class="py-1 text-sm font-medium text-body" role="none">
+              <li role="none">
+                <a href="{% url 'project' %}"
+                  class="flex items-center gap-3 w-full px-4 py-2.5 transition-all duration-200 hover:pl-5 hover:text-primary focus:pl-5 focus:outline-none group"
+                  role="menuitem">
+
+                  <iconify-icon icon="tabler:home"
+                    class="text-md text-on-surface group-hover:text-primary"></iconify-icon>
+                  Project
+                </a>
+              </li>
+
+              <!-- Garis pemisah -->
+              <li role="separator" class="my-1 h-px bg-outline-variant"></li>
+
+              <li role="none">
+                <form action="{% url 'logout' %}" method="post" class="m-0">
+                  {% csrf_token %}
+                  <button type="submit"
+                    class="flex items-center gap-3 w-full px-4 py-2.5 text-left transition-all duration-200 0 hover:text-error  focus:text-error hover:pl-5 focus:pl-5 focus:outline-none cursor-pointer group"
+                    role="menuitem">
+                    <iconify-icon icon="tabler:logout"
+                      class="shrink-0 text-md transition-colors group-hover:text-error"></iconify-icon>
+                    <span>Logout</span>
+                  </button>
+                </form>
+              </li>
+            </ul>
+          </div>
+        </div>
+        {% else %}
         <a class="rounded bg-primary-container px-5 py-2 text-sm font-bold text-on-primary-container transition hover:bg-primary"
           href="{% url 'project' %}">
           Go to Project
         </a>
+        {% endif %}
         {% else %}
         <!-- Sign In (hidden on mobile) -->
-        <a class="hidden px-4 py-2 text-sm text-outline transition hover:text-primary md:block" href="{% url 'signin' %}">
+        <a class="hidden px-4 py-2 text-sm text-outline transition hover:text-primary md:block"
+          href="{% url 'signin' %}">
           Sign In
         </a>
 
@@ -96,17 +144,18 @@
   {% include "components/toast.html" %}
 
   <!-- Custom Scripts -->
-  <script src="{% static 'js/toast.js' %}"></script>
-  <script src="{% static 'js/messages.js' %}"></script>
-  <script src="{% static 'js/components.js' %}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flowbite@4.0.1/dist/flowbite.min.js"></script>
+
+  <script src="{% static 'js/toast/manager.js' %}"></script>
+  <script src="{% static 'js/toast/django-messages.js' %}"></script>
 
   <!-- Pass Django Messages to JavaScript -->
   {% if messages %}
   <script>
     window.djangoMessages = [
       {% for message in messages %}
-        { tags: "{{ message.tags|default:'info'|escapejs }}", text: "{{ message|escapejs }}" }{% if not forloop.last %},{% endif %}
-      {% endfor %}
+    { tags: "{{ message.tags|default:'info'|escapejs }}", text: "{{ message|escapejs }}" } {% if not forloop.last %}, {% endif %}
+    {% endfor %}
     ];
   </script>
   {% endif %}

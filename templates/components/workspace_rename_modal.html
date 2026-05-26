@@ -1,0 +1,40 @@
+  {# Create Workspace Modal #}
+  <div id="renameWorkspaceModal" tabindex="-1" aria-hidden="true"
+    class="fixed inset-0 z-50 hidden h-full w-full items-center justify-center bg-zinc-950/80 p-4 backdrop-blur-sm">
+    <div class="relative w-full max-w-md rounded-lg border border-surface-container-high bg-surface-container p-8 shadow-2xl">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="font-manrope text-[11px] font-semibold uppercase tracking-[0.2em] text-primary-container">Rename Workspace</p>
+          <h2 class="mt-2 font-newsreader text-3xl font-normal text-[#e4e1e7]">Rename Workspace</h2>
+        </div>
+        <button type="button" data-modal-hide="renameWorkspaceModal"
+          class="rounded-md p-1.5 text-outline transition hover:bg-surface-container-high hover:text-[#e4e1e7]">
+          <iconify-icon icon="tabler:x" class="text-xl"></iconify-icon>
+        </button>
+      </div>
+
+      <form id="renameWorkspaceForm" method="post" class="mt-8 flex flex-col gap-6">
+        {% csrf_token %}
+        <input type="hidden" id="rename-workspace-id" name="id" value="" />
+        <div class="flex flex-col gap-2">
+          <label for="rename-workspace-name" class="font-manrope text-sm font-medium text-on-surface-varian">Name Workspace</label>
+          <input id="rename-workspace-name" name="name" type="text" maxlength="{{ workspace_name_max_length }}" data-workspace-name-input data-workspace-name-mode="rename" placeholder="Contoh: Research Project Alpha"
+            class="rounded border border-outline-variant bg-background px-4 py-3 font-manrope text-sm text-[#e4e1e7] outline-none transition placeholder:text-outline-variant focus:border-primary-container" />
+          <p class="font-manrope text-[12px] text-outline">
+            <span data-workspace-name-counter>0</span>/{{ workspace_name_max_length }} characters.
+          </p>
+        </div>
+
+        <div class="mt-2 flex items-center justify-end gap-3">
+          <button type="button" data-modal-hide="renameWorkspaceModal"
+            class="rounded border border-surface-container-high px-5 py-2.5 font-manrope text-sm font-medium text-on-surface-varian transition hover:border-outline hover:text-[#e4e1e7]">
+            Cancel
+          </button>
+          <button type="submit" id="renameSave"
+            class="rounded bg-primary-container px-5 py-2.5 font-manrope text-sm font-semibold text-on-primary transition hover:brightness-110 active:scale-[0.98]">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>

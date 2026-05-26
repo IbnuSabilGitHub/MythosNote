@@ -2,7 +2,6 @@ FROM node:20-bookworm-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    # Tambahkan ini untuk melewati proteksi PEP 668
     PIP_BREAK_SYSTEM_PACKAGES=1
 
 WORKDIR /app
@@ -16,12 +15,11 @@ RUN apt-get update \
     python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt package.json ./
+COPY requirements.txt package.json package-lock.json ./
 
-# Sekarang pip tidak akan komplain lagi
 RUN python3 -m pip install --no-cache-dir --upgrade pip \
     && python3 -m pip install --no-cache-dir -r requirements.txt \
-    && npm install
+    && npm ci
 
 COPY . .
 

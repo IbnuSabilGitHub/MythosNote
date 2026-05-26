@@ -62,6 +62,61 @@ def _get_database_config() -> dict[str, dict[str, str | Path | int]]:
     raise ValueError(f"Skema DATABASE_URL tidak didukung: {parsed_url.scheme}")
 
 
+def _env_bool(name: str, default: str = 'false') -> bool:
+    return os.getenv(name, default).strip().lower() in ('1', 'true', 'yes')
+
+
+def _get_email_mode() -> str:
+    mode = os.getenv('EMAIL_MODE', '').strip().lower()
+    if mode in ('dev', 'development'):
+        return 'console'
+    if not mode:
+        return 'smtp' if os.getenv('EMAIL_BACKEND') else 'console'
+    return mode
+
+
+def _get_email_config() -> dict[str, str | int | bool]:
+    mode = _get_email_mode()
+
+    default_from_email = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@mythosnote.local')
+
+    if mode == 'console':
+        return {
+            'EMAIL_BACKEND': 'django.core.mail.backends.console.EmailBackend',
+            'DEFAULT_FROM_EMAIL': default_from_email,
+        }
+
+    if mode == 'brevo':
+        brevo_host = os.getenv('BREVO_SMTP_HOST', 'smtp-relay.brevo.com')
+        brevo_user = os.getenv('BREVO_SMTP_USER', '')
+        if brevo_user == brevo_host:
+            raise ValueError("BREVO_SMTP_USER harus SMTP login Brevo, bukan host SMTP.")
+
+        return {
+            'EMAIL_BACKEND': 'django.core.mail.backends.smtp.EmailBackend',
+            'EMAIL_HOST': brevo_host,
+            'EMAIL_PORT': int(os.getenv('BREVO_SMTP_PORT', '587')),
+            'EMAIL_USE_TLS': _env_bool('BREVO_SMTP_USE_TLS', 'true'),
+            'EMAIL_HOST_USER': brevo_user,
+            'EMAIL_HOST_PASSWORD': os.getenv('BREVO_SMTP_KEY', ''),
+            'DEFAULT_FROM_EMAIL': default_from_email,
+        }
+
+    if mode == 'smtp':
+        return {
+            'EMAIL_BACKEND': os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend'),
+            'EMAIL_HOST': os.getenv('EMAIL_HOST', ''),
+            'EMAIL_PORT': int(os.getenv('EMAIL_PORT', '587')),
+            'EMAIL_USE_TLS': _env_bool('EMAIL_USE_TLS', 'true'),
+            'EMAIL_USE_SSL': _env_bool('EMAIL_USE_SSL'),
+            'EMAIL_HOST_USER': os.getenv('EMAIL_HOST_USER', ''),
+            'EMAIL_HOST_PASSWORD': os.getenv('EMAIL_HOST_PASSWORD', ''),
+            'DEFAULT_FROM_EMAIL': default_from_email,
+        }
+
+    raise ValueError("EMAIL_MODE harus salah satu: console, development, smtp, brevo")
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -79,7 +134,7 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "").strip()
 CSRF_TRUSTED_ORIGINS = [FRONTEND_URL] if FRONTEND_URL else []
 
 AUTHENTICATION_BACKENDS = [
-    "accounts.backends.EmailBackend",
+    "apps.accounts.backends.EmailBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
 
@@ -87,14 +142,16 @@ AUTHENTICATION_BACKENDS = [
 # Application definition
 
 INSTALLED_APPS = [
-    'project_commands',
-    'accounts.apps.AccountsConfig',
+    'apps.accounts.apps.AccountsConfig',
+    'apps.sources.apps.SourcesConfig',
+    'apps.workspaces.apps.WorkspacesConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'django_rq',
 ]
 
@@ -121,7 +178,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'accounts.context_processors.auth_settings',
+                'apps.accounts.context_processors.auth_settings',
+                'apps.accounts.context_processors.navbar_config',
             ],
         },
     },
@@ -202,23 +260,44 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Session-based auth defaults. Workspace/core feature views can use
-# accounts.decorators.verified_email_required when those apps are added.
+# apps.accounts.decorators.verified_email_required when those apps are added.
 LOGIN_URL = 'signin'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 
-# Console email keeps local WSL development dependency-free; production can
-# override EMAIL_BACKEND and SMTP settings through environment variables.
-EMAIL_BACKEND = os.getenv(
-    'EMAIL_BACKEND',
-    'django.core.mail.backends.console.EmailBackend',
-)
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@mythosnote.local')
-EMAIL_ASYNC = os.getenv('EMAIL_ASYNC', 'false').strip().lower() in ('1', 'true', 'yes')
+# EMAIL_MODE keeps switching simple:
+# console/development prints email locally, smtp uses generic SMTP, brevo uses Brevo SMTP relay.
+EMAIL_MODE = _get_email_mode()
+globals().update(_get_email_config())
+EMAIL_ASYNC = _env_bool('EMAIL_ASYNC')
 UNVERIFIED_USER_CLEANUP_DAYS = int(os.getenv('UNVERIFIED_USER_CLEANUP_DAYS', '1'))
 
 # Public Google Identity Services client id. When empty, the template keeps
 # the Google button disabled without breaking email/password auth.
 GOOGLE_OAUTH_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID', '')
+
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '').strip()
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip()
+DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY', '').strip()
+DEEPSEEK_BASE_URL = os.getenv('DEEPSEEK_BASE_URL', 'https://api.deepseek.com/v1').strip()
+
+# AI Provider options and validation
+AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini').strip().lower()
+if AI_PROVIDER not in ('gemini', 'openai', 'deepseek'):
+    raise ValueError(f"Unsupported AI_PROVIDER: {AI_PROVIDER!r}. Use 'gemini', 'openai', or 'deepseek'.")
+
+EMBEDDING_PROVIDER = os.getenv('EMBEDDING_PROVIDER', 'openai').strip().lower()
 # Security settings for modern browsers to mitigate certain types of attacks. Adjust as needed.
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
+
+# Production cookie/transport defaults stay strict, while DEBUG keeps local
+# HTTP development usable unless explicitly overridden.
+SESSION_COOKIE_SECURE = _env_bool('SESSION_COOKIE_SECURE', 'false' if DEBUG else 'true')
+CSRF_COOKIE_SECURE = _env_bool('CSRF_COOKIE_SECURE', 'false' if DEBUG else 'true')
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
+CSRF_COOKIE_SAMESITE = os.getenv('CSRF_COOKIE_SAMESITE', 'Lax')
+SECURE_SSL_REDIRECT = _env_bool('SECURE_SSL_REDIRECT', 'false' if DEBUG else 'true')
+SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '0' if DEBUG else '31536000'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'false' if DEBUG else 'true')
+SECURE_HSTS_PRELOAD = _env_bool('SECURE_HSTS_PRELOAD', 'false' if DEBUG else 'true')
