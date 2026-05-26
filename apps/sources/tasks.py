@@ -8,13 +8,13 @@ from contextlib import contextmanager
 from typing import List
 
 import fitz  # PyMuPDF
-from django.core.files.storage import default_storage
 from django.db import transaction
 from django.utils import timezone
 
 from apps.sources.embeddings import EmbeddingProvider
 from apps.sources.models import GenerateJob, Source, SourceChunk
 from apps.sources.providers import ChatProvider
+from apps.sources.utils import download_source_from_supabase
 
 
 def normalize_text(text: str) -> str:
@@ -188,22 +188,15 @@ def extract_text_from_file(file_path: str, mime_type: str) -> str:
 
 @contextmanager
 def source_file_path(storage_path: str):
-    """Yield a local path for local and remote Django storage backends."""
-
-    try:
-        yield default_storage.path(storage_path)
-        return
-    except NotImplementedError:
-        pass
+    """Yield a local temp file path downloaded from Supabase Storage."""
 
     _, extension = os.path.splitext(storage_path)
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=extension)
     temp_name = temp_file.name
 
     try:
-        with temp_file, default_storage.open(storage_path, 'rb') as stored_file:
-            for chunk in iter(lambda: stored_file.read(1024 * 1024), b''):
-                temp_file.write(chunk)
+        with temp_file:
+            temp_file.write(download_source_from_supabase(storage_path))
         yield temp_name
     finally:
         try:

@@ -5,7 +5,7 @@ django-rq==2.10.1
 psycopg2-binary==2.9.9
 pgvector==0.2.4
 PyMuPDF==1.23.8
-google-cloud-storage==2.10.0
+supabase
 python-dotenv==1.0.0
 requests==2.31.0
 gunicorn==21.2.0

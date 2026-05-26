@@ -2,6 +2,32 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.12] - 2026-05-27
+
+### Summary
+Migrasi storage dari Google Cloud Storage (GCS) ke **Supabase Storage**.
+
+### Changed
+- **Dependency**:
+  - `requirements.txt`: Mengganti `google-cloud-storage` menjadi library `supabase`
+
+- **Environment & Settings**:
+  - `.env`: Hapus kredensial GCS, tambah `SUPABASE_URL`, `SUPABASE_KEY`, dan `SUPABASE_BUCKET`
+  - `.env.example`: Diperbarui sesuai perubahan
+  - `config/settings.py`: Menambahkan pembacaan variabel Supabase
+
+- **Sources Storage Utils**:
+  - `apps/sources/utils.py`: File baru untuk handle upload/download menggunakan Supabase SDK
+  - Implementasi `client.storage.from_(bucket).upload()`
+
+- **Integrasi**:
+  - `views.py`: Update fungsi upload & delete
+  - `tasks.py`: Update download untuk processing
+
+- **Dokumentasi**:
+  - `Architecture.md`: Semua referensi GCS diganti ke Supabase Storage
+  - `PROJECT_CONTEXT.md`: Update deskripsi library, environment, dan arsitektur storage
+
 ## [1.4.11] - 2026-05-26
 
 ### Summary
