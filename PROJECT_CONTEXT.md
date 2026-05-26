@@ -6,7 +6,7 @@ MythosNote is an AI-powered note-taking platform (NotebookLM-style): users manag
 
 - **Django:** 5.0.1 | **Python:** 3.12+ (venv uses 3.12.3)
 - **Database:** PostgreSQL recommended (with **pgvector** for planned embeddings); SQLite fallback when `DATABASE_URL` unset
-- **Key libraries** (`requirements.txt`): Django, djangorestframework (not wired), django-cors-headers (not wired), django-rq, psycopg2-binary, pgvector, PyMuPDF, google-cloud-storage, python-dotenv, requests, gunicorn, email-validator
+- **Key libraries** (`requirements.txt`): Django, djangorestframework (not wired), django-cors-headers (not wired), django-rq, psycopg2-binary, pgvector, PyMuPDF, supabase, python-dotenv, requests, gunicorn, email-validator
 
 ---
 
@@ -36,7 +36,7 @@ MythosNote/
 | `django.contrib.*` | Third-party | Admin, auth User, sessions, messages, staticfiles |
 | `django_rq` | Third-party | Queue dashboard + worker integration |
 
-**Not present in repo:** `apps/workspaces/`, API views, source processing workers, GCS upload handlers (described in `README.md` / `Architecture.md` as roadmap).
+**Not present in repo:** `apps/workspaces/`, API views, source processing workers, Supabase upload handlers (described in `README.md` / `Architecture.md` as roadmap).
 
 ---
 
@@ -183,7 +183,7 @@ GET  /django-rq/      # django-rq dashboard (staff access per Django admin)
 | Task | Location | Trigger | Input | Side effects | Errors |
 |------|----------|---------|-------|--------------|--------|
 | `_send_mail_job` | `apps/accounts/utils.py` | `_dispatch_email()` when `EMAIL_ASYNC=true` | subject, message, recipients, from_email, html_message | Sends email via Django mail backend | Enqueue failure → **sync fallback** + warning log |
-| Source processing | [NOT FOUND] | Planned on upload | — | Chunk + embed + GCS | — |
+| Source processing | [NOT FOUND] | Planned on upload | — | Chunk + embed + Supabase Storage | — |
 
 - **Queue:** `default` (`RQ_QUEUES` in settings; `REDIS_URL` or localhost:6379).
 - **Worker:** `python manage.py rqworker default` or Docker `worker` service; custom `apps.accounts.management.commands.rqworker` mirrors django-rq for rq API compatibility.
@@ -242,9 +242,9 @@ DEFAULT_FROM_EMAIL
 EMAIL_ASYNC
 BREVO_SMTP_* (if brevo)
 EMAIL_HOST, EMAIL_PORT, EMAIL_* (if smtp)
-GCS_BUCKET_NAME
-GCS_PROJECT_ID
-GOOGLE_APPLICATION_CREDENTIALS
+SUPABASE_URL
+SUPABASE_KEY
+SUPABASE_BUCKET
 GOOGLE_OAUTH_CLIENT_ID
 AI_PROVIDER
 GEMINI_API_KEY
@@ -297,7 +297,7 @@ SESSION_COOKIE_SECURE, CSRF_COOKIE_SECURE, etc. (optional overrides)
 - **Migrations:** `python manage.py migrate` on deploy; accounts migrations 0001–0004; **sources:** no migrations yet.
 - **pgvector:** Enable extension on Postgres before activating `sources` app [ASSUMPTION per README].
 - **RQ:** Separate worker process/container required when `EMAIL_ASYNC=true` or future document jobs.
-- **Production checklist:** Set `DEBUG=false`, `SECRET_KEY`, Postgres `DATABASE_URL`, Redis, email (Brevo/SMTP), `GOOGLE_OAUTH_CLIENT_ID`, GCS credentials when upload ships; run `cleanup_unverified_users` via cron if desired.
+- **Production checklist:** Set `DEBUG=false`, `SECRET_KEY`, Postgres `DATABASE_URL`, Redis, email (Brevo/SMTP), `GOOGLE_OAUTH_CLIENT_ID`, Supabase credentials when upload ships; run `cleanup_unverified_users` via cron if desired.
 
 ---
 
@@ -310,7 +310,7 @@ SESSION_COOKIE_SECURE, CSRF_COOKIE_SECURE, etc. (optional overrides)
 | Workspaces app | **Missing** |
 | Sources app (DB) | **Models only** |
 | REST `/api/*` | **Missing** |
-| RAG / embeddings / GCS | **Missing** (deps present) |
+| RAG / embeddings / Supabase Storage | **Missing** (deps present) |
 | AI chat | **Missing** |
 
 When extending the project: register new apps under `apps/`, add to `INSTALLED_APPS`, include URLs in `config/urls.py`, reuse `@verified_email_required` for user-facing features, and scope data by `workspace_id` once `workspaces` exists.

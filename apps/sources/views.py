@@ -3,7 +3,6 @@
 import os
 
 import django_rq
-from django.core.files.storage import default_storage
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -17,6 +16,7 @@ from rest_framework.views import APIView
 from apps.sources.models import GenerateJob, Source, SourceChunk
 from apps.sources.providers import ChatProvider
 from apps.sources.serializers import SourceDetailSerializer, SourceListSerializer
+from apps.sources.utils import delete_source_from_supabase, upload_source_to_supabase
 from apps.workspaces.models import Workspace
 
 
@@ -95,7 +95,17 @@ class SourceUploadView(APIView):
             )
 
         storage_path = f"workspaces/{workspace.id}/sources/{uploaded_file.name}"
-        saved_path = default_storage.save(storage_path, uploaded_file)
+        try:
+            saved_path = upload_source_to_supabase(
+                uploaded_file,
+                storage_path,
+                uploaded_file.content_type or 'application/octet-stream',
+            )
+        except Exception as exc:
+            return Response(
+                {'detail': f'Failed to upload file to Supabase: {exc}'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
         try:
             with transaction.atomic():
@@ -111,7 +121,7 @@ class SourceUploadView(APIView):
                     error_message="",
                 )
         except IntegrityError:
-            default_storage.delete(saved_path)
+            delete_source_from_supabase(saved_path)
             return Response(
                 {"file": "A source with this file name already exists in this workspace."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -143,7 +153,7 @@ class SourceDeleteView(APIView):
         storage_path = source.storage_path
         source.delete()
         if storage_path:
-            default_storage.delete(storage_path)
+            delete_source_from_supabase(storage_path)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 

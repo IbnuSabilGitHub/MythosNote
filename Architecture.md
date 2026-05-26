@@ -32,25 +32,25 @@ graph TB
     Browser["🌐 Frontend<br/>(Tailwind + Flowbite)"]
     Django["⚙️ Django Backend<br/>(REST API)"]
     PostgreSQL["🗄️ PostgreSQL<br/>(+ pgvector)"]
-    GCS["☁️ Google Cloud Storage<br/>(File Storage)"]
+    SupabaseStorage["☁️ Supabase Storage<br/>(File Storage)"]
     Redis["🔴 Redis<br/>(Job Queue)"]
     AIProvider["🤖 AI Provider<br/>(LLM + Embedding)"]
     Worker["👷 Background Worker<br/>(django-rq)"]
     
     Browser <-->|HTTP/REST| Django
     Django <-->|SQL| PostgreSQL
-    Django -->|Upload/Download| GCS
+    Django -->|Upload/Download| SupabaseStorage
     Django -->|Push Job| Redis
     Django <-->|API Call| AIProvider
     Redis <-->|Consume Job| Worker
-    Worker -->|Download| GCS
+    Worker -->|Download| SupabaseStorage
     Worker <-->|Query/Insert| PostgreSQL
     Worker <-->|Generate Embedding| AIProvider
     
     style Browser fill:#e1f5ff
     style Django fill:#fff3e0
     style PostgreSQL fill:#f3e5f5
-    style GCS fill:#e8f5e9
+    style SupabaseStorage fill:#e8f5e9
     style Redis fill:#ffebee
     style AIProvider fill:#fce4ec
     style Worker fill:#fff9c4
@@ -67,7 +67,7 @@ graph TB
 | Backend | **Django 5.x** | Mature, batteries-included |
 | Frontend | **Tailwind CSS + Flowbite** | Ringan, tidak butuh build step kompleks |
 | Database | **PostgreSQL** | Relational yang solid, support JSON field |
-| File Storage | **Google Cloud Storage** | Murah, andal, mudah diintegrasikan |
+| File Storage | **Supabase Storage** | Murah, andal, mudah diintegrasikan |
 | Queue | **Redis + django-rq** | Lebih simpel dari Celery |
 | Deployment | **Railway** | Lebih mudah dari Heroku, support Redis + Postgres gratis |
 
@@ -132,7 +132,7 @@ sequenceDiagram
     actor User
     participant Frontend
     participant Django
-    participant GCS
+    participant SupabaseStorage
     participant Redis
     participant Worker
     participant PostgreSQL
@@ -143,15 +143,15 @@ sequenceDiagram
     alt Validasi Gagal
         Django->>Frontend: Error 400
     else Validasi Sukses
-        Django->>GCS: Upload file mentah
-        GCS->>Django: Return URL
+        Django->>SupabaseStorage: Upload file mentah
+        SupabaseStorage->>Django: Return URL
         Django->>PostgreSQL: Save source<br/>(status: pending)
         Django->>Redis: Queue processing job
         Django->>Frontend: Return source_id
         Frontend->>User: "Processing..."
         
         Worker->>Redis: Get job
-        Worker->>GCS: Download file
+        Worker->>SupabaseStorage: Download file
         Worker->>Worker: Extract text<br/>(PyMuPDF/Plain)
         Worker->>Worker: Normalize & chunk<br/>(500-800 tokens)
         Worker->>Worker: Generate embeddings
@@ -258,7 +258,7 @@ sources (
   filename    VARCHAR(255),
   file_type   VARCHAR(10),    -- "pdf", "md", "txt"
   file_size   INTEGER,        -- bytes
-  gcs_url     TEXT,           -- URL ke GCS
+  storage_url TEXT,           -- URL ke Supabase Storage
   status      VARCHAR(20),    -- "pending", "processing", "ready", "failed"
   created_at  TIMESTAMP
 )
@@ -507,8 +507,9 @@ SECRET_KEY=...
 DEBUG=False
 DATABASE_URL=...           # otomatis dari Railway
 REDIS_URL=...              # otomatis dari Railway
-GCS_BUCKET_NAME=...
-GOOGLE_APPLICATION_CREDENTIALS_JSON=...
+SUPABASE_URL=...
+SUPABASE_KEY=...
+SUPABASE_BUCKET=...
 AI_API_KEY=...             # Gemini / OpenAI / DeepSeek
 DEEPSEEK_API_KEY=...       # DeepSeek API Key
 DEEPSEEK_BASE_URL=...      # DeepSeek base URL (OpenAI-compatible)
@@ -553,7 +554,7 @@ worker: python manage.py rqworker default
 ```mermaid
 graph TD
     A["📤 Upload Phase"] --> A1["Receive & Validate"] 
-    A1 --> A2["Store in GCS"]
+    A1 --> A2["Store in Supabase Storage"]
     A2 --> A3["Queue Background Job"]
     
     A3 --> B["⚙️ Processing Phase"]
@@ -597,7 +598,7 @@ graph TD
 1. **Separation of Concerns** — Setiap komponen punya tanggung jawab spesifik
 2. **Asynchronous Processing** — File processing tidak memblokir user experience
 3. **Vector-First Retrieval** — Menggunakan semantic search untuk konteks berkualitas tinggi
-4. **Scalable Storage** — GCS untuk files, PostgreSQL untuk metadata + vectors
+4. **Scalable Storage** — Supabase Storage untuk files, PostgreSQL untuk metadata + vectors
 5. **Simple Job Queue** — RQ cukup 
 
 Arsitektur ini dirancang untuk:

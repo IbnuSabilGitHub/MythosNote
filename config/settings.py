@@ -153,6 +153,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'django_rq',
+    'sources',
 ]
 
 MIDDLEWARE = [
@@ -275,6 +276,10 @@ UNVERIFIED_USER_CLEANUP_DAYS = int(os.getenv('UNVERIFIED_USER_CLEANUP_DAYS', '1'
 # Public Google Identity Services client id. When empty, the template keeps
 # the Google button disabled without breaking email/password auth.
 GOOGLE_OAUTH_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID', '')
+
+SUPABASE_URL = os.getenv('SUPABASE_URL', '').strip()
+SUPABASE_KEY = os.getenv('SUPABASE_KEY', '').strip()
+SUPABASE_BUCKET = os.getenv('SUPABASE_BUCKET', '').strip()
 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '').strip()
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip()
