@@ -2,7 +2,46 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.24] - 2026-05-29
+
+### Summary
+Menghubungkan Sources Panel di `workspace.html` ke backend API upload, list, delete, dan status polling.
+
+### Added
+- Upload modal di `workspace.html`: overlay backdrop, drop zone file, preview nama/ukuran file, validasi ekstensi dan ukuran, tombol cancel/upload
+- `id="workspace-data"` bridge div yang membawa `{{ active_workspace.id }}` ke JavaScript
+- `id="source-list-container"` pada div daftar sumber agar `WorkspaceSources` bisa me-render dinamis
+- `id="btn-add-source"` pada tombol "Tambah Sumber" untuk event binding
+
+### Changed
+- `workspace.html`:
+  - Hardcoded source items dihapus; JS yang me-render daftar
+  - "Tambah Sumber" `<div>` diubah menjadi `<button>` dengan `id="btn-add-source"`
+  - Upload modal HTML ditambahkan sebelum `{% endblock %}`
+- `static/js/workspace/index.js` — Ditulis ulang sepenuhnya:
+  - Inisialisasi `WorkspaceSources` dari `data-workspace-id`
+  - Logic open/close/reset modal
+  - Validasi file (ekstensi `.pdf/.txt/.md`, maks 20 MB)
+  - Preview file (icon berdasarkan ekstensi, nama, ukuran)
+  - Submit form → `workspaceSources.uploadSource(formData)` → tutup modal + toast
+- `static/js/workspace/sources.js`:
+  - Tambah `getCSRFToken()` helper (baca dari cookie `csrftoken`)
+  - `X-CSRFToken` header ditambahkan ke `uploadSource()` dan `deleteSource()`
+  - `createSourceItemHTML()` diperbarui agar cocok dengan desain `workspace.html`:
+    - Checkbox (warna berbeda saat ready vs pending)
+    - Icon file berdasarkan ekstensi (`tabler:pdf`, `tabler:txt`, `tabler:markdown`)
+    - Nama file dengan font Manrope
+    - Metadata: waktu relatif + ukuran file
+    - Status badge minimalis (10px)
+    - Tombol hapus lebih kecil di sisi kanan
+
+### Notes
+- `config/views.py` sudah melewatkan `active_workspace` ke template — tidak ada perubahan
+- `WorkspaceSources.fetchSources()` dipanggil otomatis saat halaman dimuat
+- `WorkspaceSources.pollSourceStatus()` dimulai otomatis setelah upload berhasil
+
 ## [1.4.23] - 2026-05-27
+
 
 ### Summary
 Penambahan field `extracted_text` pada model Source dan konfigurasi media file handling.
