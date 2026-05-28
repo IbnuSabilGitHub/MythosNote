@@ -13,10 +13,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from django.core.files.storage import default_storage
+
 from apps.sources.models import GenerateJob, Source, SourceChunk
 from apps.sources.providers import ChatProvider
 from apps.sources.serializers import SourceDetailSerializer, SourceListSerializer
-from apps.sources.utils import delete_source_from_supabase, upload_source_to_supabase
 from apps.workspaces.models import Workspace
 
 
@@ -96,15 +97,11 @@ class SourceUploadView(APIView):
 
         storage_path = f"workspaces/{workspace.id}/sources/{uploaded_file.name}"
         try:
-            saved_path = upload_source_to_supabase(
-                uploaded_file,
-                storage_path,
-                uploaded_file.content_type or 'application/octet-stream',
-            )
+            saved_path = default_storage.save(storage_path, uploaded_file)
         except Exception as exc:
             return Response(
-                {'detail': f'Failed to upload file to Supabase: {exc}'},
-                status=status.HTTP_502_BAD_GATEWAY,
+                {'detail': f'Failed to save file: {exc}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         try:
@@ -121,7 +118,7 @@ class SourceUploadView(APIView):
                     error_message="",
                 )
         except IntegrityError:
-            delete_source_from_supabase(saved_path)
+            default_storage.delete(saved_path)
             return Response(
                 {"file": "File dengan nama ini sudah ada di workspace."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -153,7 +150,7 @@ class SourceDeleteView(APIView):
         storage_path = source.storage_path
         source.delete()
         if storage_path:
-            delete_source_from_supabase(storage_path)
+            default_storage.delete(storage_path)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 

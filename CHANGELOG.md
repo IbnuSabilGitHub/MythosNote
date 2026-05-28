@@ -2,6 +2,18 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.26] - 2026-05-29
+
+### Summary
+Migrasi kembali penyimpanan file ke Django FileSystemStorage (default_storage) dengan volume bersama (shared volume) Docker Compose.
+
+### Fixed
+- **Docker Compose** (`docker-compose.yml`):
+  - Menambahkan volume bersama `media_data` ke service `web` dan `worker` untuk sinkronisasi berkas media.
+- **Django Storage** (`apps/sources/views.py`, `apps/sources/tasks.py`):
+  - Mengembalikan alur penyimpanan file dari Supabase Storage ke `default_storage` Django (FileSystemStorage) yang menyimpan berkas di bawah `MEDIA_ROOT`.
+  - Memperbarui views upload/delete dan task RQ untuk membaca berkas dari media bersama.
+
 ## [1.4.25] - 2026-05-29
 
 ### Summary
