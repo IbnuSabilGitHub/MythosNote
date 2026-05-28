@@ -224,6 +224,7 @@ def process_source(source_id: str) -> None:
             if not os.path.exists(file_path):
                 raise ValueError(f"File tidak ditemukan di storage: {source.storage_path}")
             raw_text = extract_text_from_file(file_path, source.mime_type)
+            Source.objects.filter(id=source.id).update(extracted_text=raw_text)
 
         if not raw_text or not raw_text.strip():
             raise ValueError("File kosong atau tidak mengandung teks yang dapat diekstrak")

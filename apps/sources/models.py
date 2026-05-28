@@ -37,6 +37,7 @@ class Source(models.Model):
         default='pending'
     )
     error_message = models.TextField(blank=True, default='')
+    extracted_text = models.TextField(blank=True, default='')
     progress = models.IntegerField(
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(100)]
