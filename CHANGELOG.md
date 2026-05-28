@@ -2,7 +2,38 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.12] - 2026-05-27
+## [1.4.23] - 2026-05-27
+
+### Summary
+Penambahan field `extracted_text` pada model Source dan konfigurasi media file handling.
+
+### Added
+- Field `extracted_text` di model `Source` untuk menyimpan hasil ekstraksi teks dari dokumen
+- Konfigurasi `MEDIA_ROOT` dan `MEDIA_URL` di settings
+- Serving media files saat `DEBUG=True`
+
+### Changed
+- `config/settings.py`:
+  - Menambahkan `MEDIA_ROOT` dan `MEDIA_URL`
+  - Menambahkan `SessionAuthentication` di `REST_FRAMEWORK`
+  - Menghapus entry `'sources'` yang sudah tidak digunakan
+
+- `apps/sources/models.py`:
+  - Tambah `extracted_text = TextField(blank=True, default='')` pada model `Source`
+
+- `apps/sources/tasks.py`:
+  - Update `extracted_text` setelah proses ekstraksi teks selesai
+
+- `config/urls.py`:
+  - Menambahkan static media serving untuk mode development (`DEBUG=True`)
+
+- Migration `0002_source_extracted_text.py` telah digenerate
+
+### Notes
+- `.gitignore` sudah benar memiliki `/media/` (tidak perlu perubahan)
+- Persiapan untuk fitur RAG dan preview dokumen di masa depan
+
+## [1.4.22] - 2026-05-27
 
 ### Summary
 Migrasi storage dari Google Cloud Storage (GCS) ke **Supabase Storage**.
@@ -28,7 +59,7 @@ Migrasi storage dari Google Cloud Storage (GCS) ke **Supabase Storage**.
   - `Architecture.md`: Semua referensi GCS diganti ke Supabase Storage
   - `PROJECT_CONTEXT.md`: Update deskripsi library, environment, dan arsitektur storage
 
-## [1.4.11] - 2026-05-26
+## [1.4.21] - 2026-05-26
 
 ### Summary
 Perbaikan konfigurasi Docker dan database untuk mendukung pgvector dengan lebih stabil.
@@ -45,7 +76,7 @@ Perbaikan konfigurasi Docker dan database untuk mendukung pgvector dengan lebih 
 - Proses build frontend lebih stabil dan reproducible
 - Migration vector extension berjalan sesuai best practice
 
-## [1.4.10] - 2026-05-25
+## [1.4.20] - 2026-05-25
 
 ### Summary
 Penambahan limit panjang nama workspace menjadi maksimal 40 karakter pada fitur Create dan Rename.
