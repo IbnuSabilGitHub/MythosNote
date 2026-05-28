@@ -2,7 +2,46 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.25] - 2026-05-29
+
+### Summary
+DOCX support dan polish UX fitur upload sumber.
+
+### Added
+- **DOCX support** (`requirements.txt`, `views.py`, `tasks.py`):
+  - `python-docx==1.1.2` ditambahkan ke dependencies
+  - `.docx` ditambahkan ke `ALLOWED_EXTENSIONS` di `views.py`
+  - Handler DOCX di `extract_text_from_file()` menggunakan `python-docx`
+  - `tabler:file-type-docx` icon di `sources.js`
+
+### Changed
+- `apps/sources/views.py`:
+  - Error messages diubah ke Bahasa Indonesia yang user-friendly:
+    - `"Format tidak didukung. Gunakan PDF, TXT, MD, atau DOCX."`
+    - `"File terlalu besar. Maksimal 20 MB."`
+    - `"File dengan nama ini sudah ada di workspace."`
+- `apps/sources/tasks.py`:
+  - `error_message` yang tersimpan di DB dibatasi 500 karakter (bukan full traceback)
+  - Traceback lengkap tetap dicetak ke log
+- `static/js/workspace/index.js`:
+  - Upload via XHR (menggantikan `fetch`) untuk mendukung progress event
+  - Progress bar terintegrasi di modal (`upload-progress-wrap`, `upload-progress-bar`)
+  - Drag-and-drop file ke drop zone
+  - DOCX ditambahkan ke `ALLOWED_EXT`
+  - Error response dari API di-map ke pesan user-friendly
+- `static/js/workspace/sources.js`:
+  - `fileIconMap` mendukung `docx` → `tabler:file-type-docx`
+  - Status badge `pending`/`processing` menampilkan `animate-pulse`
+  - Label status diubah ke Bahasa Indonesia: Menunggu / Memproses / Siap / Gagal
+  - Badge `failed` menampilkan `title` dengan pesan error pendek (hover)
+  - `queued` status ditangani sebagai alias `pending`
+- `templates/workspace.html`:
+  - File input `accept` diperbarui ke `.pdf,.txt,.md,.docx`
+  - Teks hint drop zone diperbarui
+  - Progress bar HTML ditambahkan ke modal
+
 ## [1.4.24] - 2026-05-29
+
 
 ### Summary
 Menghubungkan Sources Panel di `workspace.html` ke backend API upload, list, delete, dan status polling.

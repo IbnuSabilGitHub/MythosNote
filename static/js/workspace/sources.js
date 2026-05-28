@@ -95,7 +95,8 @@
       const statusLabel = this.getStatusLabel(source.status);
       const fileName = source.original_filename || source.file_name || source.name || 'Unknown';
       const ext = fileName.split('.').pop().toLowerCase();
-      const fileIcon = ext === 'pdf' ? 'tabler:pdf' : (ext === 'md' ? 'tabler:markdown' : 'tabler:txt');
+      const fileIconMap = { pdf: 'tabler:pdf', md: 'tabler:markdown', docx: 'tabler:file-type-docx' };
+      const fileIcon = fileIconMap[ext] || 'tabler:txt';
       const isReady = source.status === 'ready';
       const checkboxClasses = isReady
         ? 'h-4 w-4 rounded-xs border border-[#FFC880] bg-[#FFC880] accent-[#FFC880]'
@@ -124,6 +125,12 @@
       }
 
       const meta = [timeLabel, sizeLabel].filter(Boolean).join(' \u2022 ');
+      const isProcessing = source.status === 'processing' || source.status === 'pending';
+      const isFailed = source.status === 'failed';
+      const errorTitle = isFailed && source.error_message
+        ? ` title="${this.escapeHTML(source.error_message.slice(0, 120))}"`
+        : '';
+      const badgeAnimClass = isProcessing ? ' animate-pulse' : '';
 
       return `
         <div class="source-item self-stretch p-2 relative bg-neutral-900/40 rounded-md border border-neutral-800 inline-flex justify-start items-start gap-2 cursor-pointer hover:bg-neutral-900/60 transition"
@@ -145,7 +152,7 @@
             </div>
             <div class="self-stretch flex items-center justify-between gap-2 overflow-hidden">
               <div class="text-stone-300/70 text-xs font-normal font-['Manrope'] leading-5 truncate">${this.escapeHTML(meta)}</div>
-              <span class="status-badge ${statusClass} px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap shrink-0">
+              <span class="status-badge ${statusClass}${badgeAnimClass} px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap shrink-0"${errorTitle}>
                 ${statusLabel}
               </span>
             </div>
@@ -171,10 +178,11 @@
      */
     getStatusClass(status) {
       const classMap = {
-        pending: "status-pending bg-yellow-500/20 text-yellow-300",
-        processing: "status-pending bg-blue-500/20 text-blue-300",
-        ready: "status-ready bg-green-500/20 text-green-300",
-        failed: "status-failed bg-red-500/20 text-red-300",
+        pending:    "status-pending bg-yellow-500/20 text-yellow-300",
+        queued:     "status-pending bg-yellow-500/20 text-yellow-300",
+        processing: "status-processing bg-blue-500/20 text-blue-300",
+        ready:      "status-ready bg-green-500/20 text-green-300",
+        failed:     "status-failed bg-red-500/20 text-red-300",
       };
       return classMap[status] || "bg-neutral-700/50 text-stone-300";
     }
@@ -186,10 +194,11 @@
      */
     getStatusLabel(status) {
       const labelMap = {
-        pending: "Pending",
-        processing: "Processing",
-        ready: "Ready",
-        failed: "Failed",
+        pending:    "Menunggu",
+        queued:     "Menunggu",
+        processing: "Memproses",
+        ready:      "Siap",
+        failed:     "Gagal",
       };
       return labelMap[status] || "Unknown";
     }

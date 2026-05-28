@@ -20,7 +20,7 @@ from apps.sources.utils import delete_source_from_supabase, upload_source_to_sup
 from apps.workspaces.models import Workspace
 
 
-ALLOWED_EXTENSIONS = {".pdf", ".md", ".txt"}
+ALLOWED_EXTENSIONS = {".pdf", ".md", ".txt", ".docx"}
 MAX_FILE_SIZE = 20 * 1024 * 1024
 
 
@@ -84,13 +84,13 @@ class SourceUploadView(APIView):
         _, extension = os.path.splitext(uploaded_file.name)
         if extension.lower() not in ALLOWED_EXTENSIONS:
             return Response(
-                {"file": "Only .pdf, .md, and .txt files are supported."},
+                {"file": "Format tidak didukung. Gunakan PDF, TXT, MD, atau DOCX."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if uploaded_file.size > MAX_FILE_SIZE:
             return Response(
-                {"file": "File size must be 20MB or smaller."},
+                {"file": "File terlalu besar. Maksimal 20 MB."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -123,7 +123,7 @@ class SourceUploadView(APIView):
         except IntegrityError:
             delete_source_from_supabase(saved_path)
             return Response(
-                {"file": "A source with this file name already exists in this workspace."},
+                {"file": "File dengan nama ini sudah ada di workspace."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

@@ -477,9 +477,9 @@
                     <iconify-icon icon="material-symbols:upload-file-outline" class="text-3xl text-[#FFC880]/70 group-hover:text-[#FFC880] transition"></iconify-icon>
                     <div class="text-center">
                         <p class="text-sm text-stone-300 font-['Manrope']">Klik atau seret file ke sini</p>
-                        <p class="text-xs text-stone-500 mt-0.5 font-['Manrope']">PDF, TXT, Markdown — maks. 20 MB</p>
+                        <p class="text-xs text-stone-500 mt-0.5 font-['Manrope']">PDF, TXT, Markdown, DOCX — maks. 20 MB</p>
                     </div>
-                    <input id="source-file-input" type="file" name="file" accept=".pdf,.txt,.md" class="sr-only" />
+                    <input id="source-file-input" type="file" name="file" accept=".pdf,.txt,.md,.docx" class="sr-only" />
                 </label>
                 <!-- File preview -->
                 <div id="upload-file-preview" class="hidden items-center gap-3 px-3 py-2.5 bg-neutral-950/60 rounded-lg border border-neutral-800">
@@ -491,6 +491,18 @@
                     <button type="button" id="btn-clear-file" class="text-stone-500 hover:text-red-400 transition" aria-label="Hapus file">
                         <iconify-icon icon="tabler:x" class="text-sm"></iconify-icon>
                     </button>
+                </div>
+                <!-- Upload progress -->
+                <div id="upload-progress-wrap" class="hidden flex-col gap-1">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-stone-400 font-['Manrope']">Mengupload...</span>
+                        <span id="upload-progress-pct" class="text-xs text-[#FFC880] font-['Manrope']">0%</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+                        <div id="upload-progress-bar"
+                            class="h-full bg-[#FFC880] rounded-full transition-all duration-150"
+                            style="width: 0%"></div>
+                    </div>
                 </div>
                 <!-- Error -->
                 <p id="upload-error" class="hidden text-xs text-red-400 font-['Manrope']"></p>

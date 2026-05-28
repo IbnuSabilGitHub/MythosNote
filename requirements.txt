@@ -5,6 +5,7 @@ django-rq==2.10.1
 psycopg2-binary==2.9.9
 pgvector==0.2.4
 PyMuPDF==1.23.8
+python-docx==1.1.2
 supabase
 python-dotenv==1.0.0
 requests==2.31.0

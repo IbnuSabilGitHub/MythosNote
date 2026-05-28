@@ -153,6 +153,7 @@ def extract_text_from_file(file_path: str, mime_type: str) -> str:
     is_pdf = mime_lower == 'application/pdf' or ext_lower == '.pdf'
     is_md = mime_lower in ('text/markdown', 'text/x-markdown') or ext_lower == '.md'
     is_txt = mime_lower.startswith('text/plain') or ext_lower == '.txt'
+    is_docx = 'wordprocessingml' in mime_lower or ext_lower == '.docx'
 
     if is_pdf:
         # Extract text from PDF using PyMuPDF
@@ -165,6 +166,15 @@ def extract_text_from_file(file_path: str, mime_type: str) -> str:
             return '\n'.join(text_parts)
         except Exception as e:
             raise ValueError(f"Error membaca PDF: {str(e)}")
+
+    elif is_docx:
+        # Extract text from DOCX using python-docx
+        try:
+            from docx import Document
+            doc = Document(file_path)
+            return '\n'.join(p.text for p in doc.paragraphs if p.text.strip())
+        except Exception as e:
+            raise ValueError(f"Error membaca DOCX: {str(e)}")
 
     elif is_md or is_txt:
         # Read markdown or plain text directly
@@ -279,7 +289,9 @@ def process_source(source_id: str) -> None:
             with transaction.atomic():
                 source = Source.objects.select_for_update().get(id=source.id)
                 source.status = 'failed'
-                source.error_message = error_traceback
+                # Store short message for UI; full traceback is in logs above
+                short_error = str(e)[:500] if str(e) else 'Terjadi kesalahan saat memproses file.'
+                source.error_message = short_error
                 source.save(update_fields=['status', 'error_message', 'updated_at'])
 
         # Jangan hapus file mentah - file tetap di storage
