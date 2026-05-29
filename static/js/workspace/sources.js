@@ -10,6 +10,14 @@
     }
 
     /**
+     * Get CSRF token from cookie
+     * @returns {string} CSRF token
+     */
+    getCSRFToken() {
+      return document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+    }
+
+    /**
      * Fetch sources list from API
      * @param {string|null} workspaceId - Optional workspace ID override
      */
@@ -85,37 +93,80 @@
     createSourceItemHTML(source) {
       const statusClass = this.getStatusClass(source.status);
       const statusLabel = this.getStatusLabel(source.status);
-      const fileName = source.file_name || source.name || "Unknown";
+      const fileName = source.original_filename || source.file_name || source.name || 'Unknown';
+      const ext = fileName.split('.').pop().toLowerCase();
+      const fileIconMap = { pdf: 'tabler:pdf', md: 'tabler:markdown', docx: 'tabler:file-type-docx' };
+      const fileIcon = fileIconMap[ext] || 'tabler:txt';
+      const isReady = source.status === 'ready';
+      const checkboxClasses = isReady
+        ? 'h-4 w-4 rounded-xs border border-[#FFC880] bg-[#FFC880] accent-[#FFC880]'
+        : 'h-4 w-4 rounded-xs border border-neutral-700 bg-neutral-950 accent-[#FFC880]';
+      const nameClasses = isReady
+        ? 'text-zinc-200 text-sm font-medium'
+        : 'text-stone-300 text-sm font-normal';
+
+      // Format file size
+      let sizeLabel = '';
+      if (source.file_size) {
+        const kb = source.file_size / 1024;
+        sizeLabel = kb < 1024
+          ? `${kb.toFixed(0)} KB`
+          : `${(kb / 1024).toFixed(1)} MB`;
+      }
+
+      // Format created_at
+      let timeLabel = '';
+      if (source.created_at) {
+        const diff = Date.now() - new Date(source.created_at).getTime();
+        const mins = Math.floor(diff / 60000);
+        if (mins < 60) timeLabel = `${mins || 1} min lalu`;
+        else if (mins < 1440) timeLabel = `${Math.floor(mins / 60)} jam lalu`;
+        else timeLabel = `${Math.floor(mins / 1440)} hari lalu`;
+      }
+
+      const meta = [timeLabel, sizeLabel].filter(Boolean).join(' \u2022 ');
+      const isProcessing = source.status === 'processing' || source.status === 'pending';
+      const isFailed = source.status === 'failed';
+      const errorTitle = isFailed && source.error_message
+        ? ` title="${this.escapeHTML(source.error_message.slice(0, 120))}"`
+        : '';
+      const badgeAnimClass = isProcessing ? ' animate-pulse' : '';
 
       return `
-        <div class="source-item" data-source-id="${source.id}">
-          <div class="flex items-center justify-between p-3 rounded border border-neutral-700 hover:border-neutral-600 transition-colors">
-            <div class="flex items-center gap-3 flex-1 min-w-0">
-              <div class="flex-1 min-w-0">
-                <div class="text-sm font-medium text-stone-200 truncate">
+        <div class="source-item self-stretch p-2 relative bg-neutral-900/40 rounded-md border border-neutral-800 inline-flex justify-start items-start gap-2 cursor-pointer hover:bg-neutral-900/60 transition"
+            data-source-id="${this.escapeHTML(source.id)}"
+            data-source-item
+            data-selected-classes="bg-neutral-900 border-[#FFC880]/60 shadow-[inset_0_0_0_1px_rgba(255,200,128,0.18)]">
+          <div class="pt-1 inline-flex flex-col justify-start items-start">
+            <input type="checkbox" data-source-checkbox
+              class="${checkboxClasses}" />
+          </div>
+          <div class="flex-1 inline-flex flex-col justify-start items-start gap-1 min-w-0">
+            <div class="self-stretch inline-flex justify-start items-center gap-1">
+              <iconify-icon icon="${fileIcon}" class="text-[#FFC880] text-sm shrink-0"></iconify-icon>
+              <div class="flex-1 h-6 relative overflow-hidden">
+                <div class="h-6 left-0 -top-px absolute ${nameClasses} font-['Manrope'] leading-6 whitespace-nowrap">
                   ${this.escapeHTML(fileName)}
-                </div>
-                <div class="text-xs text-stone-500 mt-1">
-                  ID: ${source.id}
                 </div>
               </div>
             </div>
-            <div class="flex items-center gap-3 ml-2">
-              <span class="status-badge ${statusClass} px-2 py-1 rounded text-xs font-medium whitespace-nowrap">
+            <div class="self-stretch flex items-center justify-between gap-2 overflow-hidden">
+              <div class="text-stone-300/70 text-xs font-normal font-['Manrope'] leading-5 truncate">${this.escapeHTML(meta)}</div>
+              <span class="status-badge ${statusClass}${badgeAnimClass} px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap shrink-0"${errorTitle}>
                 ${statusLabel}
               </span>
-              <button
-                data-delete-source="${source.id}"
-                class="p-1.5 rounded hover:bg-red-500/20 text-stone-400 hover:text-red-400 transition-colors"
-                title="Delete source"
-                aria-label="Delete source ${this.escapeHTML(fileName)}"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
             </div>
           </div>
+          <button
+            data-delete-source="${this.escapeHTML(source.id)}"
+            class="shrink-0 mt-0.5 p-1 rounded hover:bg-red-500/20 text-stone-500 hover:text-red-400 transition"
+            title="Hapus sumber"
+            aria-label="Hapus ${this.escapeHTML(fileName)}"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
         </div>
       `;
     }
@@ -127,10 +178,11 @@
      */
     getStatusClass(status) {
       const classMap = {
-        pending: "status-pending bg-yellow-500/20 text-yellow-300",
-        processing: "status-pending bg-blue-500/20 text-blue-300",
-        ready: "status-ready bg-green-500/20 text-green-300",
-        failed: "status-failed bg-red-500/20 text-red-300",
+        pending:    "status-pending bg-yellow-500/20 text-yellow-300",
+        queued:     "status-pending bg-yellow-500/20 text-yellow-300",
+        processing: "status-processing bg-blue-500/20 text-blue-300",
+        ready:      "status-ready bg-green-500/20 text-green-300",
+        failed:     "status-failed bg-red-500/20 text-red-300",
       };
       return classMap[status] || "bg-neutral-700/50 text-stone-300";
     }
@@ -142,10 +194,11 @@
      */
     getStatusLabel(status) {
       const labelMap = {
-        pending: "Pending",
-        processing: "Processing",
-        ready: "Ready",
-        failed: "Failed",
+        pending:    "Menunggu",
+        queued:     "Menunggu",
+        processing: "Memproses",
+        ready:      "Siap",
+        failed:     "Gagal",
       };
       return labelMap[status] || "Unknown";
     }
@@ -163,6 +216,9 @@
 
         const response = await fetch("/api/sources/upload/", {
           method: "POST",
+          headers: {
+            'X-CSRFToken': this.getCSRFToken(),
+          },
           body: formData,
         });
 
@@ -271,6 +327,9 @@
 
         const response = await fetch(`/api/sources/${sourceId}/`, {
           method: "DELETE",
+          headers: {
+            'X-CSRFToken': this.getCSRFToken(),
+          },
         });
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);

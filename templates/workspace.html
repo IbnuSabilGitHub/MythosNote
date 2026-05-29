@@ -4,6 +4,8 @@
 {% block title %}Workspace{% endblock %}
 
 {% block content %}
+{# Bridge: pass Django context to JS #}
+<div id="workspace-data" data-workspace-id="{{ active_workspace.id }}" class="hidden"></div>
 <div
     class="w-full min-h-screen bg-neutral-950 text-stone-200 inline-flex flex-col justify-start items-start font-sans pb-16 lg:pb-0">
     <!-- Header workspace -->
@@ -88,13 +90,13 @@
             <!-- Panel sumber (kiri) -->
             <div data-sources-panel
                 class="flex self-stretch p-4 border-b border-neutral-800/70 flex-col justify-start items-start gap-4">
-                <div
+                <button id="btn-add-source" type="button"
                     class="self-stretch py-2 bg-neutral-900/80 rounded-md border border-neutral-800 inline-flex justify-center items-center gap-2 cursor-pointer hover:bg-neutral-800 transition">
                     <iconify-icon icon="material-symbols:upload" class="text-[#FFC880] text-sm"></iconify-icon>
                     <div
                         class="text-center justify-center text-[#FFC880] text-sm font-normal font-['Manrope'] leading-6">
                         Tambah Sumber</div>
-                </div>
+                </button>
                 <!-- Toggle pilih semua sumber -->
                 <div class="self-stretch inline-flex justify-start items-center gap-2" data-select-all-row>
                     <input type="checkbox" data-select-all
@@ -105,57 +107,10 @@
                     </div>
                 </div>
             </div>
-            <!-- Daftar sumber -->
-            <div data-sources-panel
+            <!-- Daftar sumber — filled dynamically by sources.js -->
+            <div id="source-list-container" data-sources-panel
                 class="flex self-stretch flex-1 p-4 flex-col justify-start items-start gap-2 overflow-y-auto">
-                <!-- Item sumber terpilih -->
-                <div class="source-item self-stretch p-2 relative bg-neutral-900/40 rounded-md border border-neutral-800 inline-flex justify-start items-start gap-2 cursor-pointer"
-                    data-source-item
-                    data-selected-classes="bg-neutral-900 border-[#FFC880]/60 shadow-[inset_0_0_0_1px_rgba(255,200,128,0.18)]">
-                    <div class="pt-1 inline-flex flex-col justify-start items-start">
-                        <input type="checkbox" data-source-checkbox
-                            class="h-4 w-4 rounded-xs border border-[#FFC880] bg-[#FFC880] accent-[#FFC880]" />
-                    </div>
-                    <div class="flex-1 inline-flex flex-col justify-start items-start gap-1">
-                        <div class="self-stretch inline-flex justify-start items-center gap-1">
-                            <iconify-icon icon="tabler:pdf" class="text-[#FFC880] text-sm"></iconify-icon>
-                            <div class="flex-1 h-6 relative overflow-hidden">
-                                <div
-                                    class="h-6 left-0 -top-px absolute justify-center text-zinc-200 text-sm font-medium font-['Manrope'] leading-6 whitespace-nowrap">
-                                    Q3_Financial_Report.pdf</div>
-                            </div>
-                        </div>
-                        <div class="self-stretch flex flex-col justify-start items-start overflow-hidden">
-                            <div
-                                class="self-stretch justify-center text-stone-300/80 text-xs font-normal font-['Manrope'] leading-5">
-                                Added 2 hours ago • 2.4 MB</div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Item sumber tidak terpilih -->
-                <div class="source-item self-stretch p-2 relative bg-neutral-900/40 rounded-md border border-neutral-800 inline-flex justify-start items-start gap-2 cursor-pointer hover:bg-neutral-900/60 transition"
-                    data-source-item
-                    data-selected-classes="bg-neutral-900 border-[#FFC880]/60 shadow-[inset_0_0_0_1px_rgba(255,200,128,0.18)]">
-                    <div class="pt-1 inline-flex flex-col justify-start items-start">
-                        <input type="checkbox" data-source-checkbox
-                            class="h-4 w-4 rounded-xs border border-neutral-700 bg-neutral-950 accent-[#FFC880]" />
-                    </div>
-                    <div class="flex-1 inline-flex flex-col justify-start items-start gap-1">
-                        <div class="self-stretch inline-flex justify-start items-center gap-1">
-                            <iconify-icon icon="tabler:txt" class="text-[#FFC880] text-sm"></iconify-icon>
-                            <div class="flex-1 h-6 relative overflow-hidden">
-                                <div
-                                    class="h-6 left-0 -top-px absolute justify-center text-stone-300 text-sm font-normal font-['Manrope'] leading-6 whitespace-nowrap">
-                                    Interview_Transcripts_Raw.txt</div>
-                            </div>
-                        </div>
-                        <div class="self-stretch flex flex-col justify-start items-start overflow-hidden">
-                            <div
-                                class="self-stretch justify-center text-stone-300/60 text-xs font-normal font-['Manrope'] leading-5">
-                                Added yesterday • 45 KB</div>
-                        </div>
-                    </div>
-                </div>
+                <!-- JS renders source items here -->
             </div>
         </div>
         <!-- Panel chat (tengah) -->
@@ -495,6 +450,77 @@
             </button>
         </div>
     </nav>
+</div>
+
+<!-- Upload Source Modal -->
+<div id="upload-modal" class="fixed inset-0 z-50 hidden items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="upload-modal-title">
+    <!-- Backdrop -->
+    <div id="upload-modal-backdrop" class="absolute inset-0 bg-neutral-950/80 backdrop-blur-sm"></div>
+    <!-- Panel -->
+    <div class="relative z-10 w-full max-w-md mx-4 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl overflow-hidden">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-neutral-800">
+            <h2 id="upload-modal-title" class="text-zinc-200 text-base font-semibold font-['Manrope']">Tambah Sumber</h2>
+            <button id="btn-close-upload-modal" type="button"
+                class="w-7 h-7 flex items-center justify-center rounded-md text-stone-400 hover:text-[#FFC880] hover:bg-neutral-800 transition"
+                aria-label="Tutup modal">
+                <iconify-icon icon="tabler:x" class="text-base"></iconify-icon>
+            </button>
+        </div>
+        <!-- Body -->
+        <form id="upload-source-form" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            <div class="px-6 py-5 flex flex-col gap-4">
+                <!-- Drop zone -->
+                <label for="source-file-input"
+                    class="group flex flex-col items-center justify-center gap-3 w-full h-36 rounded-xl border-2 border-dashed border-neutral-700 hover:border-[#FFC880]/60 bg-neutral-950/40 cursor-pointer transition">
+                    <iconify-icon icon="material-symbols:upload-file-outline" class="text-3xl text-[#FFC880]/70 group-hover:text-[#FFC880] transition"></iconify-icon>
+                    <div class="text-center">
+                        <p class="text-sm text-stone-300 font-['Manrope']">Klik atau seret file ke sini</p>
+                        <p class="text-xs text-stone-500 mt-0.5 font-['Manrope']">PDF, TXT, Markdown, DOCX — maks. 20 MB</p>
+                    </div>
+                    <input id="source-file-input" type="file" name="file" accept=".pdf,.txt,.md,.docx" class="sr-only" />
+                </label>
+                <!-- File preview -->
+                <div id="upload-file-preview" class="hidden items-center gap-3 px-3 py-2.5 bg-neutral-950/60 rounded-lg border border-neutral-800">
+                    <iconify-icon id="upload-file-icon" icon="tabler:file" class="text-[#FFC880] text-lg shrink-0"></iconify-icon>
+                    <div class="flex-1 min-w-0">
+                        <p id="upload-file-name" class="text-sm text-zinc-200 font-['Manrope'] truncate"></p>
+                        <p id="upload-file-size" class="text-xs text-stone-500 font-['Manrope']"></p>
+                    </div>
+                    <button type="button" id="btn-clear-file" class="text-stone-500 hover:text-red-400 transition" aria-label="Hapus file">
+                        <iconify-icon icon="tabler:x" class="text-sm"></iconify-icon>
+                    </button>
+                </div>
+                <!-- Upload progress -->
+                <div id="upload-progress-wrap" class="hidden flex-col gap-1">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-stone-400 font-['Manrope']">Mengupload...</span>
+                        <span id="upload-progress-pct" class="text-xs text-[#FFC880] font-['Manrope']">0%</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+                        <div id="upload-progress-bar"
+                            class="h-full bg-[#FFC880] rounded-full transition-all duration-150"
+                            style="width: 0%"></div>
+                    </div>
+                </div>
+                <!-- Error -->
+                <p id="upload-error" class="hidden text-xs text-red-400 font-['Manrope']"></p>
+            </div>
+            <!-- Footer -->
+            <div class="px-6 pb-5 flex items-center gap-3 justify-end">
+                <button type="button" id="btn-cancel-upload"
+                    class="px-4 py-2 rounded-lg text-sm font-medium font-['Manrope'] text-stone-300 hover:text-zinc-200 hover:bg-neutral-800 transition">
+                    Batal
+                </button>
+                <button type="submit" id="btn-submit-upload"
+                    class="px-5 py-2 rounded-lg text-sm font-semibold font-['Manrope'] bg-[#FFC880] text-neutral-950 hover:bg-[#ffbb60] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled>
+                    Upload
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}
 

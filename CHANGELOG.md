@@ -2,7 +2,128 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.12] - 2026-05-27
+## [1.4.26] - 2026-05-29
+
+### Summary
+Migrasi kembali penyimpanan file ke Django FileSystemStorage (default_storage) dengan volume bersama (shared volume) Docker Compose.
+
+### Fixed
+- **Docker Compose** (`docker-compose.yml`):
+  - Menambahkan volume bersama `media_data` ke service `web` dan `worker` untuk sinkronisasi berkas media.
+- **Django Storage** (`apps/sources/views.py`, `apps/sources/tasks.py`):
+  - Mengembalikan alur penyimpanan file dari Supabase Storage ke `default_storage` Django (FileSystemStorage) yang menyimpan berkas di bawah `MEDIA_ROOT`.
+  - Memperbarui views upload/delete dan task RQ untuk membaca berkas dari media bersama.
+
+## [1.4.25] - 2026-05-29
+
+### Summary
+DOCX support dan polish UX fitur upload sumber.
+
+### Added
+- **DOCX support** (`requirements.txt`, `views.py`, `tasks.py`):
+  - `python-docx==1.1.2` ditambahkan ke dependencies
+  - `.docx` ditambahkan ke `ALLOWED_EXTENSIONS` di `views.py`
+  - Handler DOCX di `extract_text_from_file()` menggunakan `python-docx`
+  - `tabler:file-type-docx` icon di `sources.js`
+
+### Changed
+- `apps/sources/views.py`:
+  - Error messages diubah ke Bahasa Indonesia yang user-friendly:
+    - `"Format tidak didukung. Gunakan PDF, TXT, MD, atau DOCX."`
+    - `"File terlalu besar. Maksimal 20 MB."`
+    - `"File dengan nama ini sudah ada di workspace."`
+- `apps/sources/tasks.py`:
+  - `error_message` yang tersimpan di DB dibatasi 500 karakter (bukan full traceback)
+  - Traceback lengkap tetap dicetak ke log
+- `static/js/workspace/index.js`:
+  - Upload via XHR (menggantikan `fetch`) untuk mendukung progress event
+  - Progress bar terintegrasi di modal (`upload-progress-wrap`, `upload-progress-bar`)
+  - Drag-and-drop file ke drop zone
+  - DOCX ditambahkan ke `ALLOWED_EXT`
+  - Error response dari API di-map ke pesan user-friendly
+- `static/js/workspace/sources.js`:
+  - `fileIconMap` mendukung `docx` → `tabler:file-type-docx`
+  - Status badge `pending`/`processing` menampilkan `animate-pulse`
+  - Label status diubah ke Bahasa Indonesia: Menunggu / Memproses / Siap / Gagal
+  - Badge `failed` menampilkan `title` dengan pesan error pendek (hover)
+  - `queued` status ditangani sebagai alias `pending`
+- `templates/workspace.html`:
+  - File input `accept` diperbarui ke `.pdf,.txt,.md,.docx`
+  - Teks hint drop zone diperbarui
+  - Progress bar HTML ditambahkan ke modal
+
+## [1.4.24] - 2026-05-29
+
+
+### Summary
+Menghubungkan Sources Panel di `workspace.html` ke backend API upload, list, delete, dan status polling.
+
+### Added
+- Upload modal di `workspace.html`: overlay backdrop, drop zone file, preview nama/ukuran file, validasi ekstensi dan ukuran, tombol cancel/upload
+- `id="workspace-data"` bridge div yang membawa `{{ active_workspace.id }}` ke JavaScript
+- `id="source-list-container"` pada div daftar sumber agar `WorkspaceSources` bisa me-render dinamis
+- `id="btn-add-source"` pada tombol "Tambah Sumber" untuk event binding
+
+### Changed
+- `workspace.html`:
+  - Hardcoded source items dihapus; JS yang me-render daftar
+  - "Tambah Sumber" `<div>` diubah menjadi `<button>` dengan `id="btn-add-source"`
+  - Upload modal HTML ditambahkan sebelum `{% endblock %}`
+- `static/js/workspace/index.js` — Ditulis ulang sepenuhnya:
+  - Inisialisasi `WorkspaceSources` dari `data-workspace-id`
+  - Logic open/close/reset modal
+  - Validasi file (ekstensi `.pdf/.txt/.md`, maks 20 MB)
+  - Preview file (icon berdasarkan ekstensi, nama, ukuran)
+  - Submit form → `workspaceSources.uploadSource(formData)` → tutup modal + toast
+- `static/js/workspace/sources.js`:
+  - Tambah `getCSRFToken()` helper (baca dari cookie `csrftoken`)
+  - `X-CSRFToken` header ditambahkan ke `uploadSource()` dan `deleteSource()`
+  - `createSourceItemHTML()` diperbarui agar cocok dengan desain `workspace.html`:
+    - Checkbox (warna berbeda saat ready vs pending)
+    - Icon file berdasarkan ekstensi (`tabler:pdf`, `tabler:txt`, `tabler:markdown`)
+    - Nama file dengan font Manrope
+    - Metadata: waktu relatif + ukuran file
+    - Status badge minimalis (10px)
+    - Tombol hapus lebih kecil di sisi kanan
+
+### Notes
+- `config/views.py` sudah melewatkan `active_workspace` ke template — tidak ada perubahan
+- `WorkspaceSources.fetchSources()` dipanggil otomatis saat halaman dimuat
+- `WorkspaceSources.pollSourceStatus()` dimulai otomatis setelah upload berhasil
+
+## [1.4.23] - 2026-05-27
+
+
+### Summary
+Penambahan field `extracted_text` pada model Source dan konfigurasi media file handling.
+
+### Added
+- Field `extracted_text` di model `Source` untuk menyimpan hasil ekstraksi teks dari dokumen
+- Konfigurasi `MEDIA_ROOT` dan `MEDIA_URL` di settings
+- Serving media files saat `DEBUG=True`
+
+### Changed
+- `config/settings.py`:
+  - Menambahkan `MEDIA_ROOT` dan `MEDIA_URL`
+  - Menambahkan `SessionAuthentication` di `REST_FRAMEWORK`
+  - Menghapus entry `'sources'` yang sudah tidak digunakan
+
+- `apps/sources/models.py`:
+  - Tambah `extracted_text = TextField(blank=True, default='')` pada model `Source`
+
+- `apps/sources/tasks.py`:
+  - Update `extracted_text` setelah proses ekstraksi teks selesai
+
+- `config/urls.py`:
+  - Menambahkan static media serving untuk mode development (`DEBUG=True`)
+
+- Migration `0002_source_extracted_text.py` telah digenerate
+
+### Notes
+- `.gitignore` sudah benar memiliki `/media/` (tidak perlu perubahan)
+- Persiapan untuk fitur RAG dan preview dokumen di masa depan
+
+## [1.4.22] - 2026-05-27
 
 ### Summary
 Migrasi storage dari Google Cloud Storage (GCS) ke **Supabase Storage**.
@@ -28,7 +149,7 @@ Migrasi storage dari Google Cloud Storage (GCS) ke **Supabase Storage**.
   - `Architecture.md`: Semua referensi GCS diganti ke Supabase Storage
   - `PROJECT_CONTEXT.md`: Update deskripsi library, environment, dan arsitektur storage
 
-## [1.4.11] - 2026-05-26
+## [1.4.21] - 2026-05-26
 
 ### Summary
 Perbaikan konfigurasi Docker dan database untuk mendukung pgvector dengan lebih stabil.
@@ -45,7 +166,7 @@ Perbaikan konfigurasi Docker dan database untuk mendukung pgvector dengan lebih 
 - Proses build frontend lebih stabil dan reproducible
 - Migration vector extension berjalan sesuai best practice
 
-## [1.4.10] - 2026-05-25
+## [1.4.20] - 2026-05-25
 
 ### Summary
 Penambahan limit panjang nama workspace menjadi maksimal 40 karakter pada fitur Create dan Rename.
