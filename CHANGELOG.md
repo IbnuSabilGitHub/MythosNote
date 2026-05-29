@@ -2,6 +2,21 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.29] - 2026-05-29
+### Summary
+Implementasi RAG flow di `ChatView.post` menggunakan cosine similarity via pgvector.
+
+### Changed
+- `views.py`:
+  - Import `CosineDistance` dan `EmbeddingProvider`
+  - Tambah RAG retrieval: embedding query → filter & order `SourceChunk` (top 5)
+  - Fallback message jika tidak ada chunk relevan
+  - Gabungkan context ke `ChatProvider.chat_complete()`
+
+### Notes
+- Response format tetap sama (`{"response": "..."}`)
+- Sudah kompatibel dengan semua embedding provider
+
 ## [1.2.28] - 2026-05-29
 ### Summary
 Implementasi `GeminiEmbeddingProvider` dengan retry logic (exponential backoff) untuk meningkatkan kestabilan koneksi ke Google Gemini Embedding API.
