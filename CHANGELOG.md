@@ -2,6 +2,87 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.31] - 2026-05-29
+### Summary
+Perbaikan Gemini Embedding Provider: ganti SDK dan model embedding yang benar.
+
+### Fixed
+- Ganti SDK dari `google.generativeai` ke `google-genai`
+- Ubah model dari `text-embedding-004` ke `gemini-embedding-001` (dimensi 768)
+- Perbaikan endpoint embedContent yang tidak support model lama
+
+### Changed
+- `providers.py`: Update `GeminiEmbeddingProvider`
+- `settings.py`, `.env`, `.env.example`: Update konfigurasi model
+- `README.md` & `tests`: Penyesuaian dokumentasi dan test
+
+### Notes
+- Model yang benar sekarang `gemini-embedding-001`
+- Dimensi embedding = 768
+
+## [1.2.30] - 2026-05-29
+### Summary
+Penghapusan OpenAI Embedding Provider dan migrasi default ke Gemini.
+
+### Changed
+- `embeddings.py`: Hapus `OpenAIEmbeddingProvider` beserta importnya
+- `.env.example`: Hapus `OPENAI_API_KEY`
+- `settings.py`:
+  - Hapus load `OPENAI_API_KEY`
+  - Tambah `DEFAULT_EMBEDDING_PROVIDER = 'gemini'`
+  - Ubah mekanisme pengambilan `EMBEDDING_PROVIDER`
+  - Tambah `EMBEDDING_MODEL = 'models/embedding-001'`
+- `PROJECT_CONTEXT.md`: Tambah section **Migration to Gemini/DeepSeek**
+- `README.md`: Update prerequisite jadi **Gemini API Key** (free tier supported)
+
+### Notes
+- Default embedding provider sekarang Gemini
+- OpenAI dependency berhasil dihapus
+
+## [1.2.29] - 2026-05-29
+### Summary
+Implementasi RAG flow di `ChatView.post` menggunakan cosine similarity via pgvector.
+
+### Changed
+- `views.py`:
+  - Import `CosineDistance` dan `EmbeddingProvider`
+  - Tambah RAG retrieval: embedding query → filter & order `SourceChunk` (top 5)
+  - Fallback message jika tidak ada chunk relevan
+  - Gabungkan context ke `ChatProvider.chat_complete()`
+
+### Notes
+- Response format tetap sama (`{"response": "..."}`)
+- Sudah kompatibel dengan semua embedding provider
+
+## [1.2.28] - 2026-05-29
+### Summary
+Implementasi `GeminiEmbeddingProvider` dengan retry logic (exponential backoff) untuk meningkatkan kestabilan koneksi ke Google Gemini Embedding API.
+
+### Changed
+- `providers.py`: Penambahan implementasi lengkap `GeminiEmbeddingProvider` yang mewarisi `BaseEmbeddingProvider`
+
+
+## [1.4.27] - 2026-05-29
+### Summary
+Refactoring modul embeddings untuk menambahkan `LocalEmbeddingProvider` sebagai placeholder dan meningkatkan kompatibilitas dengan pgvector, sambil menjaga backward compatibility penuh.
+
+### Added
+- Class `LocalEmbeddingProvider` di `embeddings.py` (placeholder dengan `NotImplementedError`)
+- Export `LocalEmbeddingProvider` beserta 6 provider existing di `embeddings.py`
+- Support opsi `"local"` pada fungsi `_create_embedding_provider()`
+
+### Changed
+- `embeddings.py`:
+  - Menambahkan docstring utama: "All providers return vectors compatible with pgvector storage"
+- `providers.py`:
+  - `BaseEmbeddingProvider`: Menambahkan docstring tentang dimensi vector yang compatible dengan pgvector
+  - `_create_embedding_provider()`: Menambahkan penanganan provider "local"
+
+### Notes
+- Method signature `get_embedding(text: str) -> list[float]` tetap unchanged
+- Worker call pattern dan kompatibilitas existing tetap terjaga
+- Tidak ada referensi OpenAI di abstract base class (persiapan penghapusan OpenAI dependency di masa depan)
+
 ## [1.4.26] - 2026-05-29
 
 ### Summary

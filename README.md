@@ -64,7 +64,7 @@ Lihat [CHANGELOG.md](CHANGELOG.md) untuk detail lengkap semua perubahan.
 
 ### Akun & API Keys
 - Akun **Supabase** (untuk file storage)
-- API Key **Gemini**, **OpenAI**, atau **DeepSeek** (pilih minimal satu)
+- API Key **Gemini** required (free tier works)
 
 ---
 
@@ -595,8 +595,9 @@ DEEPSEEK_API_KEY=your-deepseek-api-key
 DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
 
 # EMBEDDING PROVIDER
-EMBEDDING_PROVIDER=openai  # atau 'gemini'
-EMBEDDING_MODEL=text-embedding-3-small
+EMBEDDING_PROVIDER=gemini
+EMBEDDING_MODEL=gemini-embedding-001
+EMBEDDING_DIMENSIONS=768
 
 # RATE LIMITING
 MAX_PROMPTS_PER_DAY=50

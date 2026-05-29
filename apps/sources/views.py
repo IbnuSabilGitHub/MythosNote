@@ -5,6 +5,7 @@ import os
 import django_rq
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
+from pgvector.django import CosineDistance
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView
@@ -16,7 +17,7 @@ from rest_framework.views import APIView
 from django.core.files.storage import default_storage
 
 from apps.sources.models import GenerateJob, Source, SourceChunk
-from apps.sources.providers import ChatProvider
+from apps.sources.providers import ChatProvider, EmbeddingProvider
 from apps.sources.serializers import SourceDetailSerializer, SourceListSerializer
 from apps.workspaces.models import Workspace
 
@@ -191,27 +192,71 @@ def _get_workspace_ready_chunks(request, workspace_id: str):
 
 
 class ChatView(APIView):
-    """Chat endpoint using workspace source chunks as context."""
+    """Chat endpoint using RAG: embed query → pgvector ANN → LLM generate."""
 
     permission_classes = [IsAuthenticated]
+    TOP_K = 5
+    FALLBACK_MESSAGE = "Maaf, tidak ada informasi relevan yang ditemukan untuk pertanyaan Anda."
 
     def post(self, request, id):
-        message = (request.data.get("message") or "").strip()
-        if not message:
+        user_question = (request.data.get("message") or "").strip()
+        if not user_question:
             return Response(
                 {"message": "This field is required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        chunks, error_response = _get_workspace_ready_chunks(request, id)
-        if error_response:
-            return error_response
+        # Validate workspace ownership
+        workspace = get_object_or_404(
+            Workspace.objects.filter(user=request.user),
+            id=id,
+        )
 
-        context_text = "\n\n".join(chunks)
-        prompt = f"{context_text}\n\n{message}"
+        # Step 1: Embed the user question
+        try:
+            query_embedding = EmbeddingProvider.get_embedding(user_question)
+        except Exception:
+            return Response(
+                {"response": self.FALLBACK_MESSAGE},
+                status=status.HTTP_200_OK,
+            )
+
+        # Step 2: pgvector ANN search — top_k most similar chunks
+        base_qs = SourceChunk.objects.filter(
+            source__workspace=workspace,
+            source__user=request.user,
+            source__status="ready",
+            embedding__isnull=False,
+        )
+
+        top_chunks = (
+            base_qs
+            .annotate(distance=CosineDistance("embedding", query_embedding))
+            .order_by("distance")
+            .values_list("text_content", flat=True)[: self.TOP_K]
+        )
+
+        if not top_chunks:
+            return Response(
+                {"response": self.FALLBACK_MESSAGE},
+                status=status.HTTP_200_OK,
+            )
+
+        # Step 3: Build context string
+        context_text = "\n\n".join(top_chunks)
+
+        # Step 4: Generate response via LLM with retrieved context
+        system_context = (
+            "Kamu adalah asisten AI yang menjawab berdasarkan konteks dokumen berikut.\n"
+            "Gunakan hanya informasi dari konteks untuk menjawab pertanyaan pengguna.\n\n"
+            f"Konteks:\n{context_text}"
+        )
 
         response_text = ChatProvider.chat_complete(
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": system_context},
+                {"role": "user", "content": user_question},
+            ],
         )
 
         return Response({"response": response_text}, status=status.HTTP_200_OK)

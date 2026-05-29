@@ -8,11 +8,19 @@ from django.conf import settings
 
 # Embedding Providers
 class BaseEmbeddingProvider(ABC):
-    """Abstract base for text embedding backends."""
+    """Abstract base for text embedding backends.
+    
+    All implementations must ensure that the output vector length matches
+    the pgvector dimension configuration. Vector dimension consistency is
+    critical for database storage and similarity queries.
+    """
 
     @abstractmethod
     def get_embedding(self, text: str) -> list[float]:
-        """Return embedding vector for the given text."""
+        """Return embedding vector for the given text.
+        
+        Output vector length must match pgvector dimension.
+        """
 
 
 class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
@@ -36,25 +44,59 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
         return list(response.data[0].embedding)
 
 
-class GeminiEmbeddingProvider(BaseEmbeddingProvider):
-    """Google Gemini text-embedding-004 provider."""
+import time
+from google.api_core import exceptions
+from google import genai
+from google.genai import types
 
-    MODEL = "text-embedding-004"
+
+class GeminiEmbeddingProvider(BaseEmbeddingProvider):
+    """Google Gemini embedding provider with retry logic."""
 
     def __init__(self) -> None:
-        from google import genai
-
+        self.model_name = getattr(settings, "EMBEDDING_MODEL", "gemini-embedding-001")
+        self.output_dimensionality = getattr(settings, "EMBEDDING_DIMENSIONS", 768)
         api_key = getattr(settings, "GEMINI_API_KEY", "") or ""
         if not api_key:
             raise ValueError("GEMINI_API_KEY is not configured")
         self._client = genai.Client(api_key=api_key)
 
     def get_embedding(self, text: str) -> list[float]:
-        response = self._client.models.embed_content(
-            model=self.MODEL,
-            contents=[text],
-        )
-        return list(response.embedding)
+        """Return embedding vector with exponential backoff."""
+        retries = 3
+        delay = 1.0  # seconds
+        for i in range(retries):
+            try:
+                response = self._client.models.embed_content(
+                    model=self.model_name,
+                    contents=text,
+                    config=types.EmbedContentConfig(
+                        task_type="RETRIEVAL_DOCUMENT",
+                        output_dimensionality=self.output_dimensionality,
+                    ),
+                )
+                return list(response.embeddings[0].values)
+            except exceptions.GoogleAPICallError as e:
+                if i == retries - 1:
+                    raise  # Re-raise the last exception
+                time.sleep(delay)
+                delay *= 2.0  # Exponential backoff
+        raise ConnectionError("Failed to get embedding from Gemini after multiple retries.")
+
+
+class LocalEmbeddingProvider(BaseEmbeddingProvider):
+    """Local/on-device embedding provider (placeholder).
+    
+    This provider is reserved for future local embedding implementations.
+    Useful for offline scenarios or when no API keys are available.
+    """
+
+    def __init__(self) -> None:
+        raise NotImplementedError("LocalEmbeddingProvider is not yet implemented.")
+
+    def get_embedding(self, text: str) -> list[float]:
+        """Not implemented."""
+        raise NotImplementedError("LocalEmbeddingProvider is not yet implemented.")
 
 
 def _create_embedding_provider(name: str | None = None) -> BaseEmbeddingProvider:
@@ -63,8 +105,10 @@ def _create_embedding_provider(name: str | None = None) -> BaseEmbeddingProvider
         return OpenAIEmbeddingProvider()
     if provider_name == "gemini":
         return GeminiEmbeddingProvider()
+    if provider_name == "local":
+        return LocalEmbeddingProvider()
     raise ValueError(
-        f"Unsupported EMBEDDING_PROVIDER: {provider_name!r}. Use 'openai' or 'gemini'."
+        f"Unsupported EMBEDDING_PROVIDER: {provider_name!r}. Use 'gemini', 'openai', or 'local'."
     )
 
 

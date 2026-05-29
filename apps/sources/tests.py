@@ -26,8 +26,8 @@ class AIProviderTests(TestCase):
         self.assertIsInstance(provider, OpenAIChatProvider)
 
     @override_settings(AI_PROVIDER="gemini", GEMINI_API_KEY="test-key")
-    @patch("google.generativeai.configure")
-    def test_provider_selection_gemini(self, mock_configure) -> None:
+    @patch("google.genai.Client")
+    def test_provider_selection_gemini(self, mock_client) -> None:
         """Verify Gemini chat provider is selected when AI_PROVIDER is gemini."""
         provider = _create_chat_provider()
         self.assertIsInstance(provider, GeminiChatProvider)
@@ -88,7 +88,7 @@ class AIProviderTests(TestCase):
         self.assertIsInstance(provider, OpenAIEmbeddingProvider)
 
     @override_settings(EMBEDDING_PROVIDER="gemini", GEMINI_API_KEY="test-key")
-    @patch("google.generativeai.configure")
+    @patch("google.genai.Client")
     def test_embedding_provider_selection_gemini(self, mock_configure) -> None:
         """Verify Gemini embedding provider is selected when EMBEDDING_PROVIDER is gemini."""
         provider = _create_embedding_provider()

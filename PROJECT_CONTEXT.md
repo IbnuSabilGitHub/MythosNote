@@ -396,3 +396,7 @@ SESSION_COOKIE_SECURE, CSRF_COOKIE_SECURE, etc. (optional overrides)
 | AI chat / generate | **🔄 In Progress** (endpoints exist, provider logic partial) |
 
 When extending the project: register new apps under `apps/`, add to `INSTALLED_APPS`, include URLs in `config/urls.py`, reuse `@verified_email_required` for user-facing features, scope data by `workspace_id`, and follow workspace quota patterns for multi-tenant constraints.
+
+## Migration to Gemini/DeepSeek
+
+Migrated default embedding provider to Gemini instead of OpenAI. Removed OPENAI_API_KEY requirements from environment and configuration settings. Added support for DeepSeek as an alternative AI provider.
