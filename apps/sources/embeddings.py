@@ -5,7 +5,6 @@ All providers return vectors compatible with pgvector storage and similarity que
 
 from apps.sources.providers import (
     BaseEmbeddingProvider,
-    OpenAIEmbeddingProvider,
     GeminiEmbeddingProvider,
     LocalEmbeddingProvider,
     _create_embedding_provider,
@@ -15,7 +14,6 @@ from apps.sources.providers import (
 
 __all__ = [
     "BaseEmbeddingProvider",
-    "OpenAIEmbeddingProvider",
     "GeminiEmbeddingProvider",
     "LocalEmbeddingProvider",
     "_create_embedding_provider",

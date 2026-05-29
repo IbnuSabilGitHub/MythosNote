@@ -2,6 +2,25 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.30] - 2026-05-29
+### Summary
+Penghapusan OpenAI Embedding Provider dan migrasi default ke Gemini.
+
+### Changed
+- `embeddings.py`: Hapus `OpenAIEmbeddingProvider` beserta importnya
+- `.env.example`: Hapus `OPENAI_API_KEY`
+- `settings.py`:
+  - Hapus load `OPENAI_API_KEY`
+  - Tambah `DEFAULT_EMBEDDING_PROVIDER = 'gemini'`
+  - Ubah mekanisme pengambilan `EMBEDDING_PROVIDER`
+  - Tambah `EMBEDDING_MODEL = 'models/embedding-001'`
+- `PROJECT_CONTEXT.md`: Tambah section **Migration to Gemini/DeepSeek**
+- `README.md`: Update prerequisite jadi **Gemini API Key** (free tier supported)
+
+### Notes
+- Default embedding provider sekarang Gemini
+- OpenAI dependency berhasil dihapus
+
 ## [1.2.29] - 2026-05-29
 ### Summary
 Implementasi RAG flow di `ChatView.post` menggunakan cosine similarity via pgvector.

@@ -64,7 +64,7 @@ Lihat [CHANGELOG.md](CHANGELOG.md) untuk detail lengkap semua perubahan.
 
 ### Akun & API Keys
 - Akun **Supabase** (untuk file storage)
-- API Key **Gemini**, **OpenAI**, atau **DeepSeek** (pilih minimal satu)
+- API Key **Gemini** required (free tier works)
 
 ---
 
