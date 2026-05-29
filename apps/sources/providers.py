@@ -37,26 +37,24 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
 
 
 class GeminiEmbeddingProvider(BaseEmbeddingProvider):
-    """Google Gemini embedding-001 provider."""
+    """Google Gemini text-embedding-004 provider."""
 
-    MODEL = "models/embedding-001"
+    MODEL = "text-embedding-004"
 
     def __init__(self) -> None:
-        import google.generativeai as genai
+        from google import genai
 
         api_key = getattr(settings, "GEMINI_API_KEY", "") or ""
         if not api_key:
             raise ValueError("GEMINI_API_KEY is not configured")
-        genai.configure(api_key=api_key)
-        self._client = genai
+        self._client = genai.Client(api_key=api_key)
 
     def get_embedding(self, text: str) -> list[float]:
-        result = self._client.embed_content(
+        response = self._client.models.embed_content(
             model=self.MODEL,
-            content=text,
-            task_type="retrieval_document",
+            contents=[text],
         )
-        return list(result["embedding"])
+        return list(response.embedding)
 
 
 def _create_embedding_provider(name: str | None = None) -> BaseEmbeddingProvider:
@@ -126,16 +124,15 @@ class GeminiChatProvider(BaseChatProvider):
     MODEL = "gemini-2.0-flash"
 
     def __init__(self) -> None:
-        import google.generativeai as genai
+        from google import genai
 
         api_key = getattr(settings, "GEMINI_API_KEY", "") or ""
         if not api_key:
             raise ValueError("GEMINI_API_KEY is not configured")
-        genai.configure(api_key=api_key)
-        self._client = genai
+        self._client = genai.Client(api_key=api_key)
 
     def chat_complete(self, messages: list[dict[str, str]], **kwargs: Any) -> str:
-        gemini_messages = []
+        contents = []
         system_instruction = None
         for msg in messages:
             role = msg["role"]
@@ -144,14 +141,16 @@ class GeminiChatProvider(BaseChatProvider):
                 system_instruction = content
             else:
                 gemini_role = "user" if role == "user" else "model"
-                gemini_messages.append({"role": gemini_role, "parts": [content]})
+                contents.append(genai.Content(role=gemini_role, parts=[content]))
 
         model_name = kwargs.get("model", self.MODEL)
-        model = self._client.GenerativeModel(
-            model_name=model_name,
-            system_instruction=system_instruction,
+        response = self._client.models.generate_content(
+            model=model_name,
+            contents=contents,
+            config=genai.GenerateContentConfig(
+                system_instruction=system_instruction,
+            ) if system_instruction else None,
         )
-        response = model.generate_content(gemini_messages)
         return response.text
 
 
