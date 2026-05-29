@@ -44,25 +44,40 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
         return list(response.data[0].embedding)
 
 
-class GeminiEmbeddingProvider(BaseEmbeddingProvider):
-    """Google Gemini text-embedding-004 provider."""
+import time
+import google.generativeai as genai
+from google.api_core import exceptions
 
-    MODEL = "text-embedding-004"
+
+class GeminiEmbeddingProvider(BaseEmbeddingProvider):
+    """Google Gemini embedding provider with retry logic."""
+
+    MODEL = "models/embedding-001"
 
     def __init__(self) -> None:
-        from google import genai
-
         api_key = getattr(settings, "GEMINI_API_KEY", "") or ""
         if not api_key:
             raise ValueError("GEMINI_API_KEY is not configured")
-        self._client = genai.Client(api_key=api_key)
+        genai.configure(api_key=api_key)
 
     def get_embedding(self, text: str) -> list[float]:
-        response = self._client.models.embed_content(
-            model=self.MODEL,
-            contents=[text],
-        )
-        return list(response.embedding)
+        """Return embedding vector with exponential backoff."""
+        retries = 3
+        delay = 1.0  # seconds
+        for i in range(retries):
+            try:
+                response = genai.embed_content(
+                    model=self.MODEL,
+                    content=text,
+                    task_type="retrieval_document",
+                )
+                return list(response["embedding"])
+            except exceptions.GoogleAPICallError as e:
+                if i == retries - 1:
+                    raise  # Re-raise the last exception
+                time.sleep(delay)
+                delay *= 2.0  # Exponential backoff
+        raise ConnectionError("Failed to get embedding from Gemini after multiple retries.")
 
 
 class LocalEmbeddingProvider(BaseEmbeddingProvider):

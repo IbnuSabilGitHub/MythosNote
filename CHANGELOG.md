@@ -2,6 +2,14 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.28] - 2026-05-29
+### Summary
+Implementasi `GeminiEmbeddingProvider` dengan retry logic (exponential backoff) untuk meningkatkan kestabilan koneksi ke Google Gemini Embedding API.
+
+### Changed
+- `providers.py`: Penambahan implementasi lengkap `GeminiEmbeddingProvider` yang mewarisi `BaseEmbeddingProvider`
+
+
 ## [1.4.27] - 2026-05-29
 ### Summary
 Refactoring modul embeddings untuk menambahkan `LocalEmbeddingProvider` sebagai placeholder dan meningkatkan kompatibilitas dengan pgvector, sambil menjaga backward compatibility penuh.
