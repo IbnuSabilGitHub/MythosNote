@@ -300,7 +300,8 @@ if AI_PROVIDER not in ('gemini', 'deepseek'):
 
 DEFAULT_EMBEDDING_PROVIDER = 'gemini'
 EMBEDDING_PROVIDER = os.getenv('EMBEDDING_PROVIDER', DEFAULT_EMBEDDING_PROVIDER).strip().lower()
-EMBEDDING_MODEL = 'models/embedding-001'
+EMBEDDING_MODEL = os.getenv('EMBEDDING_MODEL', 'gemini-embedding-001').strip()
+EMBEDDING_DIMENSIONS = int(os.getenv('EMBEDDING_DIMENSIONS', '768'))
 # Security settings for modern browsers to mitigate certain types of attacks. Adjust as needed.
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 

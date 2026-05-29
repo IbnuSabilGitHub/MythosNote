@@ -45,20 +45,21 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
 
 
 import time
-import google.generativeai as genai
 from google.api_core import exceptions
+from google import genai
+from google.genai import types
 
 
 class GeminiEmbeddingProvider(BaseEmbeddingProvider):
     """Google Gemini embedding provider with retry logic."""
 
-    MODEL = "models/embedding-001"
-
     def __init__(self) -> None:
+        self.model_name = getattr(settings, "EMBEDDING_MODEL", "gemini-embedding-001")
+        self.output_dimensionality = getattr(settings, "EMBEDDING_DIMENSIONS", 768)
         api_key = getattr(settings, "GEMINI_API_KEY", "") or ""
         if not api_key:
             raise ValueError("GEMINI_API_KEY is not configured")
-        genai.configure(api_key=api_key)
+        self._client = genai.Client(api_key=api_key)
 
     def get_embedding(self, text: str) -> list[float]:
         """Return embedding vector with exponential backoff."""
@@ -66,12 +67,15 @@ class GeminiEmbeddingProvider(BaseEmbeddingProvider):
         delay = 1.0  # seconds
         for i in range(retries):
             try:
-                response = genai.embed_content(
-                    model=self.MODEL,
-                    content=text,
-                    task_type="retrieval_document",
+                response = self._client.models.embed_content(
+                    model=self.model_name,
+                    contents=text,
+                    config=types.EmbedContentConfig(
+                        task_type="RETRIEVAL_DOCUMENT",
+                        output_dimensionality=self.output_dimensionality,
+                    ),
                 )
-                return list(response["embedding"])
+                return list(response.embeddings[0].values)
             except exceptions.GoogleAPICallError as e:
                 if i == retries - 1:
                     raise  # Re-raise the last exception

@@ -2,6 +2,24 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.31] - 2026-05-29
+### Summary
+Perbaikan Gemini Embedding Provider: ganti SDK dan model embedding yang benar.
+
+### Fixed
+- Ganti SDK dari `google.generativeai` ke `google-genai`
+- Ubah model dari `text-embedding-004` ke `gemini-embedding-001` (dimensi 768)
+- Perbaikan endpoint embedContent yang tidak support model lama
+
+### Changed
+- `providers.py`: Update `GeminiEmbeddingProvider`
+- `settings.py`, `.env`, `.env.example`: Update konfigurasi model
+- `README.md` & `tests`: Penyesuaian dokumentasi dan test
+
+### Notes
+- Model yang benar sekarang `gemini-embedding-001`
+- Dimensi embedding = 768
+
 ## [1.2.30] - 2026-05-29
 ### Summary
 Penghapusan OpenAI Embedding Provider dan migrasi default ke Gemini.
