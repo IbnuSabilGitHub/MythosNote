@@ -2,6 +2,27 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.27] - 2026-05-29
+### Summary
+Refactoring modul embeddings untuk menambahkan `LocalEmbeddingProvider` sebagai placeholder dan meningkatkan kompatibilitas dengan pgvector, sambil menjaga backward compatibility penuh.
+
+### Added
+- Class `LocalEmbeddingProvider` di `embeddings.py` (placeholder dengan `NotImplementedError`)
+- Export `LocalEmbeddingProvider` beserta 6 provider existing di `embeddings.py`
+- Support opsi `"local"` pada fungsi `_create_embedding_provider()`
+
+### Changed
+- `embeddings.py`:
+  - Menambahkan docstring utama: "All providers return vectors compatible with pgvector storage"
+- `providers.py`:
+  - `BaseEmbeddingProvider`: Menambahkan docstring tentang dimensi vector yang compatible dengan pgvector
+  - `_create_embedding_provider()`: Menambahkan penanganan provider "local"
+
+### Notes
+- Method signature `get_embedding(text: str) -> list[float]` tetap unchanged
+- Worker call pattern dan kompatibilitas existing tetap terjaga
+- Tidak ada referensi OpenAI di abstract base class (persiapan penghapusan OpenAI dependency di masa depan)
+
 ## [1.4.26] - 2026-05-29
 
 ### Summary

@@ -8,11 +8,19 @@ from django.conf import settings
 
 # Embedding Providers
 class BaseEmbeddingProvider(ABC):
-    """Abstract base for text embedding backends."""
+    """Abstract base for text embedding backends.
+    
+    All implementations must ensure that the output vector length matches
+    the pgvector dimension configuration. Vector dimension consistency is
+    critical for database storage and similarity queries.
+    """
 
     @abstractmethod
     def get_embedding(self, text: str) -> list[float]:
-        """Return embedding vector for the given text."""
+        """Return embedding vector for the given text.
+        
+        Output vector length must match pgvector dimension.
+        """
 
 
 class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
@@ -57,14 +65,31 @@ class GeminiEmbeddingProvider(BaseEmbeddingProvider):
         return list(response.embedding)
 
 
+class LocalEmbeddingProvider(BaseEmbeddingProvider):
+    """Local/on-device embedding provider (placeholder).
+    
+    This provider is reserved for future local embedding implementations.
+    Useful for offline scenarios or when no API keys are available.
+    """
+
+    def __init__(self) -> None:
+        raise NotImplementedError("LocalEmbeddingProvider is not yet implemented.")
+
+    def get_embedding(self, text: str) -> list[float]:
+        """Not implemented."""
+        raise NotImplementedError("LocalEmbeddingProvider is not yet implemented.")
+
+
 def _create_embedding_provider(name: str | None = None) -> BaseEmbeddingProvider:
     provider_name = (name or getattr(settings, "EMBEDDING_PROVIDER", "openai")).strip().lower()
     if provider_name == "openai":
         return OpenAIEmbeddingProvider()
     if provider_name == "gemini":
         return GeminiEmbeddingProvider()
+    if provider_name == "local":
+        return LocalEmbeddingProvider()
     raise ValueError(
-        f"Unsupported EMBEDDING_PROVIDER: {provider_name!r}. Use 'openai' or 'gemini'."
+        f"Unsupported EMBEDDING_PROVIDER: {provider_name!r}. Use 'gemini', 'openai', or 'local'."
     )
 
 
