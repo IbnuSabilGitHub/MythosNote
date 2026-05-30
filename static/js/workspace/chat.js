@@ -1,5 +1,6 @@
 /**
  * Handle workspace chat interactions
+ * Tahap 5 & 6: Dynamic chat + source selection filter
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -10,13 +11,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatInput = document.getElementById('chat-input');
     const chatSubmitBtn = document.getElementById('chat-submit-btn');
     const messagesContainer = document.getElementById('chat-messages-container');
-    
+
     let currentSessionId = null;
     let isWaitingForResponse = false;
 
     function getCsrfToken() {
         const cookieValue = document.cookie.match(/(?:^|;)\s*csrftoken=([^;]+)/);
         return cookieValue ? cookieValue[1] : '';
+    }
+
+    function escapeHtml(unsafe) {
+        return (unsafe || '').toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
     function renderUserMessage(text) {
@@ -33,14 +43,14 @@ document.addEventListener('DOMContentLoaded', () => {
         scrollToBottom();
     }
 
-    function renderBotMessage(text, sources = []) {
+    function renderBotMessage(text, sources) {
         const msgDiv = document.createElement('div');
         msgDiv.className = 'w-full max-w-3xl inline-flex justify-start items-start gap-4';
-        
+
         let sourcesHtml = '';
         if (sources && sources.length > 0) {
-            sourcesHtml = '<div class="mt-2 pt-2 border-t border-neutral-800 text-xs text-stone-400">Sumber: ' + 
-                sources.map(s => `<span class="text-[#FFC880]">${escapeHtml(s.original_filename)}</span>`).join(', ') + 
+            sourcesHtml = '<div class="mt-2 pt-2 border-t border-neutral-800 text-xs text-stone-400">Sumber: ' +
+                sources.map(s => `<span class="text-[#FFC880]">${escapeHtml(s.original_filename)}</span>`).join(', ') +
                 '</div>';
         }
 
@@ -88,34 +98,33 @@ document.addEventListener('DOMContentLoaded', () => {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    function escapeHtml(unsafe) {
-        return (unsafe || '').toString()
-             .replace(/&/g, "&amp;")
-             .replace(/</g, "&lt;")
-             .replace(/>/g, "&gt;")
-             .replace(/"/g, "&quot;")
-             .replace(/'/g, "&#039;");
-    }
-
     async function sendMessage() {
         if (isWaitingForResponse) return;
-        
+
         const message = chatInput.value.trim();
         if (!message) return;
 
-        // UI update
         chatInput.value = '';
-        chatInput.style.height = 'auto'; // Reset height
+        chatInput.style.height = 'auto';
         chatSubmitBtn.disabled = true;
         isWaitingForResponse = true;
-        
+
         renderUserMessage(message);
         renderLoading();
 
         try {
             const payload = { message: message };
+
             if (currentSessionId) {
                 payload.session_id = currentSessionId;
+            }
+
+            // Tahap 6: attach selected source IDs (empty = all ready sources)
+            if (window.WorkspaceSelection && typeof window.WorkspaceSelection.getSelectedSourceIds === 'function') {
+                const selectedIds = window.WorkspaceSelection.getSelectedSourceIds();
+                if (selectedIds.length > 0) {
+                    payload.source_ids = selectedIds;
+                }
             }
 
             const response = await fetch(`/api/workspace/${workspaceId}/chat/`, {
@@ -146,19 +155,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Auto resize textarea
-    chatInput.addEventListener('input', function() {
+    // Auto-resize textarea
+    chatInput.addEventListener('input', function () {
         this.style.height = 'auto';
         this.style.height = (this.scrollHeight) + 'px';
-        
-        if (this.value.trim().length > 0) {
-            chatSubmitBtn.disabled = false;
-        } else {
-            chatSubmitBtn.disabled = true;
-        }
+        chatSubmitBtn.disabled = this.value.trim().length === 0 || isWaitingForResponse;
     });
 
-    // Handle enter and shift+enter
+    // Enter to send, Shift+Enter for newline
     chatInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -166,8 +170,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Handle submit button
-    chatSubmitBtn.addEventListener('click', () => {
-        sendMessage();
-    });
+    chatSubmitBtn.addEventListener('click', () => sendMessage());
 });

@@ -205,6 +205,7 @@ class ChatView(APIView):
     def post(self, request, id):
         user_question = (request.data.get("message") or "").strip()
         session_id = request.data.get("session_id")
+        source_ids = request.data.get("source_ids")  # optional list of UUIDs
 
         if not user_question:
             return Response(
@@ -229,6 +230,10 @@ class ChatView(APIView):
             source__status="ready",
             embedding__isnull=False,
         )
+
+        # Filter by selected source_ids if provided and non-empty
+        if source_ids and isinstance(source_ids, list) and len(source_ids) > 0:
+            base_qs = base_qs.filter(source__id__in=source_ids)
 
         if not base_qs.exists():
             return Response(

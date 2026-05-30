@@ -2,15 +2,27 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.36] - 2026-05-30
+### Summary
+Implementasi Tahap 6: Source Selection — filter RAG berdasarkan source yang dipilih.
+
+### Added
+- `static/js/workspace/selection.js`: Rewrite untuk support dynamic re-bind items, expose `getSelectedSourceIds()`, update counter badge `#chat-source-counter`.
+
+### Changed
+- `apps/sources/views.py`: `ChatView.post` terima parameter `source_ids` (list UUID), filter chunk RAG berdasarkan source terpilih; fallback ke semua ready source jika kosong.
+- `static/js/workspace/chat.js`: Kirim `source_ids` dari `WorkspaceSelection` ke API chat.
+- `templates/workspace.html`: Tambah `id="chat-source-counter"` di header chat untuk menampilkan jumlah/pilihan sumber.
+
 ## [1.2.35] - 2026-05-30
 ### Summary
 Implementasi Tahap 5: Frontend Chat yang dinamis dan terhubung dengan backend RAG.
 
 ### Added
-- `static/js/workspace/chat.js`: Skrip frontend baru untuk mengelola state chat, merender pesan dinamis (user & AI), loading indicator, dan integrasi API `/api/workspace/<id>/chat/`. Dukungan enter untuk kirim dan shift+enter untuk baris baru.
+- `static/js/workspace/chat.js`: Skrip frontend baru untuk mengelola state chat, merender pesan dinamis (user & AI), loading indicator, dan integrasi API.
 
 ### Changed
-- `templates/workspace.html`: Ubah UI statis panel chat menjadi kontainer dinamis (`#chat-messages-container`), tambah form interaktif untuk textarea input, perbaiki styling. Memuat script `chat.js`.
+- `templates/workspace.html`: Ubah UI statis panel chat menjadi kontainer dinamis, tambah form interaktif.
 
 ## [1.2.34] - 2026-05-30
 ### Summary
@@ -24,17 +36,6 @@ Implementasi Tahap 4: RAG Normal dengan context limit, Indonesian system prompt,
 - `apps/sources/urls.py`: Daftarkan endpoint DELETE messages
 
 ## [1.2.33] - 2026-05-30
-### Summary
-Implementasi penuh riwayat chat dan persistensi percakapan AI.
-
-### Added
-- `apps/sources/views.py`: Tambah `ChatSessionListView` untuk listing session chat per workspace
-- `apps/sources/views.py`: Tambah `ChatMessageListView` untuk retrieve history pesan per session
-
-### Changed
-- `apps/sources/views.py`: Update `ChatView` untuk load history chat ke prompt LLM dan auto-save percakapan user & assistant
-- `apps/sources/urls.py`: Daftarkan endpoint API baru untuk list sessions dan messages
-
 ## [1.2.32] - 2026-05-30
 ### Summary
 Persistensi chat AI per workspace sudah ditambahkan.
