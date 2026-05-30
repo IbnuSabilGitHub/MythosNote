@@ -16,7 +16,7 @@ from rest_framework.views import APIView
 
 from django.core.files.storage import default_storage
 
-from apps.sources.models import GenerateJob, Source, SourceChunk
+from apps.sources.models import GenerateJob, Source, SourceChunk, ChatSession, ChatMessage
 from apps.sources.providers import ChatProvider, EmbeddingProvider
 from apps.sources.serializers import SourceDetailSerializer, SourceListSerializer
 from apps.workspaces.models import Workspace
@@ -203,6 +203,8 @@ class ChatView(APIView):
 
     def post(self, request, id):
         user_question = (request.data.get("message") or "").strip()
+        session_id = request.data.get("session_id")
+
         if not user_question:
             return Response(
                 {"message": "This field is required."},
@@ -259,19 +261,40 @@ class ChatView(APIView):
         # Step 3: Build context string
         context_text = "\n\n".join(top_chunks)
 
-        # Step 4: Generate response via LLM with retrieved context
+        # Step 4: Retrieve or create ChatSession
+        if session_id:
+            session = get_object_or_404(
+                ChatSession.objects.filter(user=request.user, workspace=workspace),
+                id=session_id,
+            )
+        else:
+            title = user_question[:40] + ("..." if len(user_question) > 40 else "")
+            session = ChatSession.objects.create(
+                user=request.user,
+                workspace=workspace,
+                title=title,
+            )
+
+        # Step 5: Generate response via LLM with retrieved context & history
         system_context = (
             "Kamu adalah asisten AI yang menjawab berdasarkan konteks dokumen berikut.\n"
             "Gunakan hanya informasi dari konteks untuk menjawab pertanyaan pengguna.\n\n"
             f"Konteks:\n{context_text}"
         )
 
+        messages = [{"role": "system", "content": system_context}]
+
+        # Retrieve previous messages
+        history_msgs = ChatMessage.objects.filter(session=session).order_by("created_at")
+        for msg in history_msgs:
+            messages.append({"role": msg.role, "content": msg.content})
+
+        # Append current user question
+        messages.append({"role": "user", "content": user_question})
+
         try:
             response_text = ChatProvider.chat_complete(
-                messages=[
-                    {"role": "system", "content": system_context},
-                    {"role": "user", "content": user_question},
-                ],
+                messages=messages,
             )
         except Exception:
             return Response(
@@ -279,7 +302,80 @@ class ChatView(APIView):
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
-        return Response({"response": response_text}, status=status.HTTP_200_OK)
+        # Save user question and assistant reply to session
+        try:
+            with transaction.atomic():
+                ChatMessage.objects.create(
+                    session=session,
+                    role="user",
+                    content=user_question,
+                )
+                ChatMessage.objects.create(
+                    session=session,
+                    role="assistant",
+                    content=response_text,
+                )
+                session.save()  # Touch updated_at to bring it to top
+        except Exception:
+            pass
+
+        return Response(
+            {
+                "response": response_text,
+                "session_id": str(session.id),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ChatSessionListView(APIView):
+    """List chat sessions in a workspace."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id):
+        workspace = get_object_or_404(
+            Workspace.objects.filter(user=request.user),
+            id=id,
+        )
+        sessions = ChatSession.objects.filter(
+            user=request.user,
+            workspace=workspace,
+        ).order_by("-updated_at")
+
+        data = [
+            {
+                "id": str(s.id),
+                "title": s.title,
+                "created_at": s.created_at.isoformat(),
+                "updated_at": s.updated_at.isoformat(),
+            }
+            for s in sessions
+        ]
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class ChatMessageListView(APIView):
+    """List messages in a chat session."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, session_id):
+        session = get_object_or_404(
+            ChatSession.objects.filter(user=request.user),
+            id=session_id,
+        )
+        messages = ChatMessage.objects.filter(session=session).order_by("created_at")
+        data = [
+            {
+                "id": str(m.id),
+                "role": m.role,
+                "content": m.content,
+                "created_at": m.created_at.isoformat(),
+            }
+            for m in messages
+        ]
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class GenerateView(APIView):
