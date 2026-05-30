@@ -2,6 +2,19 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.32] - 2026-05-30
+### Summary
+Persistensi chat AI per workspace sudah ditambahkan.
+
+### Added
+- `apps/sources/models.py`: Tambah model `ChatSession` untuk simpan percakapan per workspace
+- `apps/sources/models.py`: Tambah model `ChatMessage` untuk simpan pesan user dan assistant
+- `apps/sources/migrations/0003_chatsession_chatmessage.py`: Migrasi skema baru untuk chat persistence
+
+### Notes
+- Chat sekarang punya struktur data yang jelas untuk sesi dan pesan
+- Siap dipakai untuk history, sinkronisasi, dan pengembangan fitur chat berikutnya
+
 ## [1.2.31] - 2026-05-29
 ### Summary
 Perbaikan Gemini Embedding Provider: ganti SDK dan model embedding yang benar.
