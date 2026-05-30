@@ -5,6 +5,7 @@ import os
 import django_rq
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from pgvector.django import CosineDistance
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -244,12 +245,12 @@ class ChatView(APIView):
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
-        # Step 2: pgvector ANN search — top_k most similar chunks
+        # Step 2: pgvector ANN search — top_5 most similar chunks
         top_chunks = (
             base_qs
             .annotate(distance=CosineDistance("embedding", query_embedding))
             .order_by("distance")
-            .values_list("text_content", flat=True)[: self.TOP_K]
+            .select_related("source")[: self.TOP_K]
         )
 
         if not top_chunks:
@@ -258,8 +259,29 @@ class ChatView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Step 3: Build context string
-        context_text = "\n\n".join(top_chunks)
+        # Step 3: Build context string and keep list of unique sources
+        context_parts = []
+        unique_sources = []
+        seen_source_ids = set()
+        max_context_chars = 6000
+        current_len = 0
+
+        for chunk in top_chunks:
+            source_obj = chunk.source
+            if source_obj.id not in seen_source_ids:
+                seen_source_ids.add(source_obj.id)
+                unique_sources.append({
+                    "id": str(source_obj.id),
+                    "original_filename": source_obj.original_filename,
+                })
+
+            part = f"[Dokumen: {source_obj.original_filename}]\n{chunk.text_content}"
+            if current_len + len(part) > max_context_chars:
+                break
+            context_parts.append(part)
+            current_len += len(part)
+
+        context_text = "\n\n".join(context_parts)
 
         # Step 4: Retrieve or create ChatSession
         if session_id:
@@ -277,8 +299,11 @@ class ChatView(APIView):
 
         # Step 5: Generate response via LLM with retrieved context & history
         system_context = (
-            "Kamu adalah asisten AI yang menjawab berdasarkan konteks dokumen berikut.\n"
-            "Gunakan hanya informasi dari konteks untuk menjawab pertanyaan pengguna.\n\n"
+            "Jawablah pertanyaan pengguna berdasarkan konteks dokumen berikut.\n"
+            "Aturan penting:\n"
+            "1. Jawablah HANYA berdasarkan konteks dokumen yang disediakan.\n"
+            "2. Jangan mengarang jawaban (no-hallucination) jika tidak ada di konteks.\n"
+            "3. Jika konteks kurang atau informasi tidak ditemukan dalam dokumen, sebutkan secara jujur bahwa informasi tidak ditemukan.\n\n"
             f"Konteks:\n{context_text}"
         )
 
@@ -303,6 +328,7 @@ class ChatView(APIView):
             )
 
         # Save user question and assistant reply to session
+        created_at_str = timezone.now().isoformat()
         try:
             with transaction.atomic():
                 ChatMessage.objects.create(
@@ -310,18 +336,22 @@ class ChatView(APIView):
                     role="user",
                     content=user_question,
                 )
-                ChatMessage.objects.create(
+                assistant_msg = ChatMessage.objects.create(
                     session=session,
                     role="assistant",
                     content=response_text,
                 )
                 session.save()  # Touch updated_at to bring it to top
+                created_at_str = assistant_msg.created_at.isoformat()
         except Exception:
             pass
 
         return Response(
             {
+                "message": user_question,
                 "response": response_text,
+                "sources": unique_sources,
+                "created_at": created_at_str,
                 "session_id": str(session.id),
             },
             status=status.HTTP_200_OK,
@@ -376,6 +406,20 @@ class ChatMessageListView(APIView):
             for m in messages
         ]
         return Response(data, status=status.HTTP_200_OK)
+
+
+class ChatMessageDeleteView(APIView):
+    """Delete all chat history in a workspace."""
+
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, id):
+        workspace = get_object_or_404(
+            Workspace.objects.filter(user=request.user),
+            id=id,
+        )
+        ChatSession.objects.filter(user=request.user, workspace=workspace).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class GenerateView(APIView):

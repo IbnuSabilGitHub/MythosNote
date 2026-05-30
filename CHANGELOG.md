@@ -2,6 +2,29 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.34] - 2026-05-30
+### Summary
+Implementasi Tahap 4: RAG Normal dengan context limit, Indonesian system prompt, dan filter/sources response metadata.
+
+### Added
+- `apps/sources/views.py`: Tambah `ChatMessageDeleteView` untuk hapus seluruh riwayat chat di workspace
+
+### Changed
+- `apps/sources/views.py`: Update RAG pipeline di `ChatView` (top 5 CosineDistance, max context limit 6000 karakter, Indonesian system prompt, dan list sources di response)
+- `apps/sources/urls.py`: Daftarkan endpoint DELETE messages
+
+## [1.2.33] - 2026-05-30
+### Summary
+Implementasi penuh riwayat chat dan persistensi percakapan AI.
+
+### Added
+- `apps/sources/views.py`: Tambah `ChatSessionListView` untuk listing session chat per workspace
+- `apps/sources/views.py`: Tambah `ChatMessageListView` untuk retrieve history pesan per session
+
+### Changed
+- `apps/sources/views.py`: Update `ChatView` untuk load history chat ke prompt LLM dan auto-save percakapan user & assistant
+- `apps/sources/urls.py`: Daftarkan endpoint API baru untuk list sessions dan messages
+
 ## [1.2.32] - 2026-05-30
 ### Summary
 Persistensi chat AI per workspace sudah ditambahkan.
