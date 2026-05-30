@@ -2,6 +2,18 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.37] - 2026-05-31
+### Summary
+Remove OpenAI SDK and implementations; migrate fully to Gemini/DeepSeek.
+
+### Changed
+- `apps/sources/providers.py`: Remove `OpenAIEmbeddingProvider` and `OpenAIChatProvider`; default to `Gemini` for embeddings and keep `Gemini`/`DeepSeek` as supported chat providers.
+- `requirements.txt`: Remove `openai` dependency.
+- `apps/sources/tests.py`: Remove/adjust tests referencing OpenAI provider.
+
+### Notes
+- This change removes OpenAI-specific code paths and dependencies. Use `AI_PROVIDER=gemini` or `AI_PROVIDER=deepseek` with respective API keys.
+
 ## [1.2.36] - 2026-05-30
 ### Summary
 Implementasi Tahap 6: Source Selection — filter RAG berdasarkan source yang dipilih.

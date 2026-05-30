@@ -23,25 +23,7 @@ class BaseEmbeddingProvider(ABC):
         """
 
 
-class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
-    """OpenAI text-embedding-3-small provider."""
-
-    MODEL = "text-embedding-3-small"
-
-    def __init__(self) -> None:
-        from openai import OpenAI
-
-        api_key = getattr(settings, "OPENAI_API_KEY", "") or ""
-        if not api_key:
-            raise ValueError("OPENAI_API_KEY is not configured")
-        self._client = OpenAI(api_key=api_key)
-
-    def get_embedding(self, text: str) -> list[float]:
-        response = self._client.embeddings.create(
-            model=self.MODEL,
-            input=text,
-        )
-        return list(response.data[0].embedding)
+# OpenAI embedding provider removed. Default is Gemini.
 
 
 import time
@@ -100,9 +82,8 @@ class LocalEmbeddingProvider(BaseEmbeddingProvider):
 
 
 def _create_embedding_provider(name: str | None = None) -> BaseEmbeddingProvider:
-    provider_name = (name or getattr(settings, "EMBEDDING_PROVIDER", "openai")).strip().lower()
-    if provider_name == "openai":
-        return OpenAIEmbeddingProvider()
+    # Default to Gemini for embedding provider
+    provider_name = (name or getattr(settings, "EMBEDDING_PROVIDER", "gemini")).strip().lower()
     if provider_name == "gemini":
         return GeminiEmbeddingProvider()
     if provider_name == "local":
@@ -138,28 +119,7 @@ class BaseChatProvider(ABC):
         """Generate chat completion response."""
 
 
-class OpenAIChatProvider(BaseChatProvider):
-    """OpenAI chat completion provider."""
-
-    MODEL = "gpt-4o"
-
-    def __init__(self) -> None:
-        from openai import OpenAI
-
-        api_key = getattr(settings, "OPENAI_API_KEY", "") or ""
-        if not api_key:
-            raise ValueError("OPENAI_API_KEY is not configured")
-        self._client = OpenAI(api_key=api_key)
-
-    def chat_complete(self, messages: list[dict[str, str]], **kwargs: Any) -> str:
-        model_name = kwargs.get("model", self.MODEL)
-        api_kwargs = {k: v for k, v in kwargs.items() if k != "model"}
-        response = self._client.chat.completions.create(
-            model=model_name,
-            messages=messages,  # type: ignore
-            **api_kwargs,
-        )
-        return response.choices[0].message.content or ""
+# OpenAI chat provider removed. Use Gemini or DeepSeek.
 
 
 class GeminiChatProvider(BaseChatProvider):
@@ -225,14 +185,12 @@ class DeepSeekChatProvider(BaseChatProvider):
 
 def _create_chat_provider(name: str | None = None) -> BaseChatProvider:
     provider_name = (name or getattr(settings, "AI_PROVIDER", "gemini")).strip().lower()
-    if provider_name == "openai":
-        return OpenAIChatProvider()
     if provider_name == "gemini":
         return GeminiChatProvider()
     if provider_name == "deepseek":
         return DeepSeekChatProvider()
     raise ValueError(
-        f"Unsupported AI_PROVIDER: {provider_name!r}. Use 'gemini', 'openai', or 'deepseek'."
+        f"Unsupported AI_PROVIDER: {provider_name!r}. Use 'gemini' or 'deepseek'."
     )
 
 
