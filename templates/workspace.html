@@ -132,103 +132,22 @@
                     </div>
                 </div>
             </div>
-            <div
+            <div id="chat-messages-container"
                 class="flex-1 w-full p-4 sm:p-6 pt-4 sm:ptmin-6 flex flex-col justify-start items-center gap-6 sm:gap-8 overflow-y-auto">
-                <div class="w-full max-w-3xl self-end flex flex-col justify-start items-end">
-                    <div class="max-w-[85%] inline-flex justify-end items-start">
-                        <div
-                            class="self-stretch pl-4 pr-6 py-4 bg-[#FFC880]/15 rounded-2xl rounded-tr-md border border-[#FFC880]/30 inline-flex flex-col justify-start items-start">
-                            <div class="text-zinc-200 text-base font-normal font-['Manrope'] leading-6">Tolong buatkan
-                                ringkasan poin-poin utama dari laporan keuangan Q3,<br />fokus pada pertumbuhan
-                                pendapatan dan risiko yang disebutkan.</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="w-full max-w-3xl inline-flex justify-start items-start gap-4">
-                    <div class="w-8 h-9 pt-1 inline-flex flex-col justify-start items-start shrink-0">
-                        <div
-                            class="w-8 h-8 bg-neutral-900 rounded-xl outline -outline-offset-1 outline-neutral-800 inline-flex justify-center items-center">
-                            <img src="{% static 'svg/deepseek-logo.svg' %}" alt="DeepSeek" class="h-4 w-4" />
-                        </div>
-                    </div>
-                    <div
-                        class="flex-1 px-4 pt-3.5 pb-4 bg-neutral-900/70 rounded-2xl border border-neutral-800 inline-flex flex-col justify-start items-start gap-4">
-                        <div class="self-stretch flex flex-col justify-start items-start gap-1.5">
-                            <div class="self-stretch pb-[0.69px] flex flex-col justify-start items-start">
-                                <div class="self-stretch justify-center"><span
-                                        class="text-zinc-200 text-sm font-normal font-['Space_Grotesk'] leading-6 tracking-tight">Berdasarkan
-                                        dokumen </span><span
-                                        class="text-[#FFC880] text-sm font-normal font-['Space_Grotesk']">Q3_Financial_Report.pdf</span><span
-                                        class="text-zinc-200 text-sm font-normal font-['Space_Grotesk'] leading-6 tracking-tight">,
-                                        berikut adalah<br />ringkasan poin-poin utama:</span></div>
-                            </div>
-                            <div class="self-stretch pt-2 pb-[0.80px] flex flex-col justify-start items-start">
-                                <div
-                                    class="self-stretch justify-center text-[#FFC880] text-sm font-medium font-['Space_Grotesk'] leading-6 tracking-tight">
-                                    1. Pertumbuhan Pendapatan</div>
-                            </div>
-                            <div class="self-stretch pl-5 flex flex-col justify-start items-start gap-1">
-                                <div class="self-stretch flex flex-col justify-start items-start">
-                                    <div
-                                        class="justify-center text-stone-300 text-sm font-normal font-['Space_Grotesk'] leading-6 tracking-tight">
-                                        Pendapatan total meningkat 18% YoY mencapai $45.2 juta.</div>
-                                </div>
-                                <div class="self-stretch">
-                                    <div
-                                        class="justify-center text-stone-300 text-sm font-normal font-['Space_Grotesk'] leading-6 tracking-tight">
-                                        Segmen SaaS B2B menyumbang pertumbuhan terbesar (24%).</div>
-                                </div>
-                            </div>
-                            <div class="self-stretch pt-2 pb-[0.80px] flex flex-col justify-start items-start">
-                                <div
-                                    class="self-stretch justify-center text-[#FFC880] text-sm font-medium font-['Space_Grotesk'] leading-6 tracking-tight">
-                                    2. Risiko yang Diidentifikasi</div>
-                            </div>
-                            <div class="self-stretch pl-5 pt-px flex flex-col justify-start items-start gap-1">
-                                <div class="self-stretch">
-                                    <div
-                                        class="justify-center text-stone-300 text-sm font-normal font-['Space_Grotesk'] leading-6 tracking-tight">
-                                        Biaya akuisisi pelanggan (CAC) meningkat 12% pada kuartal ini.</div>
-                                </div>
-                                <div class="self-stretch">
-                                    <div
-                                        class="justify-center text-stone-300 text-sm font-normal font-['Space_Grotesk'] leading-6 tracking-tight">
-                                        Gangguan rantai pasokan perangkat keras berpotensi menunda peluncuran produk Q4.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="self-stretch pt-2 flex flex-col justify-start items-start">
-                            <div class="self-stretch inline-flex justify-start items-start gap-2">
-                                <div
-                                    class="px-2 py-1 bg-neutral-800 rounded-md flex justify-start items-center gap-1 cursor-pointer hover:bg-neutral-700 transition">
-                                    <iconify-icon icon="tabler:copy" class="text-stone-300 text-xs"></iconify-icon>
-                                    <div
-                                        class="h-5 text-center justify-center text-stone-300 text-xs font-normal font-['Manrope'] leading-5">
-                                        Salin</div>
-                                </div>
-                                <div
-                                    class="h-7 w-7 bg-neutral-800 rounded-md flex justify-center items-center cursor-pointer hover:bg-neutral-700 transition">
-                                    <iconify-icon icon="octicon:thumbsup-16"
-                                        class="text-stone-300 text-xs"></iconify-icon>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <!-- Chat messages will be dynamically injected here by chat.js -->
             </div>
             <div
                 class="w-full max-w-3xl mx-auto px-4 sm:px-6 pb-6 inline-flex flex-col justify-start items-start gap-1.5 shrink-0 relative z-10 bg-neutral-950">
                 <div
                     class="w-full relative bg-neutral-900/70 rounded-2xl border border-neutral-800 flex flex-col justify-start items-start">
-                    <div class="self-stretch min-h-16 pl-4 pr-16 pt-3 pb-10">
-                        <textarea
+                    <div class="self-stretch min-h-16 pl-4 pr-16 pt-3 pb-10 relative">
+                        <textarea id="chat-input"
                             class="w-full bg-transparent text-stone-200 text-base font-normal font-['Manrope'] leading-6 placeholder:text-stone-300/50 focus:outline-none resize-none"
                             rows="2" placeholder="Tanyakan apa pun tentang sumber yang Anda pilih..."></textarea>
                     </div>
                     <div class="absolute right-4 bottom-4 inline-flex justify-start items-start">
-                        <button
-                            class="w-10 h-10 relative bg-[#FFC880] rounded-xl flex justify-center items-center hover:bg-[#FFC880] transition shadow-md">
+                        <button id="chat-submit-btn"
+                            class="w-10 h-10 relative bg-[#FFC880] rounded-xl flex justify-center items-center hover:bg-[#FFC880]/80 transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
                             <iconify-icon icon="material-symbols:send-outline"
                                 class="text-neutral-950 text-lg"></iconify-icon>
                         </button>
@@ -528,5 +447,6 @@
 <script src="{% static 'js/workspace/sources.js' %}"></script>
 <script src="{% static 'js/workspace/layout.js' %}"></script>
 <script src="{% static 'js/workspace/selection.js' %}"></script>
+<script src="{% static 'js/workspace/chat.js' %}"></script>
 <script src="{% static 'js/workspace/index.js' %}"></script>
 {% endblock %}

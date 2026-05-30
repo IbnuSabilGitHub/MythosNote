@@ -2,6 +2,16 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.35] - 2026-05-30
+### Summary
+Implementasi Tahap 5: Frontend Chat yang dinamis dan terhubung dengan backend RAG.
+
+### Added
+- `static/js/workspace/chat.js`: Skrip frontend baru untuk mengelola state chat, merender pesan dinamis (user & AI), loading indicator, dan integrasi API `/api/workspace/<id>/chat/`. Dukungan enter untuk kirim dan shift+enter untuk baris baru.
+
+### Changed
+- `templates/workspace.html`: Ubah UI statis panel chat menjadi kontainer dinamis (`#chat-messages-container`), tambah form interaktif untuk textarea input, perbaiki styling. Memuat script `chat.js`.
+
 ## [1.2.34] - 2026-05-30
 ### Summary
 Implementasi Tahap 4: RAG Normal dengan context limit, Indonesian system prompt, dan filter/sources response metadata.
