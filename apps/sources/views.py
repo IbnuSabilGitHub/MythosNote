@@ -196,13 +196,21 @@ class ChatView(APIView):
 
     permission_classes = [IsAuthenticated]
     TOP_K = 5
-    FALLBACK_MESSAGE = "Maaf, tidak ada informasi relevan yang ditemukan untuk pertanyaan Anda."
+    MAX_MESSAGE_LENGTH = 4000
+    EMBEDDING_ERROR_MESSAGE = "Gagal memproses pertanyaan. Coba lagi nanti."
+    NO_CONTEXT_MESSAGE = "Belum ada sumber siap untuk workspace ini."
+    LLM_ERROR_MESSAGE = "AI sedang tidak bisa menjawab. Coba lagi nanti."
 
     def post(self, request, id):
         user_question = (request.data.get("message") or "").strip()
         if not user_question:
             return Response(
                 {"message": "This field is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if len(user_question) > self.MAX_MESSAGE_LENGTH:
+            return Response(
+                {"message": f"Message must be {self.MAX_MESSAGE_LENGTH} characters or fewer."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -212,16 +220,6 @@ class ChatView(APIView):
             id=id,
         )
 
-        # Step 1: Embed the user question
-        try:
-            query_embedding = EmbeddingProvider.get_embedding(user_question)
-        except Exception:
-            return Response(
-                {"response": self.FALLBACK_MESSAGE},
-                status=status.HTTP_200_OK,
-            )
-
-        # Step 2: pgvector ANN search — top_k most similar chunks
         base_qs = SourceChunk.objects.filter(
             source__workspace=workspace,
             source__user=request.user,
@@ -229,6 +227,22 @@ class ChatView(APIView):
             embedding__isnull=False,
         )
 
+        if not base_qs.exists():
+            return Response(
+                {"detail": self.NO_CONTEXT_MESSAGE},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Step 1: Embed the user question
+        try:
+            query_embedding = EmbeddingProvider.get_embedding(user_question)
+        except Exception:
+            return Response(
+                {"detail": self.EMBEDDING_ERROR_MESSAGE},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        # Step 2: pgvector ANN search — top_k most similar chunks
         top_chunks = (
             base_qs
             .annotate(distance=CosineDistance("embedding", query_embedding))
@@ -238,8 +252,8 @@ class ChatView(APIView):
 
         if not top_chunks:
             return Response(
-                {"response": self.FALLBACK_MESSAGE},
-                status=status.HTTP_200_OK,
+                {"detail": self.NO_CONTEXT_MESSAGE},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Step 3: Build context string
@@ -252,12 +266,18 @@ class ChatView(APIView):
             f"Konteks:\n{context_text}"
         )
 
-        response_text = ChatProvider.chat_complete(
-            messages=[
-                {"role": "system", "content": system_context},
-                {"role": "user", "content": user_question},
-            ],
-        )
+        try:
+            response_text = ChatProvider.chat_complete(
+                messages=[
+                    {"role": "system", "content": system_context},
+                    {"role": "user", "content": user_question},
+                ],
+            )
+        except Exception:
+            return Response(
+                {"detail": self.LLM_ERROR_MESSAGE},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
         return Response({"response": response_text}, status=status.HTTP_200_OK)
 
