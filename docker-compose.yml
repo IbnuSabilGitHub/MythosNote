@@ -34,7 +34,11 @@ services:
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
     ports:
       - "8000:8000"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     volumes:
+      - .:/app
       - media_data:/app/media
     depends_on:
       db:
@@ -51,7 +55,11 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-mythosnote_user}:${POSTGRES_PASSWORD:-mythosnote_password}@db:5432/${POSTGRES_DB:-mythosnote}
       REDIS_URL: redis://redis:6379/0
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     volumes:
+      - .:/app
       - media_data:/app/media
     depends_on:
       db:
