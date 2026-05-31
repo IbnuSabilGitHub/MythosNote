@@ -2,7 +2,7 @@
 
 Sistem AI-powered note-taking yang memungkinkan pengguna mengelola workspace, mengunggah dokumen, dan berinteraksi dengan AI berdasarkan konteks dokumen.
 
-**Stack:** Python (Django) | PostgreSQL | Redis | Supabase Storage | Gemini/OpenAI/DeepSeek API
+**Stack:** Python (Django) | PostgreSQL | Redis | Supabase Storage | Gemini/DeepSeek API
 
 ---
 
@@ -30,7 +30,7 @@ Sistem AI-powered note-taking yang memungkinkan pengguna mengelola workspace, me
 - ✨ Race condition fixes untuk atomic workspace creation
 - ✨ Chat API dengan RAG (Retrieval-Augmented Generation)
 - ✨ Generate API untuk async content generation (ringkasan, kuis, tabel, mindmap)
-- ✨ Backend support untuk multiple AI providers (Gemini, OpenAI, DeepSeek)
+-- ✨ Backend support untuk multiple AI providers (Gemini, DeepSeek)
 - ✨ Embedding providers dengan 768-dimensional vectors
 - ✨ UI improvements dengan modal-based workspace management & toast notifications
 
@@ -46,7 +46,7 @@ Lihat [CHANGELOG.md](CHANGELOG.md) untuk detail lengkap semua perubahan.
 - ✅ **Generate Content**: Auto-generate ringkasan, tabel, kuis, mindmap via background jobs
 - ✅ **Semantic Search**: Pencarian menggunakan embedding vectors (768-dimensional)
 - ✅ **Cloud Storage**: Penyimpanan dokumen di Supabase Storage
-- ✅ **Multi-AI Provider**: Support Gemini, OpenAI, DeepSeek
+-- ✅ **Multi-AI Provider**: Support Gemini, DeepSeek
 - ✅ **Rate Limiting**: Proteksi API dengan quota harian per user
 - ✅ **Background Processing**: RQ worker untuk ekstraksi & embedding async
 
@@ -226,7 +226,7 @@ SUPABASE_URL=your-supabase-url
 SUPABASE_KEY=your-supabase-key
 SUPABASE_BUCKET=your-bucket-name
 
-# AI PROVIDER (pilih salah satu: gemini, openai, deepseek)
+# AI PROVIDER (pilih salah satu: gemini, deepseek)
 AI_PROVIDER=gemini
 GEMINI_API_KEY=your-gemini-api-key
 
@@ -588,9 +588,9 @@ SUPABASE_KEY=your-supabase-anon-key
 SUPABASE_BUCKET=mythosnote-bucket
 
 # AI PROVIDER
-AI_PROVIDER=gemini  # atau 'openai', 'deepseek'
+# Supported: gemini, deepseek
+AI_PROVIDER=gemini
 GEMINI_API_KEY=your-gemini-api-key
-OPENAI_API_KEY=your-openai-api-key
 DEEPSEEK_API_KEY=your-deepseek-api-key
 DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
 
@@ -665,11 +665,6 @@ send_mail("SMTP test", "Email MythosNote aktif.", None, ["you@example.com"])
 3. Di menu "Storage", buat bucket baru (nama: `mythosnote-bucket`)
 4. Copy `Project URL` → `SUPABASE_URL`
 5. Copy `anon key` dari Settings → API → Anon → `SUPABASE_KEY`
-
-#### OpenAI API
-1. Daftar di [openai.com](https://platform.openai.com)
-2. Buat API key di Settings → API Keys
-3. Set `OPENAI_API_KEY`
 
 #### Gemini API
 1. Dapatkan di [Google AI Studio](https://makersuite.google.com/app/apikey)
@@ -762,8 +757,8 @@ MythosNote/
 │       ├── models.py        # Source, SourceChunk models
 │       ├── views.py         # Upload, list, delete endpoints
 │       ├── tasks.py         # RQ background jobs (extraction, embedding)
-│       ├── embeddings.py    # Embedding providers (OpenAI, Gemini)
-│       ├── providers.py     # Chat providers (Gemini, OpenAI, DeepSeek)
+│       ├── embeddings.py    # Embedding providers (Gemini)
+│       ├── providers.py     # Chat providers (Gemini, DeepSeek)
 │       ├── serializers.py
 │       └── urls.py
 │
@@ -902,7 +897,7 @@ pip install -r requirements.txt
 - [PostgreSQL Tutorial](https://www.postgresql.org/docs/current/tutorial.html)
 - [Supabase Documentation](https://supabase.com/docs)
 - [Gemini API](https://ai.google.dev/tutorials/get_started_web)
-- [OpenAI API](https://platform.openai.com/docs)
+
 - [DeepSeek API](https://platform.deepseek.com/)
 
 ---

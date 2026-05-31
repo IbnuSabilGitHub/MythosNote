@@ -75,7 +75,7 @@ graph TB
 
 | Kebutuhan | Saran | Alasan |
 |---|---|---|
-| **LLM** | Google Gemini API (gemini-2.0-flash), DeepSeek API (deepseek-chat) | Murah, konteks panjang, ada free tier / cost-effective |
+| **LLM** | Google Gemini API (gemini-2.5-flash), DeepSeek API (deepseek-chat) | Murah, konteks panjang, ada free tier / cost-effective |
 | **Embedding** | `text-embedding-3-small` (OpenAI) atau Gemini Embedding | Murah, performa baik |
 | **Vector Search** | **pgvector** (PostgreSQL extension) | ⭐ Tidak perlu infra tambahan |
 | **PDF Parsing** | `PyMuPDF` (fitz) | Cepat dan akurat |

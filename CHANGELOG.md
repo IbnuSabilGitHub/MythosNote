@@ -2,6 +2,65 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.37] - 2026-05-31
+### Summary
+Remove OpenAI SDK and implementations; migrate fully to Gemini/DeepSeek.
+
+### Changed
+- `apps/sources/providers.py`: Remove `OpenAIEmbeddingProvider` and `OpenAIChatProvider`; default to `Gemini` for embeddings and keep `Gemini`/`DeepSeek` as supported chat providers.
+- `requirements.txt`: Remove `openai` dependency.
+- `apps/sources/tests.py`: Remove/adjust tests referencing OpenAI provider.
+
+### Notes
+- This change removes OpenAI-specific code paths and dependencies. Use `AI_PROVIDER=gemini` or `AI_PROVIDER=deepseek` with respective API keys.
+
+## [1.2.36] - 2026-05-30
+### Summary
+Implementasi Tahap 6: Source Selection — filter RAG berdasarkan source yang dipilih.
+
+### Added
+- `static/js/workspace/selection.js`: Rewrite untuk support dynamic re-bind items, expose `getSelectedSourceIds()`, update counter badge `#chat-source-counter`.
+
+### Changed
+- `apps/sources/views.py`: `ChatView.post` terima parameter `source_ids` (list UUID), filter chunk RAG berdasarkan source terpilih; fallback ke semua ready source jika kosong.
+- `static/js/workspace/chat.js`: Kirim `source_ids` dari `WorkspaceSelection` ke API chat.
+- `templates/workspace.html`: Tambah `id="chat-source-counter"` di header chat untuk menampilkan jumlah/pilihan sumber.
+
+## [1.2.35] - 2026-05-30
+### Summary
+Implementasi Tahap 5: Frontend Chat yang dinamis dan terhubung dengan backend RAG.
+
+### Added
+- `static/js/workspace/chat.js`: Skrip frontend baru untuk mengelola state chat, merender pesan dinamis (user & AI), loading indicator, dan integrasi API.
+
+### Changed
+- `templates/workspace.html`: Ubah UI statis panel chat menjadi kontainer dinamis, tambah form interaktif.
+
+## [1.2.34] - 2026-05-30
+### Summary
+Implementasi Tahap 4: RAG Normal dengan context limit, Indonesian system prompt, dan filter/sources response metadata.
+
+### Added
+- `apps/sources/views.py`: Tambah `ChatMessageDeleteView` untuk hapus seluruh riwayat chat di workspace
+
+### Changed
+- `apps/sources/views.py`: Update RAG pipeline di `ChatView` (top 5 CosineDistance, max context limit 6000 karakter, Indonesian system prompt, dan list sources di response)
+- `apps/sources/urls.py`: Daftarkan endpoint DELETE messages
+
+## [1.2.33] - 2026-05-30
+## [1.2.32] - 2026-05-30
+### Summary
+Persistensi chat AI per workspace sudah ditambahkan.
+
+### Added
+- `apps/sources/models.py`: Tambah model `ChatSession` untuk simpan percakapan per workspace
+- `apps/sources/models.py`: Tambah model `ChatMessage` untuk simpan pesan user dan assistant
+- `apps/sources/migrations/0003_chatsession_chatmessage.py`: Migrasi skema baru untuk chat persistence
+
+### Notes
+- Chat sekarang punya struktur data yang jelas untuk sesi dan pesan
+- Siap dipakai untuk history, sinkronisasi, dan pengembangan fitur chat berikutnya
+
 ## [1.2.31] - 2026-05-29
 ### Summary
 Perbaikan Gemini Embedding Provider: ganti SDK dan model embedding yang benar.

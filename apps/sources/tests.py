@@ -18,12 +18,6 @@ from apps.sources.providers import (
 class AIProviderTests(TestCase):
     """Test suite for AI Provider selection, validation, and error fallback."""
 
-    @override_settings(AI_PROVIDER="openai", OPENAI_API_KEY="test-key")
-    @patch("openai.OpenAI")
-    def test_provider_selection_openai(self, mock_openai) -> None:
-        """Verify OpenAI chat provider is selected when AI_PROVIDER is openai."""
-        provider = _create_chat_provider()
-        self.assertIsInstance(provider, OpenAIChatProvider)
 
     @override_settings(AI_PROVIDER="gemini", GEMINI_API_KEY="test-key")
     @patch("google.genai.Client")
@@ -53,12 +47,6 @@ class AIProviderTests(TestCase):
             DeepSeekChatProvider()
         self.assertIn("DEEPSEEK_API_KEY is not configured", str(ctx.exception))
 
-    @override_settings(OPENAI_API_KEY="")
-    def test_openai_missing_api_key_raises_error(self) -> None:
-        """Verify OpenAIChatProvider raises ValueError if api key is missing."""
-        with self.assertRaises(ValueError) as ctx:
-            OpenAIChatProvider()
-        self.assertIn("OPENAI_API_KEY is not configured", str(ctx.exception))
 
     @override_settings(GEMINI_API_KEY="")
     def test_gemini_missing_api_key_raises_error(self) -> None:
@@ -80,12 +68,7 @@ class AIProviderTests(TestCase):
             base_url="https://api.deepseek.com/v1",
         )
 
-    @override_settings(EMBEDDING_PROVIDER="openai", OPENAI_API_KEY="test-key")
-    @patch("openai.OpenAI")
-    def test_embedding_provider_selection_openai(self, mock_openai) -> None:
-        """Verify OpenAI embedding provider is selected when EMBEDDING_PROVIDER is openai."""
-        provider = _create_embedding_provider()
-        self.assertIsInstance(provider, OpenAIEmbeddingProvider)
+    # OpenAI provider removed; tests focus on Gemini and DeepSeek providers
 
     @override_settings(EMBEDDING_PROVIDER="gemini", GEMINI_API_KEY="test-key")
     @patch("google.genai.Client")

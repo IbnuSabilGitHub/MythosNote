@@ -9,6 +9,9 @@ from apps.sources.views import (
     SourceListView,
     SourceStatusView,
     SourceUploadView,
+    ChatSessionListView,
+    ChatMessageListView,
+    ChatMessageDeleteView,
 )
 
 
@@ -18,5 +21,8 @@ urlpatterns = [
     path("api/sources/<uuid:id>/", SourceDeleteView.as_view(), name="source-delete"),
     path("api/sources/<uuid:id>/status/", SourceStatusView.as_view(), name="source-status"),
     path("api/workspace/<uuid:id>/chat/", ChatView.as_view(), name="workspace-chat"),
+    path("api/workspace/<uuid:id>/chat/sessions/", ChatSessionListView.as_view(), name="workspace-chat-sessions"),
+    path("api/chat/session/<uuid:session_id>/messages/", ChatMessageListView.as_view(), name="chat-session-messages"),
+    path("api/workspace/<uuid:id>/chat/messages/", ChatMessageDeleteView.as_view(), name="workspace-chat-messages-delete"),
     path("api/workspace/<uuid:id>/generate/", GenerateView.as_view(), name="workspace-generate"),
 ]
