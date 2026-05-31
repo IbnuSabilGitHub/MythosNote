@@ -2,7 +2,19 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.40] - 2026-05-31
+### Summary
+Token efficiency Tahap 3: naikkan chunk size 500 → 800 token untuk mengurangi jumlah chunks per dokumen.
+
+### Changed
+- `apps/sources/tasks.py`: `process_source` — ubah `chunk_text(..., max_tokens=500)` menjadi `max_tokens=800`. Menghasilkan lebih sedikit chunks per dokumen, mengurangi embedding API calls saat processing dan jumlah entri pgvector.
+
+### Notes
+- **Berlaku untuk dokumen baru saja.** Dokumen yang sudah diproses tidak di-reprocess otomatis; re-upload diperlukan untuk konsistensi.
+- `overlap=50` tetap tidak berubah.
+
 ## [1.2.39] - 2026-05-31
+
 ### Summary
 Token efficiency Tahap 2: batasi context generate dengan char-limit guard (12.000 karakter).
 

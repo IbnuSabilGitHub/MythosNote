@@ -247,7 +247,8 @@ def process_source(source_id: str) -> None:
             raise ValueError("File kosong atau tidak mengandung teks yang dapat diekstrak")
 
         normalized_text = normalize_text(raw_text)
-        chunks = chunk_text(normalized_text, max_tokens=500, overlap=50)
+        # Token efficiency: chunk lebih besar = lebih sedikit chunks & embedding calls
+        chunks = chunk_text(normalized_text, max_tokens=800, overlap=50)
 
         if not chunks:
             raise ValueError("Tidak ada chunks yang dihasilkan dari teks")
