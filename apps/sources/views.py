@@ -436,6 +436,8 @@ class GenerateView(APIView):
     """Generate summary/mindmap/quiz/table from workspace source chunks."""
 
     permission_classes = [IsAuthenticated]
+    # Token efficiency: batasi context generate agar tidak kirim semua chunks
+    MAX_GENERATE_CHARS = 12_000  # ~3k token; cukup untuk dokumen panjang
 
     PROMPT_TEMPLATES = {
         "summary": "Summarize the following context into concise bullet points.",
@@ -456,7 +458,17 @@ class GenerateView(APIView):
         if error_response:
             return error_response
 
-        context_text = "\n\n".join(chunks)
+        # Bangun context dengan char-limit guard — hemat token, cegah blow-up
+        context_parts = []
+        total_chars = 0
+        total_chunks = len(chunks)
+        for chunk in chunks:
+            if total_chars + len(chunk) > self.MAX_GENERATE_CHARS:
+                break
+            context_parts.append(chunk)
+            total_chars += len(chunk)
+        context_text = "\n\n".join(context_parts)
+
         instruction = self.PROMPT_TEMPLATES[action]
         prompt = f"{context_text}\n\nTask: {instruction}"
 

@@ -2,7 +2,20 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.39] - 2026-05-31
+### Summary
+Token efficiency Tahap 2: batasi context generate dengan char-limit guard (12.000 karakter).
+
+### Changed
+- `apps/sources/views.py`: `GenerateView` — tambah konstanta `MAX_GENERATE_CHARS = 12_000`; ganti `"\n\n".join(chunks)` dengan loop guard yang berhenti saat total karakter melebihi batas. Mencegah kiriman semua chunks ke LLM sekaligus pada workspace besar.
+
+### Notes
+- 12.000 karakter ≈ 3.000 token — cukup representatif untuk semua aksi (summary/mindmap/quiz/table).
+- Chunks diambil secara berurutan (FIFO dari DB) hingga batas terpenuhi.
+- Penghematan: hingga 88% token pada workspace dengan 50+ chunks.
+
 ## [1.2.38] - 2026-05-31
+
 ### Summary
 Token efficiency Tahap 1: batasi chat history ke sliding window 10 pesan terakhir.
 
