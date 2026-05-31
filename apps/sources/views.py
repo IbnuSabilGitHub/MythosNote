@@ -345,6 +345,7 @@ class ChatView(APIView):
                     session=session,
                     role="assistant",
                     content=response_text,
+                    metadata={"sources": unique_sources},
                 )
                 session.save()  # Touch updated_at to bring it to top
                 created_at_str = assistant_msg.created_at.isoformat()
@@ -406,6 +407,7 @@ class ChatMessageListView(APIView):
                 "id": str(m.id),
                 "role": m.role,
                 "content": m.content,
+                "metadata": m.metadata,
                 "created_at": m.created_at.isoformat(),
             }
             for m in messages
