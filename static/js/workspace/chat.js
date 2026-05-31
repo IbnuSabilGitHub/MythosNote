@@ -155,6 +155,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function loadChatHistory() {
+        try {
+            const response = await fetch(`/api/workspace/${workspaceId}/chat/sessions/`);
+            if (!response.ok) return;
+            const sessions = await response.json();
+            if (sessions.length === 0) return;
+
+            // Load the most recent session
+            const activeSession = sessions[0];
+            currentSessionId = activeSession.id;
+
+            const msgsResponse = await fetch(`/api/chat/session/${currentSessionId}/messages/`);
+            if (!msgsResponse.ok) return;
+            const messages = await msgsResponse.json();
+
+            messagesContainer.innerHTML = '';
+            messages.forEach(msg => {
+                if (msg.role === 'user') {
+                    renderUserMessage(msg.content);
+                } else {
+                    const sources = msg.metadata ? msg.metadata.sources : [];
+                    renderBotMessage(msg.content, sources);
+                }
+            });
+        } catch (err) {
+            console.error("Gagal memuat histori chat:", err);
+        }
+    }
+
     // Auto-resize textarea
     chatInput.addEventListener('input', function () {
         this.style.height = 'auto';
@@ -171,4 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     chatSubmitBtn.addEventListener('click', () => sendMessage());
+
+    // Load initial history
+    loadChatHistory();
 });
