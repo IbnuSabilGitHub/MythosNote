@@ -305,12 +305,10 @@ class ChatView(APIView):
             )
 
         # Step 5: Generate response via LLM with retrieved context & history
+        # Token efficiency: system prompt dipersingkat tanpa kehilangan instruksi inti
         system_context = (
-            "Jawablah pertanyaan pengguna berdasarkan konteks dokumen berikut.\n"
-            "Aturan penting:\n"
-            "1. Jawablah HANYA berdasarkan konteks dokumen yang disediakan.\n"
-            "2. Jangan mengarang jawaban (no-hallucination) jika tidak ada di konteks.\n"
-            "3. Jika konteks kurang atau informasi tidak ditemukan dalam dokumen, sebutkan secara jujur bahwa informasi tidak ditemukan.\n\n"
+            "Jawab pertanyaan pengguna berdasarkan konteks dokumen berikut. "
+            "Jika informasi tidak ada dalam konteks, katakan tidak ditemukan — jangan mengarang.\n\n"
             f"Konteks:\n{context_text}"
         )
 

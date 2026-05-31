@@ -2,7 +2,15 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.41] - 2026-05-31
+### Summary
+Token efficiency Tahap 4: ringkas system prompt ChatView dari 5 baris menjadi 2 baris padat.
+
+### Changed
+- `apps/sources/views.py`: `ChatView.post` — system prompt dipersingkat; instruksi "jawab dari konteks" dan "no-hallucination" digabung menjadi 1 kalimat tanpa kehilangan semantik. Hemat ~50 token per request.
+
 ## [1.2.40] - 2026-05-31
+
 ### Summary
 Token efficiency Tahap 3: naikkan chunk size 500 → 800 token untuk mengurangi jumlah chunks per dokumen.
 
