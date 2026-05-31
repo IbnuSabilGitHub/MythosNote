@@ -2,7 +2,19 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.38] - 2026-05-31
+### Summary
+Token efficiency Tahap 1: batasi chat history ke sliding window 10 pesan terakhir.
+
+### Changed
+- `apps/sources/views.py`: `ChatView` — tambah konstanta `HISTORY_WINDOW = 10`; query history diubah dari `.order_by("created_at")` (semua pesan) menjadi `.order_by("-created_at")[:10]` lalu di-reverse. Mencegah token blow-up pada session panjang.
+
+### Notes
+- Session dengan >10 pesan: AI hanya "mengingat" 10 terakhir (5 pasang user/assistant).
+- Trade-off diterima: penghematan 60–80% token history pada session panjang.
+
 ## [1.2.37] - 2026-05-31
+
 ### Summary
 Remove OpenAI SDK and implementations; migrate fully to Gemini/DeepSeek.
 

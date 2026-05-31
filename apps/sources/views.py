@@ -198,6 +198,8 @@ class ChatView(APIView):
     permission_classes = [IsAuthenticated]
     TOP_K = 5
     MAX_MESSAGE_LENGTH = 4000
+    # Token efficiency: batasi history yang dikirim ke LLM
+    HISTORY_WINDOW = 10  # jumlah pesan terakhir (user+assistant) yang disertakan
     EMBEDDING_ERROR_MESSAGE = "Gagal memproses pertanyaan. Coba lagi nanti."
     NO_CONTEXT_MESSAGE = "Belum ada sumber siap untuk workspace ini."
     LLM_ERROR_MESSAGE = "AI sedang tidak bisa menjawab. Coba lagi nanti."
@@ -314,9 +316,12 @@ class ChatView(APIView):
 
         messages = [{"role": "system", "content": system_context}]
 
-        # Retrieve previous messages
-        history_msgs = ChatMessage.objects.filter(session=session).order_by("created_at")
-        for msg in history_msgs:
+        # Retrieve previous messages — sliding window untuk hemat token
+        history_msgs = (
+            ChatMessage.objects.filter(session=session)
+            .order_by("-created_at")[: self.HISTORY_WINDOW]
+        )
+        for msg in reversed(list(history_msgs)):
             messages.append({"role": msg.role, "content": msg.content})
 
         # Append current user question
