@@ -1,8 +1,10 @@
 """AI provider implementations for embeddings and chat/completions."""
 
+import time
 from abc import ABC, abstractmethod
 from typing import Any
 
+import requests
 from django.conf import settings
 
 
@@ -26,7 +28,6 @@ class BaseEmbeddingProvider(ABC):
 # OpenAI embedding provider removed. Default is Gemini.
 
 
-import time
 from google.api_core import exceptions
 from google import genai
 from google.genai import types
@@ -125,7 +126,7 @@ class BaseChatProvider(ABC):
 class GeminiChatProvider(BaseChatProvider):
     """Google Gemini chat completion provider."""
 
-    MODEL = "gemini-2.0-flash"
+    MODEL = "gemini-2.5-flash"
 
     def __init__(self) -> None:
         from google import genai
@@ -145,42 +146,42 @@ class GeminiChatProvider(BaseChatProvider):
                 system_instruction = content
             else:
                 gemini_role = "user" if role == "user" else "model"
-                contents.append(genai.Content(role=gemini_role, parts=[content]))
+                contents.append(types.Content(role=gemini_role, parts=[types.Part.from_text(text=content)]))
 
         model_name = kwargs.get("model", self.MODEL)
         response = self._client.models.generate_content(
             model=model_name,
             contents=contents,
-            config=genai.GenerateContentConfig(
+            config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
             ) if system_instruction else None,
         )
         return response.text
 
 
-class DeepSeekChatProvider(BaseChatProvider):
-    """DeepSeek chat completion provider using OpenAI SDK."""
 
-    MODEL = "deepseek-chat"
+class DeepSeekChatProvider(BaseChatProvider):
+    """DeepSeek chat completion provider using REST API."""
 
     def __init__(self) -> None:
-        from openai import OpenAI
-
-        api_key = getattr(settings, "DEEPSEEK_API_KEY", "") or ""
-        if not api_key:
+        self.api_key = getattr(settings, "DEEPSEEK_API_KEY", "")
+        if not self.api_key:
             raise ValueError("DEEPSEEK_API_KEY is not configured")
-        base_url = getattr(settings, "DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1") or "https://api.deepseek.com/v1"
-        self._client = OpenAI(api_key=api_key, base_url=base_url)
+        self.url = "https://api.deepseek.com/v1/chat/completions"
 
     def chat_complete(self, messages: list[dict[str, str]], **kwargs: Any) -> str:
-        model_name = kwargs.get("model", self.MODEL)
-        api_kwargs = {k: v for k, v in kwargs.items() if k != "model"}
-        response = self._client.chat.completions.create(
-            model=model_name,
-            messages=messages,  # type: ignore
-            **api_kwargs,
-        )
-        return response.choices[0].message.content or ""
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": kwargs.get("model", "deepseek-chat"),
+            "messages": messages,
+            "stream": False,
+        }
+        response = requests.post(self.url, headers=headers, json=payload)
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"]
 
 
 def _create_chat_provider(name: str | None = None) -> BaseChatProvider:
