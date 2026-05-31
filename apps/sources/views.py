@@ -270,7 +270,8 @@ class ChatView(APIView):
         context_parts = []
         unique_sources = []
         seen_source_ids = set()
-        max_context_chars = 6000
+        # Token efficiency: format kompak + naikkan limit karena format lebih hemat
+        max_context_chars = 8000
         current_len = 0
 
         for chunk in top_chunks:
@@ -282,7 +283,8 @@ class ChatView(APIView):
                     "original_filename": source_obj.original_filename,
                 })
 
-            part = f"[Dokumen: {source_obj.original_filename}]\n{chunk.text_content}"
+            # Format kompak: "[filename]: content" vs "[Dokumen: filename]\ncontent"
+            part = f"[{source_obj.original_filename}]: {chunk.text_content}"
             if current_len + len(part) > max_context_chars:
                 break
             context_parts.append(part)

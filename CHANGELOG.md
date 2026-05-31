@@ -2,7 +2,15 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.42] - 2026-05-31
+### Summary
+Token efficiency Tahap 5 (terakhir): format context RAG dipersingkat, char limit dinaikkan.
+
+### Changed
+- `apps/sources/views.py`: `ChatView.post` — format label chunk diubah dari `"[Dokumen: filename]\n{content}"` menjadi `"[filename]: {content}"`. Hemat ~15 token per chunk × TOP_K chunks per request. `max_context_chars` dinaikkan `6000 → 8000` karena format lebih efisien.
+
 ## [1.2.41] - 2026-05-31
+
 ### Summary
 Token efficiency Tahap 4: ringkas system prompt ChatView dari 5 baris menjadi 2 baris padat.
 
