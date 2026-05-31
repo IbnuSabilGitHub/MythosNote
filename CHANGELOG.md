@@ -2,7 +2,26 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.43] - 2026-05-31
+### Summary
+Token efficiency Tahap 6: Dynamic Top-K RAG — jumlah chunks yang dikirim ke LLM disesuaikan dengan similarity score tertinggi.
+
+### Changed
+- `apps/sources/views.py`: `ChatView` — ganti `TOP_K = 5` (statis) dengan Dynamic Top-K:
+  - `TOP_K_MAX = 8` — kandidat yang di-fetch dari pgvector
+  - `TOP_K_MIN = 2` — chunk minimum jika sangat relevan
+  - `SIM_HIGH = 0.85` → potong ke 2 chunk (query sangat spesifik)
+  - `SIM_MED = 0.70` → potong ke 4 chunk (query relevan)
+  - `< SIM_MED` → ambil semua 8 (query kurang spesifik)
+  - Konversi `CosineDistance → similarity`: `similarity = 1.0 - distance`
+
+### Notes
+- Pertanyaan spesifik (similarity ≥ 0.85): kirim 2 chunk vs sebelumnya 5 — hemat 60% context token.
+- Pertanyaan umum: kirim hingga 8 chunk untuk recall lebih baik vs sebelumnya 5.
+- Threshold SIM_HIGH/SIM_MED bisa di-tune via class constants tanpa ubah logika.
+
 ## [1.2.42] - 2026-05-31
+
 ### Summary
 Token efficiency Tahap 5 (terakhir): format context RAG dipersingkat, char limit dinaikkan.
 

@@ -196,7 +196,12 @@ class ChatView(APIView):
     """Chat endpoint using RAG: embed query → pgvector ANN → LLM generate."""
 
     permission_classes = [IsAuthenticated]
-    TOP_K = 5
+    # Dynamic Top-K: fetch kandidat lebih banyak, potong berdasarkan similarity
+    TOP_K_MAX = 8       # kandidat maksimum yang di-fetch dari pgvector
+    TOP_K_MIN = 2       # minimum chunk jika similarity sangat tinggi
+    # Threshold similarity (1 - cosine_distance)
+    SIM_HIGH = 0.85     # sangat relevan → ambil TOP_K_MIN chunk
+    SIM_MED  = 0.70     # relevan        → ambil 4 chunk
     MAX_MESSAGE_LENGTH = 4000
     # Token efficiency: batasi history yang dikirim ke LLM
     HISTORY_WINDOW = 10  # jumlah pesan terakhir (user+assistant) yang disertakan
@@ -252,19 +257,31 @@ class ChatView(APIView):
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
-        # Step 2: pgvector ANN search — top_5 most similar chunks
-        top_chunks = (
+        # Step 2: pgvector ANN search — fetch TOP_K_MAX, potong dengan dynamic top-k
+        candidates = list(
             base_qs
             .annotate(distance=CosineDistance("embedding", query_embedding))
             .order_by("distance")
-            .select_related("source")[: self.TOP_K]
+            .select_related("source")[: self.TOP_K_MAX]
         )
 
-        if not top_chunks:
+        if not candidates:
             return Response(
                 {"detail": self.NO_CONTEXT_MESSAGE},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # Dynamic Top-K: gunakan similarity teratas untuk tentukan berapa chunk dipakai
+        # CosineDistance ∈ [0, 2]; similarity = 1 - distance ∈ [-1, 1]
+        best_similarity = 1.0 - candidates[0].distance
+        if best_similarity >= self.SIM_HIGH:
+            dynamic_k = self.TOP_K_MIN          # sangat relevan: cukup 2 chunk
+        elif best_similarity >= self.SIM_MED:
+            dynamic_k = 4                       # relevan: 4 chunk
+        else:
+            dynamic_k = self.TOP_K_MAX          # kurang relevan: ambil semua 8
+
+        top_chunks = candidates[:dynamic_k]
 
         # Step 3: Build context string and keep list of unique sources
         context_parts = []
