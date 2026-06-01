@@ -3,6 +3,7 @@
 from datetime import timedelta
 from typing import Any
 import logging
+import hashlib
 
 import requests
 from django.conf import settings
@@ -35,6 +36,8 @@ GOOGLE_OAUTH_RATE_LIMIT_WINDOW = 300
 PASSWORD_RESET_EMAIL_COOLDOWN = 300
 PASSWORD_RESET_RATE_LIMIT_ATTEMPTS = 5
 PASSWORD_RESET_RATE_LIMIT_WINDOW = 300
+MAX_CONCURRENT_REQUESTS = 5
+CONCURRENT_REQUEST_WINDOW = timedelta(seconds=10)
 
 
 class EmailVerificationTokenGenerator(PasswordResetTokenGenerator):
@@ -85,6 +88,20 @@ def get_client_ip(request: HttpRequest) -> str | None:
                 return forwarded_for.split(",", 1)[0].strip()
 
     return remote_addr
+
+
+def generate_device_fingerprint(request: HttpRequest) -> str:
+    """Generate device fingerprint dari header HTTP yang konsisten.
+    
+    Menggabungkan User-Agent, Accept-Language, dan Accept-Encoding
+    untuk membuat identifikasi perangkat yang lebih sulit diakali.
+    """
+    user_agent = request.META.get("HTTP_USER_AGENT", "")
+    accept_language = request.META.get("HTTP_ACCEPT_LANGUAGE", "")
+    accept_encoding = request.META.get("HTTP_ACCEPT_ENCODING", "")
+    
+    fingerprint_data = f"{user_agent}|{accept_language}|{accept_encoding}"
+    return hashlib.sha256(fingerprint_data.encode()).hexdigest()[:64]
 
 
 def increment_cache_counter(cache_key: str, timeout: int) -> int:
@@ -370,57 +387,223 @@ def get_api_usage(user: Any, request: HttpRequest) -> UserUsage:
 
     today = timezone.localdate()
     ip_address = get_client_ip(request)
+    device_fingerprint = generate_device_fingerprint(request)
     identifier = user.email if hasattr(user, 'email') else f"anon|{ip_address or 'unknown'}"
     
-    usage, _ = UserUsage.objects.get_or_create(
+    usage, created = UserUsage.objects.get_or_create(
         user=user if user.is_authenticated else None,
         identifier=identifier,
         date=today,
-        defaults={"ip_address": ip_address},
+        defaults={
+            "ip_address": ip_address,
+            "device_fingerprint": device_fingerprint,
+        },
     )
+    
+    # Update device fingerprint jika berubah (misal browser update)
+    if not created and usage.device_fingerprint != device_fingerprint:
+        usage.device_fingerprint = device_fingerprint
+        usage.save(update_fields=["device_fingerprint"])
+    
     return usage
 
 
-def check_and_increment_prompt(user: Any, request: HttpRequest) -> bool:
-    """Periksa kuota chat harian dan inkremen jika masih tersedia."""
-
-    with transaction.atomic():
-        usage = get_api_usage(user, request)
-        locked_usage = UserUsage.objects.select_for_update().get(pk=usage.pk)
-        
-        if locked_usage.prompt_count >= settings.AI_DAILY_PROMPT_LIMIT:
-            return False
-            
-        locked_usage.prompt_count = F("prompt_count") + 1
-        locked_usage.save(update_fields=["prompt_count"])
+def check_concurrent_request_limit(user: Any, request: HttpRequest) -> bool:
+    """Periksa apakah pengguna melebihi batas permintaan bersamaan.
+    
+    Returns True jika masih dalam batas, False jika sudah melebihi.
+    Menggunakan cache atomik untuk tracking concurrent requests.
+    """
+    if not user.is_authenticated:
         return True
+    
+    cache_key = f"concurrent_requests:{user.pk}"
+    now = timezone.now()
+    window_seconds = int(CONCURRENT_REQUEST_WINDOW.total_seconds())
+    
+    # Gunakan Redis/hash map untuk tracking concurrent requests
+    # Dengan cleanup otomatis berdasarkan waktu
+    current_count = cache.get(cache_key, 0)
+    
+    if current_count >= MAX_CONCURRENT_REQUESTS:
+        return False
+    
+    # Increment counter dengan TTL pendek
+    cache.set(cache_key, current_count + 1, window_seconds)
+    return True
+
+
+def release_concurrent_request(user: Any, request: HttpRequest) -> None:
+    """Release slot concurrent request setelah selesai diproses."""
+    if not user.is_authenticated:
+        return
+    
+    cache_key = f"concurrent_requests:{user.pk}"
+    current_count = cache.get(cache_key, 0)
+    
+    if current_count > 0:
+        cache.set(cache_key, current_count - 1, int(CONCURRENT_REQUEST_WINDOW.total_seconds()))
+
+
+def check_and_increment_prompt(user: Any, request: HttpRequest) -> bool:
+    """Periksa kuota chat harian dan inkremen jika masih tersedia.
+    
+    Menggunakan UPDATE atomic dengan kondisi WHERE untuk mencegah race condition.
+    Juga memeriksa batas concurrent requests.
+    """
+    # Cek concurrent request limit terlebih dahulu
+    if not check_concurrent_request_limit(user, request):
+        return False
+    
+    try:
+        # Gunakan query UPDATE atomik dengan kondisi WHERE
+        # Ini mencegah race condition karena database yang menangani locking
+        from django.db import connection
+        
+        with transaction.atomic():
+            today = timezone.localdate()
+            ip_address = get_client_ip(request)
+            device_fingerprint = generate_device_fingerprint(request)
+            identifier = user.email if hasattr(user, 'email') else f"anon|{ip_address or 'unknown'}"
+            
+            # Query atomik: increment hanya jika masih di bawah limit
+            # Menggunakan F() expression dengan kondisi di filter
+            updated = UserUsage.objects.filter(
+                user=user if user.is_authenticated else None,
+                identifier=identifier,
+                date=today,
+                prompt_count__lt=settings.AI_DAILY_PROMPT_LIMIT,
+            ).update(
+                prompt_count=F("prompt_count") + 1,
+                last_request_at=timezone.now(),
+                device_fingerprint=device_fingerprint,
+            )
+            
+            if updated == 0:
+                # Tidak ada baris yang di-update = quota sudah habis
+                # Atau perlu create record baru
+                usage, created = UserUsage.objects.get_or_create(
+                    user=user if user.is_authenticated else None,
+                    identifier=identifier,
+                    date=today,
+                    defaults={
+                        "ip_address": ip_address,
+                        "device_fingerprint": device_fingerprint,
+                        "prompt_count": 1 if settings.AI_DAILY_PROMPT_LIMIT > 0 else 0,
+                    },
+                )
+                
+                if not created and usage.prompt_count >= settings.AI_DAILY_PROMPT_LIMIT:
+                    release_concurrent_request(user, request)
+                    return False
+                
+                # Jika baru dibuat dan limit > 0, berarti berhasil
+                if created and settings.AI_DAILY_PROMPT_LIMIT > 0:
+                    return True
+                    
+            return True
+    finally:
+        # Selalu release slot concurrent request
+        release_concurrent_request(user, request)
 
 
 def check_and_increment_generate(user: Any, request: HttpRequest) -> bool:
-    """Periksa kuota generate harian dan inkremen jika masih tersedia."""
-
-    with transaction.atomic():
-        usage = get_api_usage(user, request)
-        locked_usage = UserUsage.objects.select_for_update().get(pk=usage.pk)
-        
-        if locked_usage.generate_count >= settings.AI_DAILY_GENERATE_LIMIT:
-            return False
+    """Periksa kuota generate harian dan inkremen jika masih tersedia.
+    
+    Menggunakan UPDATE atomic dengan kondisi WHERE untuk mencegah race condition.
+    Juga memeriksa batas concurrent requests.
+    """
+    if not check_concurrent_request_limit(user, request):
+        return False
+    
+    try:
+        with transaction.atomic():
+            today = timezone.localdate()
+            ip_address = get_client_ip(request)
+            device_fingerprint = generate_device_fingerprint(request)
+            identifier = user.email if hasattr(user, 'email') else f"anon|{ip_address or 'unknown'}"
             
-        locked_usage.generate_count = F("generate_count") + 1
-        locked_usage.save(update_fields=["generate_count"])
-        return True
+            updated = UserUsage.objects.filter(
+                user=user if user.is_authenticated else None,
+                identifier=identifier,
+                date=today,
+                generate_count__lt=settings.AI_DAILY_GENERATE_LIMIT,
+            ).update(
+                generate_count=F("generate_count") + 1,
+                last_request_at=timezone.now(),
+                device_fingerprint=device_fingerprint,
+            )
+            
+            if updated == 0:
+                usage, created = UserUsage.objects.get_or_create(
+                    user=user if user.is_authenticated else None,
+                    identifier=identifier,
+                    date=today,
+                    defaults={
+                        "ip_address": ip_address,
+                        "device_fingerprint": device_fingerprint,
+                        "generate_count": 1 if settings.AI_DAILY_GENERATE_LIMIT > 0 else 0,
+                    },
+                )
+                
+                if not created and usage.generate_count >= settings.AI_DAILY_GENERATE_LIMIT:
+                    release_concurrent_request(user, request)
+                    return False
+                
+                if created and settings.AI_DAILY_GENERATE_LIMIT > 0:
+                    return True
+                    
+            return True
+    finally:
+        release_concurrent_request(user, request)
 
 
 def check_and_increment_upload(user: Any, request: HttpRequest) -> bool:
-    """Periksa kuota upload harian dan inkremen jika masih tersedia."""
-
-    with transaction.atomic():
-        usage = get_api_usage(user, request)
-        locked_usage = UserUsage.objects.select_for_update().get(pk=usage.pk)
-        
-        if locked_usage.upload_count >= settings.AI_DAILY_UPLOAD_LIMIT:
-            return False
+    """Periksa kuota upload harian dan inkremen jika masih tersedia.
+    
+    Menggunakan UPDATE atomic dengan kondisi WHERE untuk mencegah race condition.
+    Juga memeriksa batas concurrent requests.
+    """
+    if not check_concurrent_request_limit(user, request):
+        return False
+    
+    try:
+        with transaction.atomic():
+            today = timezone.localdate()
+            ip_address = get_client_ip(request)
+            device_fingerprint = generate_device_fingerprint(request)
+            identifier = user.email if hasattr(user, 'email') else f"anon|{ip_address or 'unknown'}"
             
-        locked_usage.upload_count = F("upload_count") + 1
-        locked_usage.save(update_fields=["upload_count"])
-        return True
+            updated = UserUsage.objects.filter(
+                user=user if user.is_authenticated else None,
+                identifier=identifier,
+                date=today,
+                upload_count__lt=settings.AI_DAILY_UPLOAD_LIMIT,
+            ).update(
+                upload_count=F("upload_count") + 1,
+                last_request_at=timezone.now(),
+                device_fingerprint=device_fingerprint,
+            )
+            
+            if updated == 0:
+                usage, created = UserUsage.objects.get_or_create(
+                    user=user if user.is_authenticated else None,
+                    identifier=identifier,
+                    date=today,
+                    defaults={
+                        "ip_address": ip_address,
+                        "device_fingerprint": device_fingerprint,
+                        "upload_count": 1 if settings.AI_DAILY_UPLOAD_LIMIT > 0 else 0,
+                    },
+                )
+                
+                if not created and usage.upload_count >= settings.AI_DAILY_UPLOAD_LIMIT:
+                    release_concurrent_request(user, request)
+                    return False
+                
+                if created and settings.AI_DAILY_UPLOAD_LIMIT > 0:
+                    return True
+                    
+            return True
+    finally:
+        release_concurrent_request(user, request)

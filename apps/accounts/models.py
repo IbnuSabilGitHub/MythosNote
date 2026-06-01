@@ -33,6 +33,7 @@ class UserUsage(models.Model):
     )
     identifier = models.CharField(max_length=255, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
+    device_fingerprint = models.CharField(max_length=64, blank=True, db_index=True)
     date = models.DateField()
     prompt_count = models.PositiveIntegerField(default=0)
     generate_count = models.PositiveIntegerField(default=0)
@@ -40,6 +41,8 @@ class UserUsage(models.Model):
     failed_login_count = models.PositiveIntegerField(default=0)
     failed_login_window_started_at = models.DateTimeField(null=True, blank=True)
     last_failed_login_at = models.DateTimeField(null=True, blank=True)
+    concurrent_requests = models.PositiveIntegerField(default=0)
+    last_request_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         constraints = [
@@ -51,6 +54,8 @@ class UserUsage(models.Model):
         indexes = [
             models.Index(fields=["date", "identifier"]),
             models.Index(fields=["date", "user"]),
+            models.Index(fields=["device_fingerprint", "date"]),
+            models.Index(fields=["user", "concurrent_requests"]),
         ]
 
     def __str__(self) -> str:
