@@ -254,8 +254,15 @@ class ChatView(APIView):
 
     permission_classes = [IsAuthenticated]
     throttle_classes = [ChatRateThrottle]
-    TOP_K = 5
+    # Dynamic Top-K: fetch kandidat lebih banyak, potong berdasarkan similarity
+    TOP_K_MAX = 8       # kandidat maksimum yang di-fetch dari pgvector
+    TOP_K_MIN = 2       # minimum chunk jika similarity sangat tinggi
+    # Threshold similarity (1 - cosine_distance)
+    SIM_HIGH = 0.85     # sangat relevan → ambil TOP_K_MIN chunk
+    SIM_MED  = 0.70     # relevan        → ambil 4 chunk
     MAX_MESSAGE_LENGTH = 4000
+    # Token efficiency: batasi history yang dikirim ke LLM
+    HISTORY_WINDOW = 10  # jumlah pesan terakhir (user+assistant) yang disertakan
     EMBEDDING_ERROR_MESSAGE = "Gagal memproses pertanyaan. Coba lagi nanti."
     NO_CONTEXT_MESSAGE = "Belum ada sumber siap untuk workspace ini."
     LLM_ERROR_MESSAGE = "AI sedang tidak bisa menjawab. Coba lagi nanti."
@@ -308,25 +315,38 @@ class ChatView(APIView):
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
-        # Step 2: pgvector ANN search — top_5 most similar chunks
-        top_chunks = (
+        # Step 2: pgvector ANN search — fetch TOP_K_MAX, potong dengan dynamic top-k
+        candidates = list(
             base_qs
             .annotate(distance=CosineDistance("embedding", query_embedding))
             .order_by("distance")
-            .select_related("source")[: self.TOP_K]
+            .select_related("source")[: self.TOP_K_MAX]
         )
 
-        if not top_chunks:
+        if not candidates:
             return Response(
                 {"detail": self.NO_CONTEXT_MESSAGE},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Dynamic Top-K: gunakan similarity teratas untuk tentukan berapa chunk dipakai
+        # CosineDistance ∈ [0, 2]; similarity = 1 - distance ∈ [-1, 1]
+        best_similarity = 1.0 - candidates[0].distance
+        if best_similarity >= self.SIM_HIGH:
+            dynamic_k = self.TOP_K_MIN          # sangat relevan: cukup 2 chunk
+        elif best_similarity >= self.SIM_MED:
+            dynamic_k = 4                       # relevan: 4 chunk
+        else:
+            dynamic_k = self.TOP_K_MAX          # kurang relevan: ambil semua 8
+
+        top_chunks = candidates[:dynamic_k]
+
         # Step 3: Build context string and keep list of unique sources
         context_parts = []
         unique_sources = []
         seen_source_ids = set()
-        max_context_chars = 6000
+        # Token efficiency: format kompak + naikkan limit karena format lebih hemat
+        max_context_chars = 8000
         current_len = 0
 
         for chunk in top_chunks:
@@ -338,7 +358,8 @@ class ChatView(APIView):
                     "original_filename": source_obj.original_filename,
                 })
 
-            part = f"[Dokumen: {source_obj.original_filename}]\n{chunk.text_content}"
+            # Format kompak: "[filename]: content" vs "[Dokumen: filename]\ncontent"
+            part = f"[{source_obj.original_filename}]: {chunk.text_content}"
             if current_len + len(part) > max_context_chars:
                 break
             context_parts.append(part)
@@ -361,20 +382,20 @@ class ChatView(APIView):
             )
 
         # Step 5: Generate response via LLM with retrieved context & history
+        # Token efficiency: system prompt dipersingkat tanpa kehilangan instruksi inti
         system_context = (
-            "Jawablah pertanyaan pengguna berdasarkan konteks dokumen berikut.\n"
-            "Aturan penting:\n"
-            "1. Jawablah HANYA berdasarkan konteks dokumen yang disediakan.\n"
-            "2. Jangan mengarang jawaban (no-hallucination) jika tidak ada di konteks.\n"
-            "3. Jika konteks kurang atau informasi tidak ditemukan dalam dokumen, sebutkan secara jujur bahwa informasi tidak ditemukan.\n\n"
+            "Jawab pertanyaan pengguna berdasarkan konteks dokumen berikut. "
+            "Jika informasi tidak ada dalam konteks, katakan tidak ditemukan — jangan mengarang.\n\n"
             f"Konteks:\n{context_text}"
         )
 
         messages = [{"role": "system", "content": system_context}]
 
-        # Retrieve previous messages (cap to last 20 to limit token usage)
-        MAX_HISTORY_MESSAGES = 20
-        history_msgs = ChatMessage.objects.filter(session=session).order_by("-created_at")[:MAX_HISTORY_MESSAGES]
+        # Retrieve previous messages — sliding window untuk hemat token
+        history_msgs = (
+            ChatMessage.objects.filter(session=session)
+            .order_by("-created_at")[: self.HISTORY_WINDOW]
+        )
         for msg in reversed(list(history_msgs)):
             messages.append({"role": msg.role, "content": msg.content})
 
@@ -493,6 +514,8 @@ class GenerateView(APIView):
 
     permission_classes = [IsAuthenticated]
     throttle_classes = [GenerateRateThrottle]
+    # Token efficiency: batasi context generate agar tidak kirim semua chunks
+    MAX_GENERATE_CHARS = 12_000  # ~3k token; cukup untuk dokumen panjang
 
     PROMPT_TEMPLATES = {
         "summary": "Summarize the following context into concise bullet points.",
@@ -513,7 +536,16 @@ class GenerateView(APIView):
         if error_response:
             return error_response
 
-        context_text = "\n\n".join(chunks)[:MAX_GENERATE_CHARS]
+        # Bangun context dengan char-limit guard — hemat token, cegah blow-up
+        context_parts = []
+        total_chars = 0
+        for chunk in chunks:
+            if total_chars + len(chunk) > self.MAX_GENERATE_CHARS:
+                break
+            context_parts.append(chunk)
+            total_chars += len(chunk)
+        context_text = "\n\n".join(context_parts)
+
         instruction = self.PROMPT_TEMPLATES[action]
         prompt = f"{context_text}\n\nTask: {instruction}"
 
