@@ -95,3 +95,8 @@ def workspace(request: HttpRequest) -> HttpResponse:
             "active_workspace": active_workspace,
         },
     )
+
+
+def custom_404_view(request: HttpRequest, exception=None) -> HttpResponse:
+    """Render a premium 404 error page."""
+    return render(request, "404.html", {"show_navbar": False}, status=404)
