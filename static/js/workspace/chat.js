@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderUserMessage(text) {
         const msgDiv = document.createElement('div');
-        msgDiv.className = 'w-full max-w-3xl self-end flex flex-col justify-start items-end';
+        msgDiv.className = 'w-full max-w-3xl flex flex-col justify-start items-end';
         msgDiv.innerHTML = `
             <div class="max-w-[85%] inline-flex justify-end items-start">
                 <div class="self-stretch pl-4 pr-6 py-4 bg-[#FFC880]/15 rounded-2xl rounded-tr-md border border-[#FFC880]/30 inline-flex flex-col justify-start items-start">
