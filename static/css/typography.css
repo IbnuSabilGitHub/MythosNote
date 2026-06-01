@@ -93,6 +93,117 @@ p {
     color: var(--color-primary);
 }
 
+.chat-markdown {
+    color: var(--color-on-surface);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-body-md);
+    line-height: var(--line-height-normal);
+}
+
+.chat-markdown > * + * {
+    margin-top: 0.75rem;
+}
+
+.chat-markdown h1,
+.chat-markdown h2,
+.chat-markdown h3,
+.chat-markdown h4 {
+    color: var(--color-on-surface-strong);
+    font-family: var(--font-family-serif);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-heading);
+}
+
+.chat-markdown h1 { font-size: 1.5rem; }
+.chat-markdown h2 { font-size: 1.25rem; }
+.chat-markdown h3 { font-size: 1.1rem; }
+.chat-markdown h4 { font-size: 1rem; }
+
+.chat-markdown p {
+    color: var(--color-on-surface);
+}
+
+.chat-markdown a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.chat-markdown a:hover {
+    color: var(--color-primary-active);
+}
+
+.chat-markdown ul,
+.chat-markdown ol {
+    padding-left: 1.25rem;
+}
+
+.chat-markdown li + li {
+    margin-top: 0.35rem;
+}
+
+.chat-markdown blockquote {
+    padding: 0.5rem 0.75rem;
+    border-left: 3px solid var(--color-outline-variant);
+    background: color-mix(in srgb, var(--color-surface-container), transparent 20%);
+    color: var(--color-on-surface-variant);
+    border-radius: 0.5rem;
+}
+
+.chat-markdown code {
+    padding: 0.12rem 0.35rem;
+    border-radius: 0.35rem;
+    background: color-mix(in srgb, var(--color-surface-container-high), transparent 15%);
+    color: var(--color-on-surface);
+    font-family: var(--font-family-mono);
+    font-size: 0.9em;
+}
+
+.chat-markdown pre {
+    padding: 0.9rem 1rem;
+    border-radius: 0.75rem;
+    background: color-mix(in srgb, var(--color-surface-container-high), transparent 5%);
+    border: 1px solid color-mix(in srgb, var(--color-outline-variant), transparent 30%);
+    overflow-x: auto;
+}
+
+.chat-markdown pre code {
+    padding: 0;
+    background: transparent;
+    font-size: 0.9em;
+}
+
+.chat-markdown hr {
+    border: 0;
+    height: 1px;
+    background: color-mix(in srgb, var(--color-outline-variant), transparent 40%);
+}
+
+.chat-markdown table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--color-outline-variant), transparent 30%);
+}
+
+.chat-markdown th,
+.chat-markdown td {
+    padding: 0.5rem 0.65rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-outline-variant), transparent 35%);
+    text-align: left;
+}
+
+.chat-markdown th {
+    background: color-mix(in srgb, var(--color-surface-container-high), transparent 10%);
+    color: var(--color-on-surface-strong);
+    font-weight: var(--font-weight-semibold);
+}
+
+.chat-markdown tr:last-child td {
+    border-bottom: 0;
+}
+
 @media (min-width: 960px) {
     :root {
         --font-size-h1: 64px;

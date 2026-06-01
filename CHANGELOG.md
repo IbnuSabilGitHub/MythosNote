@@ -2,6 +2,14 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.44] - 2026-06-01
+### Summary
+Polish render markdown di chat agar lebih rapi dan nyaman dibaca.
+
+### Changed
+- `static/js/workspace/chat.js`: aktifkan opsi markdown `breaks` dan gunakan wrapper `chat-markdown`.
+- `static/css/typography.css`: tambahkan styling markdown untuk heading, list, code block, quote, dan table.
+
 ## [1.2.43] - 2026-05-31
 ### Summary
 Token efficiency Tahap 6: Dynamic Top-K RAG — jumlah chunks yang dikirim ke LLM disesuaikan dengan similarity score tertinggi.

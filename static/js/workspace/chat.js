@@ -1,3 +1,5 @@
+import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
+
 /**
  * Handle workspace chat interactions
  * Tahap 5 & 6: Dynamic chat + source selection filter
@@ -6,6 +8,10 @@
 document.addEventListener('DOMContentLoaded', () => {
     const workspaceData = document.getElementById('workspace-data');
     if (!workspaceData) return;
+
+    marked.setOptions({
+        breaks: true
+    });
 
     const workspaceId = workspaceData.dataset.workspaceId;
     const chatInput = document.getElementById('chat-input');
@@ -54,6 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 '</div>';
         }
 
+        const renderedMarkdown = marked.parse(text);
+
         msgDiv.innerHTML = `
             <div class="w-8 h-9 pt-1 inline-flex flex-col justify-start items-start shrink-0">
                 <div class="w-8 h-8 bg-neutral-900 rounded-xl outline -outline-offset-1 outline-neutral-800 inline-flex justify-center items-center">
@@ -62,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="flex-1 px-4 pt-3.5 pb-4 bg-neutral-900/70 rounded-2xl border border-neutral-800 inline-flex flex-col justify-start items-start gap-4">
                 <div class="self-stretch flex flex-col justify-start items-start gap-1.5">
-                    <div class="text-zinc-200 text-sm font-normal font-['Space_Grotesk'] leading-6 tracking-tight whitespace-pre-wrap">${escapeHtml(text)}</div>
+                    <div class="chat-markdown">${renderedMarkdown}</div>
                     ${sourcesHtml}
                 </div>
             </div>
@@ -188,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chatInput.addEventListener('input', function () {
         this.style.height = 'auto';
         this.style.height = (this.scrollHeight) + 'px';
-        chatSubmitBtn.disabled = this.value.trim().length === 0 || isWaitingForResponse;
+        chatSubmitBtn.disabled = this.value.trim().length === 0;
     });
 
     // Enter to send, Shift+Enter for newline
