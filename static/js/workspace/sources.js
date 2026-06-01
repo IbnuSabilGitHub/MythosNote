@@ -6,6 +6,9 @@
     constructor(workspaceId) {
       this.workspaceId = workspaceId;
       this.container = document.querySelector("#source-list-container");
+      this.countEl = document.querySelector("[data-source-count]");
+      this.statsEl = document.querySelector("[data-source-stats]");
+      this.maxSources = 5;
       this.pollIntervals = new Map(); // Track polling timers
     }
 
@@ -52,6 +55,8 @@
         return;
       }
 
+      this.updatePanelSummary(sources || []);
+
       // Handle empty state
       if (!sources || sources.length === 0) {
         this.container.innerHTML = `
@@ -60,7 +65,7 @@
               <iconify-icon icon="tabler:file-upload" class="text-xl"></iconify-icon>
             </div>
             <div class="text-stone-300 text-sm font-medium font-['Manrope']">Belum ada sumber</div>
-            <div class="text-stone-500 text-xs mt-1 font-['Manrope']">Upload PDF, TXT, Markdown, atau DOCX.</div>
+            <div class="text-stone-500 text-xs mt-1 font-['Manrope']">Upload 1-5 file utama untuk mulai chat.</div>
           </div>
         `;
         return;
@@ -86,6 +91,29 @@
             this.deleteSource(sourceId);
           });
         });
+    }
+
+    /**
+     * Update compact panel metadata for source limits and status counts.
+     * @param {Array} sources - Sources data from API
+     */
+    updatePanelSummary(sources) {
+      const total = sources.length;
+      const ready = sources.filter((source) => source.status === "ready").length;
+      const processing = sources.filter((source) =>
+        ["pending", "queued", "processing"].includes(source.status)
+      ).length;
+      const failed = sources.filter((source) => source.status === "failed").length;
+
+      if (this.countEl) {
+        this.countEl.textContent = `${total}/${this.maxSources} sumber`;
+      }
+
+      if (this.statsEl) {
+        const parts = [`${ready} siap`, `${processing} proses`];
+        if (failed > 0) parts.push(`${failed} gagal`);
+        this.statsEl.textContent = parts.join(" • ");
+      }
     }
 
     /**
