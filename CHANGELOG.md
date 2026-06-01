@@ -2,6 +2,42 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.39] - 2026-06-01
+### Summary
+Security Vulnerability Hardening and remediation fixes.
+
+### Security
+- **Production Server**: Configured Docker and Docker Compose to run via Gunicorn instead of Django development server.
+- **Rate Limiting**: Added DRF UserRateThrottle and AnonRateThrottle to protect Chat, Generate, and Source Upload endpoints.
+- **Upload Validation**: Added magic-bytes signature verification (for PDF and DOCX) to block extension-spoofing bypasses.
+- **Resource Cleanup**: Created Django `post_delete` signal for `Source` models to automatically purge physical files from disk/storage on deletion.
+- **Internal Leakage**: Truncated generate job background task errors to 500 characters to prevent internal trace/path disclosure.
+- **Security Headers**: Enabled `SECURE_REFERRER_POLICY` ('strict-origin-when-cross-origin') and `SECURE_CONTENT_TYPE_NOSNIFF` headers.
+- **Supply Chain**: Pinned AI dependency versions (`google-genai==1.14.0`, `google-api-core==2.24.2`) in requirements.txt.
+- **Input Validation**: Added 128-character limit for passwords and 254-character limit for emails across Django forms, HTML templates, and JS validation to prevent long-password DoS.
+- **Upload Validation**: Added 150-character limit for uploaded filenames to prevent database insertion overflows and filesystem issues.
+
+### Added
+- **User Interface**: Designed and implemented a custom 404 error template with responsive UI and Iconify support.
+
+### Fixed
+- **Unit Tests**: Updated workspace name length validation tests to assert the configured 40-character limit.
+- **Security Pentest**: Resolved split-index bug in CDN SRI test assertion.
+
+### Removed
+- **Dead Code**: Deleted `apps/chat` directory containing unused duplicate providers.
+
+## [1.2.38] - 2026-06-01
+### Summary
+Security hardening and vulnerability fixes based on static code review.
+
+### Security
+- **Rate Limiting (XFF Spoofing)**: Limit trusted proxies configuration via `TRUSTED_PROXY_IPS` CIDR list to prevent spoofed XFF headers.
+- **Upload Hardening**: Sanitize filenames with `get_valid_filename` and UUID prefixes to prevent path traversal and overwrite collisions.
+- **Resource Limits (Parser/AI)**: Added file processing page caps (500 pages), text length limits (2M chars), RAG context limits (15k chars), and DeepSeek HTTP timeouts to prevent CPU and billing DoS.
+- **Supply Chain**: Pinned CDN script versions and added SRI integrity hashes (`integrity=""` and `crossorigin=""`) in base and home templates.
+- **Internal Leakage**: Removed exception string leaks from API responses and restricted the `django-rq` dashboard strictly to staff members via django URLs.
+
 ## [1.2.37] - 2026-05-31
 ### Summary
 Remove OpenAI SDK and implementations; migrate fully to Gemini/DeepSeek.

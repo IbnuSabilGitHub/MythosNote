@@ -90,6 +90,7 @@
 
       sourcesToggles.forEach((button) => {
         button.setAttribute("aria-expanded", String(!collapsed));
+        button.setAttribute("title", collapsed ? "Buka Panel" : "Tutup Panel");
       });
       sourcesChevrons.forEach((icon) => {
         icon.classList.toggle("rotate-180", !collapsed);
@@ -115,6 +116,7 @@
 
       generateToggles.forEach((button) => {
         button.setAttribute("aria-expanded", String(!collapsed));
+        button.setAttribute("title", collapsed ? "Buka Panel" : "Tutup Panel");
       });
       generateChevrons.forEach((icon) => {
         icon.classList.toggle("rotate-180", !collapsed);

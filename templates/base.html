@@ -23,19 +23,17 @@
   <link rel="stylesheet" href="{% static 'css/typography.css' %}" />
 
   <!-- Iconify (Icon Library) -->
-  <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
+  <script integrity="sha384-Hj2pe/JEGitdWiVWNPuXWhAdYtdM+ZO+s0KuZHaAk1oAbeAtNas7R6hKlmbInTM4" crossorigin="anonymous" src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
 
   <!-- Marked.js (Markdown rendering) -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script integrity="sha384-H+hy9ULve6xfxRkWIh/YOtvDdpXgV2fmAGQkIDTxIgZwNoaoBal14Di2YTMR6MzR" crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
 
   <!-- Mermaid.js (Diagrams) -->
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script integrity="sha384-R63zfMfSwJF4xCR11wXii+QUsbiBIdiDzDbtxia72oGWfkT7WHJfmD/I/eeHPJyT" crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
   <script>
     mermaid.initialize({ startOnLoad: true, theme: "dark" });
     mermaid.contentLoaded();
   </script>
-
-  <script type="module" src="{% static 'js/components.js' %}"></script>
 
   {% block extra_css %}{% endblock %}
 </head>
@@ -143,8 +141,7 @@
   <!-- Toast Component -->
   {% include "components/toast.html" %}
 
-  <!-- Custom Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/flowbite@4.0.1/dist/flowbite.min.js"></script>
+  <script integrity="sha384-dXMudAuWq5MLjG7Tex8rC+3U/BPQ/OUAF6UyUa7DWzfAMW1JRIf2NuW2hAyGtsvO" crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/flowbite@4.0.1/dist/flowbite.min.js"></script>
 
   <script src="{% static 'js/toast/manager.js' %}"></script>
   <script src="{% static 'js/toast/django-messages.js' %}"></script>

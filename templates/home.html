@@ -5,7 +5,7 @@
 
 {% block extra_css %}
 <!-- AOS CSS -->
-<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" integrity="sha384-/rJKQnzOkEo+daG0jMjU1IwwY9unxt1NBw3Ef2fmOJ3PW/TfAg2KXVoWwMZQZtw9" crossorigin="anonymous" />
 {% endblock %}
 
 {% block content %}
@@ -183,8 +183,8 @@
       <!-- Feature Card 4 - Large -->
       <div data-aos="fade-up" data-aos-duration="1000" data-aos-delay="400"
         class="relative col-span-1 overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-low lg:col-span-8">
-        <img class="absolute inset-0 h-full w-full object-cover opacity-10" src="{% static 'img/feature_card_4.png' %}"
-          alt="" />
+        <img class="absolute inset-0 h-full w-full object-cover opacity-10" src="{% static 'img/feature_card_4.webp' %}"
+          loading="lazy" alt="" />
         <div class="relative p-10">
           <h3 class="font-newsreader text-xl font-bold text-on-surface sm:text-2xl lg:text-[1.875rem]">
             From Hundreds of Pages to One Page
@@ -279,8 +279,8 @@
           <!-- Image Section -->
           <div data-aos="fade-left" data-aos-duration="1000" data-aos-delay="200"
             class="relative flex-1 overflow-hidden rounded-3xl border border-outline-variant bg-surface-container">
-            <img class="size-full object-cover" src="{% static 'img/vertical_timeline_image.png' %}"
-              alt="How it works illustration" />
+            <img class="size-full object-cover" src="{% static 'img/vertical_timeline_image.webp' %}"
+              loading="lazy" alt="How it works illustration" />
 
             <!-- Gradient Overlay -->
             <div class="absolute inset-0 bg-linear-to-t from-background/80 via-background/10 to-transparent"></div>
@@ -375,7 +375,7 @@
 
 {% block extra_js %}
 <!-- AOS JS -->
-<script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js" integrity="sha384-n1AULnKdMJlK1oQCLNDL9qZsDgXtH6jRYFCpBtWFc+a9Yve0KSoMn575rk755NJZ" crossorigin="anonymous"></script>
 <script>
   // Initialize AOS
   AOS.init({

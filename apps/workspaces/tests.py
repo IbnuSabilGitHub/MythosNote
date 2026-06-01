@@ -22,17 +22,17 @@ class WorkspaceNameValidationTests(TestCase):
     def test_project_create_rejects_overlong_workspace_name(self) -> None:
         response = self.client.post(
             reverse("project"),
-            {"name": "a" * 81},
+            {"name": "a" * 41},
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertContains(response, "Nama workspace maksimal 80 karakter.", status_code=400)
+        self.assertContains(response, "Nama workspace maksimal 40 karakter.", status_code=400)
         self.assertEqual(Workspace.objects.count(), 0)
 
     def test_project_create_renders_name_limit(self) -> None:
         response = self.client.get(reverse("project"))
 
-        self.assertContains(response, 'maxlength="80"')
+        self.assertContains(response, 'maxlength="40"')
         self.assertContains(response, "data-workspace-name-counter")
 
     def test_workspace_rename_rejects_overlong_workspace_name(self) -> None:
@@ -40,10 +40,10 @@ class WorkspaceNameValidationTests(TestCase):
 
         response = self.client.post(
             reverse("workspace-rename", args=[workspace.id]),
-            {"name": "b" * 81},
+            {"name": "b" * 41},
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()["name"], "Nama workspace maksimal 80 karakter.")
+        self.assertEqual(response.json()["name"], "Nama workspace maksimal 40 karakter.")
         workspace.refresh_from_db()
         self.assertEqual(workspace.name, "Existing Workspace")
