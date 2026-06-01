@@ -24,6 +24,7 @@ from apps.sources.models import GenerateJob, Source, SourceChunk, ChatSession, C
 from apps.sources.providers import ChatProvider, EmbeddingProvider
 from apps.sources.serializers import SourceDetailSerializer, SourceListSerializer
 from apps.workspaces.models import Workspace
+from apps.accounts.utils import check_and_increment_prompt, check_and_increment_generate
 
 
 ALLOWED_EXTENSIONS = {".pdf", ".md", ".txt", ".docx"}
@@ -295,6 +296,12 @@ class ChatView(APIView):
         user_question = (request.data.get("message") or "").strip()
         session_id = request.data.get("session_id")
         source_ids = request.data.get("source_ids")  # optional list of UUIDs
+
+        if not check_and_increment_prompt(request.user, request):
+            return Response(
+                {"detail": "Kuota harian chat telah habis."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
 
         if not user_question:
             return Response(
@@ -568,6 +575,12 @@ class GenerateView(APIView):
             return Response(
                 {"action": "Invalid action. Use summary, mindmap, quiz, or table."},
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+            
+        if not check_and_increment_generate(request.user, request):
+            return Response(
+                {"detail": "Kuota harian generate telah habis."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 
         chunks, error_response = _get_workspace_ready_chunks(request, id)

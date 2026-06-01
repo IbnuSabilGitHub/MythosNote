@@ -316,6 +316,11 @@ DEFAULT_EMBEDDING_PROVIDER = 'gemini'
 EMBEDDING_PROVIDER = os.getenv('EMBEDDING_PROVIDER', DEFAULT_EMBEDDING_PROVIDER).strip().lower()
 EMBEDDING_MODEL = os.getenv('EMBEDDING_MODEL', 'gemini-embedding-001').strip()
 EMBEDDING_DIMENSIONS = int(os.getenv('EMBEDDING_DIMENSIONS', '768'))
+
+# AI Quota Limits
+AI_DAILY_PROMPT_LIMIT = int(os.getenv('AI_DAILY_PROMPT_LIMIT', '50'))
+AI_DAILY_GENERATE_LIMIT = int(os.getenv('AI_DAILY_GENERATE_LIMIT', '20'))
+
 # Trusted proxy IPs/CIDRs for X-Forwarded-For header parsing.
 # Empty = ignore XFF (safest default). Add reverse proxy CIDRs in production.
 # Example for Cloudflare: ['173.245.48.0/20', '103.21.244.0/22', ...]

@@ -3,6 +3,31 @@
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.2.49] - 2026-06-02
+### Summary
+Implementasi AI Daily Quota untuk membatasi penggunaan fitur generatif (chat & generate summary) per hari dan mencegah abuse/cost exhaustion.
+
+### Added
+- `settings.py`:
+  - `AI_DAILY_PROMPT_LIMIT` (default: 50)
+  - `AI_DAILY_GENERATE_LIMIT` (default: 20)
+
+- `apps/accounts/utils.py`:
+  - `get_api_usage()`
+  - `check_and_increment_prompt()`
+  - `check_and_increment_generate()`
+
+### Changed
+- `apps/sources/views.py`:
+  - `ChatView.post()`: Cek kuota prompt → return 429 jika melebihi limit
+  - `GenerateView.post()`: Cek kuota generate → return 429 jika melebihi limit
+
+### Notes
+- Menggunakan `select_for_update()` untuk mencegah race condition (atomic)
+- Tetap mengaktifkan DRF throttling per-menit
+- Keamanan tinggi terhadap concurrent requests
+
+
 ## [1.2.48] - 2026-06-02
 ### Summary
 Pencegahan chat di luar topik dan validasi pilihan dokumen.

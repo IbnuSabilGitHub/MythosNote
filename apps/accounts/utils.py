@@ -363,3 +363,49 @@ def verify_google_credential(credential: str) -> dict[str, str | bool]:
         "name": payload.get("name", ""),
         "email_verified": payload.get("email_verified") in (True, "true", "True"),
     }
+
+
+def get_api_usage(user: Any, request: HttpRequest) -> UserUsage:
+    """Ambil atau buat tracking pemakaian API untuk user/IP hari ini."""
+
+    today = timezone.localdate()
+    ip_address = get_client_ip(request)
+    identifier = user.email if hasattr(user, 'email') else f"anon|{ip_address or 'unknown'}"
+    
+    usage, _ = UserUsage.objects.get_or_create(
+        user=user if user.is_authenticated else None,
+        identifier=identifier,
+        date=today,
+        defaults={"ip_address": ip_address},
+    )
+    return usage
+
+
+def check_and_increment_prompt(user: Any, request: HttpRequest) -> bool:
+    """Periksa kuota chat harian dan inkremen jika masih tersedia."""
+
+    with transaction.atomic():
+        usage = get_api_usage(user, request)
+        locked_usage = UserUsage.objects.select_for_update().get(pk=usage.pk)
+        
+        if locked_usage.prompt_count >= settings.AI_DAILY_PROMPT_LIMIT:
+            return False
+            
+        locked_usage.prompt_count = F("prompt_count") + 1
+        locked_usage.save(update_fields=["prompt_count"])
+        return True
+
+
+def check_and_increment_generate(user: Any, request: HttpRequest) -> bool:
+    """Periksa kuota generate harian dan inkremen jika masih tersedia."""
+
+    with transaction.atomic():
+        usage = get_api_usage(user, request)
+        locked_usage = UserUsage.objects.select_for_update().get(pk=usage.pk)
+        
+        if locked_usage.generate_count >= settings.AI_DAILY_GENERATE_LIMIT:
+            return False
+            
+        locked_usage.generate_count = F("generate_count") + 1
+        locked_usage.save(update_fields=["generate_count"])
+        return True
