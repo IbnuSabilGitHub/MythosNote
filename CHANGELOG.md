@@ -2,6 +2,30 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.50] - 2026-05-29
+### Summary
+Implementasi AI Daily Quota + Security Mitigation untuk mencegah abuse (cost & storage exhaustion).
+
+### Added
+- `settings.py`:
+  - `AI_DAILY_PROMPT_LIMIT` (default: 50)
+  - `AI_DAILY_GENERATE_LIMIT` (default: 20)
+  - `AI_DAILY_UPLOAD_LIMIT` (default: 10)
+  - `WORKSPACE_MAX_SOURCES` (default: 15)
+
+- `apps/accounts/models.py`: Tambah `upload_count` di model `UserUsage`
+- `apps/accounts/utils.py`: Tambah `check_and_increment_upload()`
+
+### Changed
+- `apps/sources/views.py`:
+  - `SourceUploadView.post`: Cek max sources (400) & daily upload quota (429)
+  - `ChatView.post`: Cek daily prompt quota (429)
+  - `GenerateView.post`: Cek daily generate quota (429)
+
+### Notes
+- Menggunakan atomic transaction (`select_for_update`) untuk cegah race condition
+- Perlindungan ganda terhadap storage & cost exhaustion
+
 
 ## [1.2.49] - 2026-06-02
 ### Summary

@@ -320,6 +320,8 @@ EMBEDDING_DIMENSIONS = int(os.getenv('EMBEDDING_DIMENSIONS', '768'))
 # AI Quota Limits
 AI_DAILY_PROMPT_LIMIT = int(os.getenv('AI_DAILY_PROMPT_LIMIT', '50'))
 AI_DAILY_GENERATE_LIMIT = int(os.getenv('AI_DAILY_GENERATE_LIMIT', '20'))
+AI_DAILY_UPLOAD_LIMIT = int(os.getenv('AI_DAILY_UPLOAD_LIMIT', '10'))
+WORKSPACE_MAX_SOURCES = int(os.getenv('WORKSPACE_MAX_SOURCES', '15'))
 
 # Trusted proxy IPs/CIDRs for X-Forwarded-For header parsing.
 # Empty = ignore XFF (safest default). Add reverse proxy CIDRs in production.

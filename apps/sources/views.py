@@ -24,7 +24,8 @@ from apps.sources.models import GenerateJob, Source, SourceChunk, ChatSession, C
 from apps.sources.providers import ChatProvider, EmbeddingProvider
 from apps.sources.serializers import SourceDetailSerializer, SourceListSerializer
 from apps.workspaces.models import Workspace
-from apps.accounts.utils import check_and_increment_prompt, check_and_increment_generate
+from django.conf import settings
+from apps.accounts.utils import check_and_increment_prompt, check_and_increment_generate, check_and_increment_upload
 
 
 ALLOWED_EXTENSIONS = {".pdf", ".md", ".txt", ".docx"}
@@ -113,6 +114,18 @@ class SourceUploadView(APIView):
             Workspace.objects.filter(user=request.user),
             id=workspace_id,
         )
+        
+        if Source.objects.filter(workspace=workspace).count() >= settings.WORKSPACE_MAX_SOURCES:
+            return Response(
+                {"detail": f"Workspace ini telah mencapai batas maksimal dokumen ({settings.WORKSPACE_MAX_SOURCES})."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+            
+        if not check_and_increment_upload(request.user, request):
+            return Response(
+                {"detail": "Kuota upload/embedding harian Anda telah habis."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
 
         uploaded_file = request.FILES.get("file")
         if uploaded_file is None:

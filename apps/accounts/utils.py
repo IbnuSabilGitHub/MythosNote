@@ -409,3 +409,18 @@ def check_and_increment_generate(user: Any, request: HttpRequest) -> bool:
         locked_usage.generate_count = F("generate_count") + 1
         locked_usage.save(update_fields=["generate_count"])
         return True
+
+
+def check_and_increment_upload(user: Any, request: HttpRequest) -> bool:
+    """Periksa kuota upload harian dan inkremen jika masih tersedia."""
+
+    with transaction.atomic():
+        usage = get_api_usage(user, request)
+        locked_usage = UserUsage.objects.select_for_update().get(pk=usage.pk)
+        
+        if locked_usage.upload_count >= settings.AI_DAILY_UPLOAD_LIMIT:
+            return False
+            
+        locked_usage.upload_count = F("upload_count") + 1
+        locked_usage.save(update_fields=["upload_count"])
+        return True

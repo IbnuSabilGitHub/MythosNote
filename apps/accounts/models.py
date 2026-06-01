@@ -36,6 +36,7 @@ class UserUsage(models.Model):
     date = models.DateField()
     prompt_count = models.PositiveIntegerField(default=0)
     generate_count = models.PositiveIntegerField(default=0)
+    upload_count = models.PositiveIntegerField(default=0)
     failed_login_count = models.PositiveIntegerField(default=0)
     failed_login_window_started_at = models.DateTimeField(null=True, blank=True)
     last_failed_login_at = models.DateTimeField(null=True, blank=True)
