@@ -2,6 +2,23 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.2.45] - 2026-06-01
+### Summary
+Polish dan perbaikan UI/UX pada workspace (3-panel layout & berbagai improvement).
+
+
+
+### Polished
+- 3-panel layout
+- Token color primary
+- Chat empty state
+- Source cards yang lebih baik
+- Chat input focus
+- Mobile safe-area navigation
+- Disabled state pada generate buttons
+- Drag & upload state
+
 ## [1.2.44] - 2026-06-01
 ### Summary
 Polish render markdown di chat agar lebih rapi dan nyaman dibaca.

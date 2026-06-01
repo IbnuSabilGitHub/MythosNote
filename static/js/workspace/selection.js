@@ -23,7 +23,7 @@
 
   function updateSelectAllState() {
     if (!selectAllCheckbox) return;
-    const items = getItems();
+    const items = getItems().filter((item) => item.dataset.sourceReady !== "false");
     const allChecked =
       items.length > 0 && items.every((item) => {
         const cb = item.querySelector("[data-source-checkbox]");
@@ -46,7 +46,7 @@
     const items = getItems();
     const readyItems = items.filter((item) => {
       const cb = item.querySelector("[data-source-checkbox]");
-      return cb; // only items with checkbox = source items
+      return cb && !cb.disabled;
     });
     const checkedItems = readyItems.filter((item) => {
       const cb = item.querySelector("[data-source-checkbox]");
@@ -66,6 +66,7 @@
   function setAllItems(checked) {
     getItems().forEach((item) => {
       const cb = item.querySelector("[data-source-checkbox]");
+      if (cb?.disabled) return;
       if (cb) cb.checked = checked;
       updateItemVisual(item, checked);
     });
@@ -88,6 +89,7 @@
       });
 
       item.addEventListener("click", (e) => {
+        if (cb.disabled) return;
         if (e.target === cb) return;
         // Only toggle if not clicking delete button
         if (e.target.closest("[data-delete-source]")) return;
@@ -139,7 +141,7 @@
      * Empty array means "no filter → use all ready sources".
      */
     getSelectedSourceIds() {
-      const items = getItems();
+      const items = getItems().filter((item) => item.dataset.sourceReady !== "false");
       const allCount = items.length;
       if (allCount === 0) return [];
 

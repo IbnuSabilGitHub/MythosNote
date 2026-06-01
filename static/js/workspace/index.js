@@ -210,14 +210,14 @@ document.addEventListener("DOMContentLoaded", () => {
   if (dropLabel) {
     dropLabel.addEventListener("dragover", (e) => {
       e.preventDefault();
-      dropLabel.classList.add("border-[#FFC880]/60");
+      dropLabel.classList.add("is-dragging");
     });
     dropLabel.addEventListener("dragleave", () => {
-      dropLabel.classList.remove("border-[#FFC880]/60");
+      dropLabel.classList.remove("is-dragging");
     });
     dropLabel.addEventListener("drop", (e) => {
       e.preventDefault();
-      dropLabel.classList.remove("border-[#FFC880]/60");
+      dropLabel.classList.remove("is-dragging");
       const file = e.dataTransfer?.files?.[0];
       if (file) {
         // Assign to input so form data works

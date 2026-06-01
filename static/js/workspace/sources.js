@@ -55,9 +55,12 @@
       // Handle empty state
       if (!sources || sources.length === 0) {
         this.container.innerHTML = `
-          <div class="flex flex-col items-center justify-center py-8 text-center">
-            <div class="text-stone-400 text-sm">No sources uploaded.</div>
-            <div class="text-stone-500 text-xs mt-1">Upload your first source to get started.</div>
+          <div class="flex min-h-56 w-full flex-col items-center justify-center rounded-xl border border-dashed border-neutral-800 bg-neutral-900/30 px-4 py-8 text-center">
+            <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <iconify-icon icon="tabler:file-upload" class="text-xl"></iconify-icon>
+            </div>
+            <div class="text-stone-300 text-sm font-medium font-['Manrope']">Belum ada sumber</div>
+            <div class="text-stone-500 text-xs mt-1 font-['Manrope']">Upload PDF, TXT, Markdown, atau DOCX.</div>
           </div>
         `;
         return;
@@ -99,8 +102,8 @@
       const fileIcon = fileIconMap[ext] || 'tabler:txt';
       const isReady = source.status === 'ready';
       const checkboxClasses = isReady
-        ? 'h-4 w-4 rounded-xs border border-[#FFC880] bg-[#FFC880] accent-[#FFC880]'
-        : 'h-4 w-4 rounded-xs border border-neutral-700 bg-neutral-950 accent-[#FFC880]';
+        ? 'h-4 w-4 rounded-xs border border-primary bg-primary accent-primary focus:ring-primary/40'
+        : 'h-4 w-4 rounded-xs border border-neutral-700 bg-neutral-950 accent-primary opacity-40 cursor-not-allowed';
       const nameClasses = isReady
         ? 'text-zinc-200 text-sm font-medium'
         : 'text-stone-300 text-sm font-normal';
@@ -133,26 +136,27 @@
       const badgeAnimClass = isProcessing ? ' animate-pulse' : '';
 
       return `
-        <div class="source-item self-stretch p-2 relative bg-neutral-900/40 rounded-md border border-neutral-800 inline-flex justify-start items-start gap-2 cursor-pointer hover:bg-neutral-900/60 transition"
+        <div class="source-item self-stretch p-2.5 relative bg-neutral-900/45 rounded-lg border border-neutral-800 inline-flex justify-start items-start gap-2.5 ${isReady ? 'cursor-pointer hover:border-primary/35 hover:bg-neutral-900/80' : 'cursor-not-allowed opacity-80'} transition shadow-[0_8px_28px_rgba(0,0,0,0.10)]"
             data-source-id="${this.escapeHTML(source.id)}"
             data-source-item
-            data-selected-classes="bg-neutral-900 border-[#FFC880]/60 shadow-[inset_0_0_0_1px_rgba(255,200,128,0.18)]">
+            data-source-ready="${isReady ? 'true' : 'false'}"
+            data-selected-classes="bg-neutral-900 border-primary/60 shadow-[inset_0_0_0_1px_rgba(255,200,128,0.18),0_12px_40px_rgba(0,0,0,0.18)]">
           <div class="pt-1 inline-flex flex-col justify-start items-start">
             <input type="checkbox" data-source-checkbox
-              class="${checkboxClasses}" />
+              class="${checkboxClasses}" ${isReady ? '' : 'disabled'} />
           </div>
           <div class="flex-1 inline-flex flex-col justify-start items-start gap-1 min-w-0">
             <div class="self-stretch inline-flex justify-start items-center gap-1">
-              <iconify-icon icon="${fileIcon}" class="text-[#FFC880] text-sm shrink-0"></iconify-icon>
-              <div class="flex-1 h-6 relative overflow-hidden">
-                <div class="h-6 left-0 -top-px absolute ${nameClasses} font-['Manrope'] leading-6 whitespace-nowrap">
+              <iconify-icon icon="${fileIcon}" class="text-primary text-sm shrink-0"></iconify-icon>
+              <div class="min-w-0 flex-1 overflow-hidden">
+                <div class="${nameClasses} truncate font-['Manrope'] leading-6" title="${this.escapeHTML(fileName)}">
                   ${this.escapeHTML(fileName)}
                 </div>
               </div>
             </div>
             <div class="self-stretch flex items-center justify-between gap-2 overflow-hidden">
               <div class="text-stone-300/70 text-xs font-normal font-['Manrope'] leading-5 truncate">${this.escapeHTML(meta)}</div>
-              <span class="status-badge ${statusClass}${badgeAnimClass} px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap shrink-0"${errorTitle}>
+              <span class="status-badge ${statusClass}${badgeAnimClass} px-1.5 py-0.5 rounded-md text-[10px] font-semibold whitespace-nowrap shrink-0"${errorTitle}>
                 ${statusLabel}
               </span>
             </div>
@@ -180,7 +184,7 @@
       const classMap = {
         pending:    "status-pending bg-yellow-500/20 text-yellow-300",
         queued:     "status-pending bg-yellow-500/20 text-yellow-300",
-        processing: "status-processing bg-blue-500/20 text-blue-300",
+        processing: "status-processing bg-primary/10 text-primary",
         ready:      "status-ready bg-green-500/20 text-green-300",
         failed:     "status-failed bg-red-500/20 text-red-300",
       };
@@ -269,6 +273,7 @@
           if (status === "ready" || status === "failed") {
             clearInterval(this.pollIntervals.get(sourceId));
             this.pollIntervals.delete(sourceId);
+            await this.fetchSources();
           }
         } catch (error) {
           console.error(`Poll failed for source ${sourceId}:`, error);
@@ -298,7 +303,7 @@
 
       const badge = item.querySelector(".status-badge");
       if (badge) {
-        badge.className = `status-badge ${this.getStatusClass(status)} px-2 py-1 rounded text-xs font-medium whitespace-nowrap`;
+        badge.className = `status-badge ${this.getStatusClass(status)} px-1.5 py-0.5 rounded-md text-[10px] font-semibold whitespace-nowrap`;
         badge.textContent = this.getStatusLabel(status);
       }
     }
@@ -382,12 +387,12 @@
         <div class="flex items-center justify-center py-8">
           <div class="flex flex-col items-center gap-3">
             <div class="animate-spin">
-              <svg class="w-6 h-6 text-[#FFC880]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
             </div>
-            <div class="text-sm text-stone-400">Loading sources...</div>
+            <div class="text-sm text-stone-400 font-['Manrope']">Memuat sumber...</div>
           </div>
         </div>
       `;

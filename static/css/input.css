@@ -6,6 +6,52 @@
    ========================================== */
 
 @layer components {
+  /* Workspace */
+  .workspace-shell {
+    background:
+      radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 34rem),
+      linear-gradient(180deg, color-mix(in srgb, var(--color-surface-container-lowest) 92%, black), var(--color-neutral-950));
+  }
+
+  .workspace-panel {
+    background: color-mix(in srgb, var(--color-neutral-950) 92%, var(--color-surface-container));
+  }
+
+  .workspace-panel-header {
+    background: color-mix(in srgb, var(--color-neutral-950) 82%, transparent);
+    box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--color-outline-variant) 60%, transparent);
+  }
+
+  .workspace-icon-button {
+    @apply inline-flex items-center justify-center rounded-lg border border-neutral-800 bg-neutral-900/70 text-primary transition hover:border-primary/50 hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-45;
+  }
+
+  .workspace-soft-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900/80 text-primary transition hover:border-primary/40 hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-45;
+  }
+
+  .workspace-generate-button {
+    @apply relative flex min-h-24 flex-col items-center justify-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-5 text-primary transition hover:border-primary/40 hover:bg-neutral-800/80 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .workspace-input-shell {
+    @apply w-full rounded-2xl border border-neutral-800 bg-neutral-900/80 shadow-[0_18px_60px_rgba(0,0,0,0.22)] transition focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/20;
+  }
+
+  .workspace-dropzone {
+    @apply flex h-40 w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-neutral-700 bg-neutral-950/50 transition hover:border-primary/60 hover:bg-neutral-950/70;
+  }
+
+  .workspace-dropzone.is-dragging {
+    border-color: color-mix(in srgb, var(--color-primary) 85%, transparent);
+    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-neutral-950));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 32%, transparent);
+  }
+
+  .workspace-mobile-nav {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
   /* Buttons */
   .btn {
     @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200;

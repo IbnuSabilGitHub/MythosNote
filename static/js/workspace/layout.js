@@ -68,10 +68,11 @@
       mobileTabButtons.forEach((button) => {
         const isActive = button.dataset.mobileTab === tabName;
         button.setAttribute("aria-selected", String(isActive));
-        button.classList.toggle("text-[#FFC880]", isActive);
+        button.classList.toggle("text-primary", isActive);
         button.classList.toggle("text-stone-400", !isActive);
-        button.classList.toggle("border-[#FFC880]", isActive);
+        button.classList.toggle("border-primary", isActive);
         button.classList.toggle("border-transparent", !isActive);
+        button.classList.toggle("font-semibold", isActive);
       });
     };
 
