@@ -217,6 +217,17 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
     ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.AnonRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '120/minute',
+        'anon': '30/minute',
+        'upload': '20/minute',
+        'chat': '30/minute',
+        'generate': '10/minute',
+    },
 }
 
 
@@ -277,18 +288,21 @@ LOGOUT_REDIRECT_URL = 'home'
 # EMAIL_MODE keeps switching simple:
 # console/development prints email locally, smtp uses generic SMTP, brevo uses Brevo SMTP relay.
 EMAIL_MODE = _get_email_mode()
-globals().update(_get_email_config())
+_email_config = _get_email_config()
+EMAIL_BACKEND = _email_config.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = _email_config.get('EMAIL_HOST', '')
+EMAIL_PORT = _email_config.get('EMAIL_PORT', 587)
+EMAIL_USE_TLS = _email_config.get('EMAIL_USE_TLS', True)
+EMAIL_USE_SSL = _email_config.get('EMAIL_USE_SSL', False)
+EMAIL_HOST_USER = _email_config.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = _email_config.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = _email_config.get('DEFAULT_FROM_EMAIL', 'no-reply@mythosnote.local')
 EMAIL_ASYNC = _env_bool('EMAIL_ASYNC')
 UNVERIFIED_USER_CLEANUP_DAYS = int(os.getenv('UNVERIFIED_USER_CLEANUP_DAYS', '1'))
 
 # Public Google Identity Services client id. When empty, the template keeps
 # the Google button disabled without breaking email/password auth.
 GOOGLE_OAUTH_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID', '')
-
-SUPABASE_URL = os.getenv('SUPABASE_URL', '').strip()
-SUPABASE_KEY = os.getenv('SUPABASE_KEY', '').strip()
-SUPABASE_BUCKET = os.getenv('SUPABASE_BUCKET', '').strip()
-
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip()
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY', '').strip()
 DEEPSEEK_BASE_URL = os.getenv('DEEPSEEK_BASE_URL', 'https://api.deepseek.com/v1').strip()
@@ -302,8 +316,16 @@ DEFAULT_EMBEDDING_PROVIDER = 'gemini'
 EMBEDDING_PROVIDER = os.getenv('EMBEDDING_PROVIDER', DEFAULT_EMBEDDING_PROVIDER).strip().lower()
 EMBEDDING_MODEL = os.getenv('EMBEDDING_MODEL', 'gemini-embedding-001').strip()
 EMBEDDING_DIMENSIONS = int(os.getenv('EMBEDDING_DIMENSIONS', '768'))
+# Trusted proxy IPs/CIDRs for X-Forwarded-For header parsing.
+# Empty = ignore XFF (safest default). Add reverse proxy CIDRs in production.
+# Example for Cloudflare: ['173.245.48.0/20', '103.21.244.0/22', ...]
+_raw_trusted_proxies = os.getenv('TRUSTED_PROXY_IPS', '').strip()
+TRUSTED_PROXY_IPS = [p.strip() for p in _raw_trusted_proxies.split(',') if p.strip()] if _raw_trusted_proxies else []
+
 # Security settings for modern browsers to mitigate certain types of attacks. Adjust as needed.
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
+SECURE_REFERRER_POLICY = os.getenv('SECURE_REFERRER_POLICY', 'strict-origin-when-cross-origin')
+SECURE_CONTENT_TYPE_NOSNIFF = True
 
 # Production cookie/transport defaults stay strict, while DEBUG keeps local
 # HTTP development usable unless explicitly overridden.

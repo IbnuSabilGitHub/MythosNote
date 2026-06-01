@@ -130,8 +130,15 @@ def chunk_text(text: str, max_tokens: int = 500, overlap: int = 50) -> List[str]
     return chunks
 
 
+MAX_EXTRACT_PAGES = 500
+MAX_EXTRACTED_CHARS = 2_000_000
+
+
 def extract_text_from_file(file_path: str, mime_type: str) -> str:
     """Ekstrak teks dari file berdasarkan tipe MIME.
+
+    Note: Ekstraksi dilindungi dengan limit halaman, limit karakter,
+    dan timeout eksekusi di level worker RQ.
 
     Args:
         file_path: Path ke file di storage.
@@ -159,11 +166,25 @@ def extract_text_from_file(file_path: str, mime_type: str) -> str:
         # Extract text from PDF using PyMuPDF
         try:
             doc = fitz.open(file_path)
+            if doc.page_count > MAX_EXTRACT_PAGES:
+                doc.close()
+                raise ValueError(
+                    f"PDF terlalu banyak halaman ({doc.page_count}). "
+                    f"Maksimal {MAX_EXTRACT_PAGES} halaman."
+                )
             text_parts = []
+            total_chars = 0
             for page in doc:
-                text_parts.append(page.get_text())
+                page_text = page.get_text()
+                total_chars += len(page_text)
+                if total_chars > MAX_EXTRACTED_CHARS:
+                    text_parts.append(page_text[:MAX_EXTRACTED_CHARS - (total_chars - len(page_text))])
+                    break
+                text_parts.append(page_text)
             doc.close()
             return '\n'.join(text_parts)
+        except ValueError:
+            raise
         except Exception as e:
             raise ValueError(f"Error membaca PDF: {str(e)}")
 
@@ -172,7 +193,15 @@ def extract_text_from_file(file_path: str, mime_type: str) -> str:
         try:
             from docx import Document
             doc = Document(file_path)
-            return '\n'.join(p.text for p in doc.paragraphs if p.text.strip())
+            text_parts = []
+            total_chars = 0
+            for p in doc.paragraphs:
+                if p.text.strip():
+                    total_chars += len(p.text)
+                    if total_chars > MAX_EXTRACTED_CHARS:
+                        break
+                    text_parts.append(p.text)
+            return '\n'.join(text_parts)
         except Exception as e:
             raise ValueError(f"Error membaca DOCX: {str(e)}")
 
@@ -339,7 +368,9 @@ def process_generate_job(job_id: str, prompt: str) -> None:
             with transaction.atomic():
                 job = GenerateJob.objects.select_for_update().get(id=job.id)
                 job.status = "failed"
-                job.error_message = error_traceback
+                # Store short message for UI; full traceback is in logs above
+                short_error = error_traceback[:500] if error_traceback else 'Terjadi kesalahan saat memproses.'
+                job.error_message = short_error
                 job.save(update_fields=["status", "error_message", "updated_at"])
 
 

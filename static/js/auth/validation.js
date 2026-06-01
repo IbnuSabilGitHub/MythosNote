@@ -11,11 +11,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Constants & Configuration
     const VALIDATION_RULES = {
         email: (value) => {
+            if (value.length > 254) return 'Email maksimal 254 karakter';
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             return emailRegex.test(value) ? '' : 'Format email tidak valid';
         },
         password: (value) => {
-            return value.length >= 8 ? '' : 'Password minimal 8 karakter';
+            if (value.length < 8) return 'Password minimal 8 karakter';
+            if (value.length > 128) return 'Password maksimal 128 karakter';
+            return '';
         },
         password_confirm: (value, form, input) => {
             const passwordFieldName = input.dataset.matchPassword || 'password';

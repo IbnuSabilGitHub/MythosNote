@@ -73,7 +73,7 @@
                 <div data-sources-label
                     class="h-3 justify-center text-stone-300 text-xs font-semibold font-['Manrope'] uppercase leading-3 tracking-wider">
                     SUMBER</div>
-                <button type="button" data-sources-toggle aria-expanded="true"
+                <button type="button" data-sources-toggle aria-expanded="true" title="Tutup Panel"
                     class="w-7 h-7 flex justify-center items-center rounded-md hover:bg-neutral-900/70 transition cursor-pointer">
                     <iconify-icon data-sources-chevron icon="akar-icons:panel-right"
                         class="text-[#FFC880] text-base"></iconify-icon>
@@ -81,8 +81,8 @@
             </div>
             <div data-sources-rail class="hidden self-stretch flex-1 py-4 px-2 border-b border-neutral-800/70">
                 <div class="flex h-full flex-col items-center justify-start gap-3 pt-2">
-                    <button type="button"
-                        class="mx-auto w-11 h-11 rounded-xl bg-neutral-900/70 border border-neutral-800 flex items-center justify-center text-[#FFC880] shadow-sm">
+                    <button id="btn-add-source-rail" type="button" title="Tambah Sumber"
+                        class="mx-auto w-11 h-11 rounded-xl bg-neutral-900/70 border border-neutral-800 flex items-center justify-center text-[#FFC880] shadow-sm hover:bg-neutral-800 cursor-pointer transition">
                         <iconify-icon icon="tabler:plus" class="text-lg"></iconify-icon>
                     </button>
                 </div>
@@ -90,7 +90,7 @@
             <!-- Panel sumber (kiri) -->
             <div data-sources-panel
                 class="flex self-stretch p-4 border-b border-neutral-800/70 flex-col justify-start items-start gap-4">
-                <button id="btn-add-source" type="button"
+                <button id="btn-add-source" type="button" title="Tambah Sumber"
                     class="self-stretch py-2 bg-neutral-900/80 rounded-md border border-neutral-800 inline-flex justify-center items-center gap-2 cursor-pointer hover:bg-neutral-800 transition">
                     <iconify-icon icon="material-symbols:upload" class="text-[#FFC880] text-sm"></iconify-icon>
                     <div
@@ -144,7 +144,7 @@
                 <div
                     class="w-full relative bg-neutral-900/70 rounded-2xl border border-neutral-800 flex flex-col justify-start items-start">
                     <div class="self-stretch min-h-16 pl-4 pr-16 pt-3 pb-10 relative">
-                        <textarea id="chat-input"
+                        <textarea id="chat-input" maxlength="4000"
                             class="w-full bg-transparent text-stone-200 text-base font-normal font-['Manrope'] leading-6 placeholder:text-stone-300/50 focus:outline-none resize-none"
                             rows="2" placeholder="Tanyakan apa pun tentang sumber yang Anda pilih..."></textarea>
                     </div>
@@ -171,7 +171,7 @@
                 <div data-generate-label
                     class="h-3 justify-center text-stone-300 text-xs font-semibold font-['Manrope'] uppercase leading-3 tracking-wider">
                     GENERATE</div>
-                <button type="button" data-generate-toggle aria-expanded="true"
+                <button type="button" data-generate-toggle aria-expanded="true" title="Tutup Panel"
                     class="w-7 h-7 flex justify-center items-center rounded-md hover:bg-neutral-900/70 transition cursor-pointer">
                     <iconify-icon data-generate-chevron icon="akar-icons:panel-right"
                         class="text-[#FFC880] text-base"></iconify-icon>

@@ -1,23 +1,26 @@
-"""Tests for AI providers selection and validation."""
+"""Tests for AI providers selection, validation, and security vulnerabilities."""
 
-from unittest.mock import patch
-
+import os
+from unittest.mock import patch, MagicMock
 from django.test import TestCase, override_settings
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.urls import reverse
+from django.contrib.auth import get_user_model
+from rest_framework.test import APITestCase
 
 from apps.sources.providers import (
     DeepSeekChatProvider,
     GeminiChatProvider,
-    OpenAIChatProvider,
     _create_chat_provider,
     _create_embedding_provider,
-    OpenAIEmbeddingProvider,
     GeminiEmbeddingProvider,
 )
+from apps.accounts.utils import get_client_ip
+from apps.sources.tasks import extract_text_from_file
 
 
 class AIProviderTests(TestCase):
     """Test suite for AI Provider selection, validation, and error fallback."""
-
 
     @override_settings(AI_PROVIDER="gemini", GEMINI_API_KEY="test-key")
     @patch("google.genai.Client")
@@ -27,8 +30,7 @@ class AIProviderTests(TestCase):
         self.assertIsInstance(provider, GeminiChatProvider)
 
     @override_settings(AI_PROVIDER="deepseek", DEEPSEEK_API_KEY="test-key")
-    @patch("openai.OpenAI")
-    def test_provider_selection_deepseek(self, mock_openai) -> None:
+    def test_provider_selection_deepseek(self) -> None:
         """Verify DeepSeek chat provider is selected when AI_PROVIDER is deepseek."""
         provider = _create_chat_provider()
         self.assertIsInstance(provider, DeepSeekChatProvider)
@@ -47,7 +49,6 @@ class AIProviderTests(TestCase):
             DeepSeekChatProvider()
         self.assertIn("DEEPSEEK_API_KEY is not configured", str(ctx.exception))
 
-
     @override_settings(GEMINI_API_KEY="")
     def test_gemini_missing_api_key_raises_error(self) -> None:
         """Verify GeminiChatProvider raises ValueError if api key is missing."""
@@ -55,24 +56,65 @@ class AIProviderTests(TestCase):
             GeminiChatProvider()
         self.assertIn("GEMINI_API_KEY is not configured", str(ctx.exception))
 
-    @override_settings(
-        DEEPSEEK_API_KEY="test-deepseek-key",
-        DEEPSEEK_BASE_URL="https://api.deepseek.com/v1",
-    )
-    @patch("openai.OpenAI")
-    def test_deepseek_provider_uses_openai_sdk_with_correct_base_url(self, mock_openai_cls) -> None:
-        """Verify DeepSeekChatProvider correctly forwards base_url to OpenAI SDK."""
-        DeepSeekChatProvider()
-        mock_openai_cls.assert_called_once_with(
-            api_key="test-deepseek-key",
-            base_url="https://api.deepseek.com/v1",
-        )
-
-    # OpenAI provider removed; tests focus on Gemini and DeepSeek providers
-
     @override_settings(EMBEDDING_PROVIDER="gemini", GEMINI_API_KEY="test-key")
     @patch("google.genai.Client")
     def test_embedding_provider_selection_gemini(self, mock_configure) -> None:
         """Verify Gemini embedding provider is selected when EMBEDDING_PROVIDER is gemini."""
         provider = _create_embedding_provider()
         self.assertIsInstance(provider, GeminiEmbeddingProvider)
+
+
+class SecurityVulnerabilityTests(APITestCase):
+    """Test suite targeting the fixed vulnerabilities."""
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(username="testuser", email="test@mythosnote.local", password="password123")
+
+    @override_settings(TRUSTED_PROXY_IPS=[])
+    def test_xff_untrusted_by_default(self):
+        """Verify X-Forwarded-For is ignored if TRUSTED_PROXY_IPS is empty."""
+        request = MagicMock()
+        request.META = {
+            "REMOTE_ADDR": "127.0.0.1",
+            "HTTP_X_FORWARDED_FOR": "203.0.113.195, 127.0.0.1"
+        }
+        ip = get_client_ip(request)
+        self.assertEqual(ip, "127.0.0.1")
+
+    @override_settings(TRUSTED_PROXY_IPS=["127.0.0.1"])
+    def test_xff_trusted_when_configured(self):
+        """Verify X-Forwarded-For is trusted only if REMOTE_ADDR is in TRUSTED_PROXY_IPS."""
+        request = MagicMock()
+        request.META = {
+            "REMOTE_ADDR": "127.0.0.1",
+            "HTTP_X_FORWARDED_FOR": "203.0.113.195, 127.0.0.1"
+        }
+        ip = get_client_ip(request)
+        self.assertEqual(ip, "203.0.113.195")
+
+    def test_parser_bomb_page_limit(self):
+        """Verify extract_text_from_file raises ValueError if pages exceed MAX_EXTRACT_PAGES."""
+        mock_doc = MagicMock()
+        mock_doc.page_count = 1000  # Exceeds max 500 pages
+        
+        with patch("fitz.open", return_value=mock_doc):
+            with self.assertRaises(ValueError) as ctx:
+                extract_text_from_file("dummy.pdf", "application/pdf")
+            self.assertIn("PDF terlalu banyak halaman", str(ctx.exception))
+
+    def test_upload_file_with_too_long_filename(self):
+        """Verify uploading file with name > 255 chars returns 400."""
+        from apps.workspaces.models import Workspace
+        workspace = Workspace.objects.create(user=self.user, name="Test WS")
+        self.client.force_authenticate(user=self.user)
+
+        long_filename = "a" * 160 + ".txt"
+        file = SimpleUploadedFile(long_filename, b"content", content_type="text/plain")
+        response = self.client.post(
+            reverse("source-upload"),
+            {"workspace_id": str(workspace.id), "file": file},
+            format="multipart"
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Nama file terlalu panjang", response.data["file"])

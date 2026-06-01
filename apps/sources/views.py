@@ -1,6 +1,7 @@
 """Views for source management APIs."""
 
 import os
+import uuid
 
 import django_rq
 from django.db import IntegrityError, transaction
@@ -13,6 +14,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
 from django.core.files.storage import default_storage
@@ -25,6 +27,38 @@ from apps.workspaces.models import Workspace
 
 ALLOWED_EXTENSIONS = {".pdf", ".md", ".txt", ".docx"}
 MAX_FILE_SIZE = 20 * 1024 * 1024
+
+# Magic bytes for file type validation
+FILE_MAGIC_BYTES = {
+    ".pdf": [b"%PDF"],
+    ".docx": [b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08"],
+}
+
+
+def _validate_file_magic(uploaded_file, extension: str) -> bool:
+    """Validate file content matches expected magic bytes for the extension.
+
+    Returns True if validation passes (magic matches or no magic check needed).
+    """
+    expected = FILE_MAGIC_BYTES.get(extension.lower())
+    if not expected:
+        return True  # No magic bytes check for .txt/.md
+    pos = uploaded_file.tell()
+    header = uploaded_file.read(8)
+    uploaded_file.seek(pos)
+    return any(header.startswith(magic) for magic in expected)
+
+
+class UploadRateThrottle(UserRateThrottle):
+    scope = 'upload'
+
+
+class ChatRateThrottle(UserRateThrottle):
+    scope = 'chat'
+
+
+class GenerateRateThrottle(UserRateThrottle):
+    scope = 'generate'
 
 
 class SourcePagination(PageNumberPagination):
@@ -63,6 +97,7 @@ class SourceUploadView(APIView):
     """Upload a source file and queue background chunking."""
 
     permission_classes = [IsAuthenticated]
+    throttle_classes = [UploadRateThrottle]
 
     def post(self, request):
         workspace_id = request.data.get("workspace_id")
@@ -97,22 +132,40 @@ class SourceUploadView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        storage_path = f"workspaces/{workspace.id}/sources/{uploaded_file.name}"
+        if len(uploaded_file.name) > 150:
+            return Response(
+                {"file": "Nama file terlalu panjang. Maksimal 150 karakter."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not _validate_file_magic(uploaded_file, extension):
+            return Response(
+                {"file": "Isi file tidak sesuai dengan format yang diharapkan."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        safe_name = os.path.basename(uploaded_file.name)
+        from django.utils.text import get_valid_filename
+        safe_name = get_valid_filename(safe_name)
+        unique_name = f"{uuid.uuid4().hex[:8]}_{safe_name}"
+        storage_path = f"workspaces/{workspace.id}/sources/{unique_name}"
         try:
             saved_path = default_storage.save(storage_path, uploaded_file)
-        except Exception as exc:
+        except Exception:
             return Response(
-                {'detail': f'Failed to save file: {exc}'},
+                {'detail': 'Failed to save file. Please try again.'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         try:
             with transaction.atomic():
+                import mimetypes
+                detected_mime, _ = mimetypes.guess_type(uploaded_file.name)
                 source = Source.objects.create(
                     user=request.user,
                     workspace=workspace,
                     original_filename=uploaded_file.name,
-                    mime_type=uploaded_file.content_type or "application/octet-stream",
+                    mime_type=detected_mime or "application/octet-stream",
                     file_size=uploaded_file.size,
                     storage_path=saved_path,
                     status="pending",
@@ -171,6 +224,10 @@ class SourceStatusView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+MAX_GENERATE_CHUNKS = 200
+MAX_GENERATE_CHARS = 15_000
+
+
 def _get_workspace_ready_chunks(request, workspace_id: str):
     workspace = get_object_or_404(
         Workspace.objects.filter(user=request.user),
@@ -181,7 +238,7 @@ def _get_workspace_ready_chunks(request, workspace_id: str):
         source__workspace=workspace,
         source__user=request.user,
         source__status="ready",
-    ).values_list("text_content", flat=True)
+    ).values_list("text_content", flat=True)[:MAX_GENERATE_CHUNKS]
 
     if not chunks.exists():
         return None, Response(
@@ -196,6 +253,7 @@ class ChatView(APIView):
     """Chat endpoint using RAG: embed query → pgvector ANN → LLM generate."""
 
     permission_classes = [IsAuthenticated]
+    throttle_classes = [ChatRateThrottle]
     TOP_K = 5
     MAX_MESSAGE_LENGTH = 4000
     EMBEDDING_ERROR_MESSAGE = "Gagal memproses pertanyaan. Coba lagi nanti."
@@ -314,9 +372,10 @@ class ChatView(APIView):
 
         messages = [{"role": "system", "content": system_context}]
 
-        # Retrieve previous messages
-        history_msgs = ChatMessage.objects.filter(session=session).order_by("created_at")
-        for msg in history_msgs:
+        # Retrieve previous messages (cap to last 20 to limit token usage)
+        MAX_HISTORY_MESSAGES = 20
+        history_msgs = ChatMessage.objects.filter(session=session).order_by("-created_at")[:MAX_HISTORY_MESSAGES]
+        for msg in reversed(list(history_msgs)):
             messages.append({"role": msg.role, "content": msg.content})
 
         # Append current user question
@@ -433,6 +492,7 @@ class GenerateView(APIView):
     """Generate summary/mindmap/quiz/table from workspace source chunks."""
 
     permission_classes = [IsAuthenticated]
+    throttle_classes = [GenerateRateThrottle]
 
     PROMPT_TEMPLATES = {
         "summary": "Summarize the following context into concise bullet points.",
@@ -453,7 +513,7 @@ class GenerateView(APIView):
         if error_response:
             return error_response
 
-        context_text = "\n\n".join(chunks)
+        context_text = "\n\n".join(chunks)[:MAX_GENERATE_CHARS]
         instruction = self.PROMPT_TEMPLATES[action]
         prompt = f"{context_text}\n\nTask: {instruction}"
 

@@ -68,7 +68,7 @@
                                 EMAIL
                             </label>
                         </div>
-                        <input name="email" type="email" required placeholder="nama@domain.com"
+                        <input name="email" type="email" required placeholder="nama@domain.com" maxlength="254"
                             value="{{ form.email.value|default:''|escape }}"
                             class="self-stretch bg-neutral-800 px-4 pt-3 pb-3.5 text-on-surface/50 outline -outline-offset-1 outline-stone-700 transition" />
                         {% if form.email.errors %}
@@ -99,7 +99,7 @@
                                 </a>
                             </div>
                         </div>
-                        <input name="password" type="password" required placeholder="••••••••"
+                        <input name="password" type="password" required placeholder="••••••••" maxlength="128"
                             class="self-stretch bg-neutral-800 px-4 pt-3 pb-3.5 text-on-surface/50 outline -outline-offset-1 outline-stone-700 transition" />
                     </div>
 
@@ -139,5 +139,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/auth-validation.js' %}"></script>
+<script src="{% static 'js/auth/validation.js' %}"></script>
 {% endblock %}

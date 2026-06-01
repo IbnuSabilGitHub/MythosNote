@@ -65,7 +65,7 @@
                         class="self-stretch text-justify font-['Manrope'] text-xs font-semibold uppercase leading-3 tracking-wider text-on-surface">
                         EMAIL
                     </label>
-                    <input name="email" type="email" required placeholder="you@example.com"
+                    <input name="email" type="email" required placeholder="you@example.com" maxlength="254"
                         value="{{ form.email.value|default:''|escape }}"
                         class="self-stretch bg-neutral-800 px-4 pt-3 pb-3.5 text-on-surface/50 outline -outline-offset-1 outline-stone-700 transition" />
                 </div>
@@ -76,7 +76,7 @@
                         class="self-stretch text-justify font-['Manrope'] text-xs font-semibold uppercase leading-3 tracking-wider text-on-surface">
                         PASSWORD
                     </label>
-                    <input name="password" type="password" required placeholder="••••••••"
+                    <input name="password" type="password" required placeholder="••••••••" maxlength="128"
                         class="self-stretch bg-neutral-800 px-4 pt-3 pb-3.5 text-on-surface/50 outline -outline-offset-1 {% if form.password.errors %}outline-red-500/50{% else %}outline-stone-700{% endif %} transition" />
                     {% if form.password.errors %}
                     <div class="flex items-start gap-2 self-stretch">
@@ -96,7 +96,7 @@
                         class="self-stretch text-justify font-['Manrope'] text-xs font-semibold uppercase leading-3 tracking-wider text-on-surface">
                         CONFIRM PASSWORD
                     </label>
-                    <input name="password_confirm" type="password" required placeholder="••••••••"
+                    <input name="password_confirm" type="password" required placeholder="••••••••" maxlength="128"
                         class="self-stretch bg-neutral-800 px-4 pt-3 pb-3.5 text-on-surface/50 outline -outline-offset-1 {% if form.password_confirm.errors %}outline-red-500/50{% else %}outline-stone-700{% endif %} transition" />
                     {% if form.password_confirm.errors %}
                     <div class="flex items-start gap-2 self-stretch">
@@ -141,5 +141,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/auth-validation.js' %}"></script>
+<script src="{% static 'js/auth/validation.js' %}"></script>
 {% endblock %}

@@ -17,7 +17,7 @@ class SignInForm(forms.Form):
     """Masuk pakai email dan password."""
 
     email = forms.EmailField()
-    password = forms.CharField(strip=False, widget=forms.PasswordInput)
+    password = forms.CharField(strip=False, widget=forms.PasswordInput, max_length=128)
 
     def __init__(self, request: Any = None, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -50,8 +50,8 @@ class SignInForm(forms.Form):
 class SignUpForm(forms.ModelForm):
     """Buat akun email/password untuk verifikasi."""
 
-    password = forms.CharField(strip=False, widget=forms.PasswordInput)
-    password_confirm = forms.CharField(strip=False, widget=forms.PasswordInput)
+    password = forms.CharField(strip=False, widget=forms.PasswordInput, max_length=128)
+    password_confirm = forms.CharField(strip=False, widget=forms.PasswordInput, max_length=128)
 
     class Meta:
         model = User

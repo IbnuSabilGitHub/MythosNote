@@ -179,7 +179,7 @@ class DeepSeekChatProvider(BaseChatProvider):
             "messages": messages,
             "stream": False,
         }
-        response = requests.post(self.url, headers=headers, json=payload)
+        response = requests.post(self.url, headers=headers, json=payload, timeout=(5, 60))
         response.raise_for_status()
         return response.json()["choices"][0]["message"]["content"]
 

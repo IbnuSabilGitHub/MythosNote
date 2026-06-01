@@ -57,12 +57,34 @@ def normalize_identifier(identifier: str | None) -> str:
 
 
 def get_client_ip(request: HttpRequest) -> str | None:
-    """Ambil IP klien terbaik dengan memperhatikan proxy."""
+    """Ambil IP klien terbaik dengan memperhatikan proxy.
 
-    forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if forwarded_for:
-        return forwarded_for.split(",", 1)[0].strip()
-    return request.META.get("REMOTE_ADDR")
+    X-Forwarded-For hanya dipercaya jika REMOTE_ADDR berasal dari
+    daftar proxy terpercaya (settings.TRUSTED_PROXY_IPS).  Tanpa
+    konfigurasi tersebut, header XFF diabaikan untuk mencegah spoofing.
+    """
+    import ipaddress
+
+    remote_addr = request.META.get("REMOTE_ADDR")
+    trusted_proxies = getattr(settings, "TRUSTED_PROXY_IPS", [])
+
+    if trusted_proxies and remote_addr:
+        try:
+            remote_ip = ipaddress.ip_address(remote_addr)
+            is_trusted = any(
+                remote_ip in ipaddress.ip_network(cidr, strict=False)
+                for cidr in trusted_proxies
+            )
+        except ValueError:
+            is_trusted = False
+
+        if is_trusted:
+            forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+            if forwarded_for:
+                # Ambil IP paling kiri (client asli)
+                return forwarded_for.split(",", 1)[0].strip()
+
+    return remote_addr
 
 
 def increment_cache_counter(cache_key: str, timeout: int) -> int:

@@ -31,6 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const errorEl      = document.getElementById("upload-error");
   const submitBtn    = document.getElementById("btn-submit-upload");
   const openBtn      = document.getElementById("btn-add-source");
+  const openBtnRail  = document.getElementById("btn-add-source-rail");
   const closeBtn     = document.getElementById("btn-close-upload-modal");
   const cancelBtn    = document.getElementById("btn-cancel-upload");
   const clearBtn     = document.getElementById("btn-clear-file");
@@ -185,6 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Event wiring ───────────────────────────────────────────────────────────
   openBtn?.addEventListener("click", openModal);
+  openBtnRail?.addEventListener("click", openModal);
   closeBtn?.addEventListener("click", closeModal);
   cancelBtn?.addEventListener("click", closeModal);
   backdrop?.addEventListener("click", closeModal);
