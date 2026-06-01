@@ -3,6 +3,18 @@
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.2.47] - 2026-06-02
+### Summary
+Implementasi Chat 3 (Quick Actions) pada panel sumber workspace.
+
+### Added
+- **Source Download**: Tombol download berkas cepat ditambahkan di sebelah tombol hapus pada item daftar sumber panel workspace.
+- **SourceDownloadView**: Endpoint `GET /api/sources/<uuid:id>/download/` baru untuk mengunduh berkas dengan aman menggunakan `FileResponse` Django.
+
+### Changed
+- `apps/sources/urls.py`: Daftarkan routing baru untuk `source-download`.
+- `static/js/workspace/sources.js`: Integrasikan tautan unduh dinamis dengan atribut download HTML5 dan penataan a11y focus.
+
 ## [1.2.46] - 2026-06-02
 ### Summary
 Implementasi Chat 2 (Info Per File) dan Chat 4 (Safety + Polish) pada panel sumber workspace.

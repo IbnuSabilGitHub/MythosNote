@@ -5,6 +5,7 @@ import uuid
 
 import django_rq
 from django.db import IntegrityError, transaction
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from pgvector.django import CosineDistance
@@ -208,6 +209,29 @@ class SourceDeleteView(APIView):
             default_storage.delete(storage_path)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SourceDownloadView(APIView):
+    """Download a source file belonging to the authenticated user."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id):
+        source = get_object_or_404(
+            Source.objects.filter(user=request.user),
+            id=id,
+        )
+
+        if not default_storage.exists(source.storage_path):
+            return Response(
+                {"detail": "File tidak ditemukan di storage."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        file_handle = default_storage.open(source.storage_path, "rb")
+        response = FileResponse(file_handle, content_type=source.mime_type)
+        response["Content-Disposition"] = f'attachment; filename="{source.original_filename}"'
+        return response
 
 
 class SourceStatusView(APIView):

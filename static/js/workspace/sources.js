@@ -215,6 +215,17 @@
             ${progressHTML}
             ${errorHTML}
           </div>
+          <a
+            href="/api/sources/${this.escapeHTML(source.id)}/download/"
+            download="${this.escapeHTML(fileName)}"
+            class="shrink-0 mt-0.5 p-1 rounded hover:bg-neutral-800 text-stone-500 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/40 transition cursor-pointer"
+            title="Download sumber"
+            aria-label="Download ${this.escapeHTML(fileName)}"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </a>
           <button
             data-delete-source="${this.escapeHTML(source.id)}"
             class="shrink-0 mt-0.5 p-1 rounded hover:bg-red-500/20 text-stone-500 hover:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-500/40 transition cursor-pointer"
