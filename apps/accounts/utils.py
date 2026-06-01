@@ -39,6 +39,13 @@ PASSWORD_RESET_RATE_LIMIT_WINDOW = 300
 MAX_CONCURRENT_REQUESTS = 5
 CONCURRENT_REQUEST_WINDOW = timedelta(seconds=10)
 
+# Prioritas TINGGI: Sliding window & token bucket settings
+SLIDING_WINDOW_SIZE = timedelta(minutes=1)  # Window untuk rate limiting per-menit
+SLIDING_WINDOW_MAX_REQUESTS = 10  # Max request per menit
+TOKEN_BUCKET_CAPACITY = 20  # Kapasitas maksimum token
+TOKEN_BUCKET_REFILL_RATE = 2  # Token per detik
+TOKEN_BUCKET_KEY_PREFIX = "token_bucket"
+
 
 class EmailVerificationTokenGenerator(PasswordResetTokenGenerator):
     """Token batal saat status verifikasi email berubah."""
@@ -445,21 +452,167 @@ def release_concurrent_request(user: Any, request: HttpRequest) -> None:
         cache.set(cache_key, current_count - 1, int(CONCURRENT_REQUEST_WINDOW.total_seconds()))
 
 
+def check_sliding_window_rate_limit(user: Any, request: HttpRequest) -> bool:
+    """Periksa rate limiting dengan sliding window log.
+    
+    Menggunakan Redis sorted set untuk tracking timestamp request dalam window.
+    Ini memberikan akurasi lebih tinggi dibanding fixed window counter.
+    
+    Returns True jika masih dalam batas, False jika sudah melebihi.
+    """
+    if not user.is_authenticated:
+        return True
+    
+    cache_key = f"sliding_window:{user.pk}"
+    now = timezone.now().timestamp()
+    window_start = now - SLIDING_WINDOW_SIZE.total_seconds()
+    
+    # Hapus request lama di luar window (atomik dengan Redis ZREMRANGEBYSCORE)
+    cache.zremrangebyscore(cache_key, '-inf', window_start)
+    
+    # Hitung jumlah request dalam window
+    current_count = cache.zcard(cache_key)
+    
+    if current_count >= SLIDING_WINDOW_MAX_REQUESTS:
+        return False
+    
+    # Tambahkan request baru dengan timestamp sebagai score
+    # Gunakan unique member untuk menghindari duplikasi
+    member = f"{now}:{id(request)}"
+    cache.zadd(cache_key, {member: now})
+    
+    # Set TTL untuk cleanup otomatis
+    cache.expire(cache_key, int(SLIDING_WINDOW_SIZE.total_seconds() * 2))
+    
+    return True
+
+
+def check_token_bucket(user: Any, request: HttpRequest, tokens_required: int = 1) -> bool:
+    """Periksa dan konsumsi token dari token bucket.
+    
+    Algoritma token bucket memberikan fleksibilitas untuk burst traffic
+    sambil menjaga rata-rata rate dalam batas yang ditentukan.
+    
+    Args:
+        user: User object
+        request: Request object
+        tokens_required: Jumlah token yang dibutuhkan (default 1)
+    
+    Returns:
+        True jika token tersedia dan berhasil dikonsumsi, False jika tidak
+    """
+    if not user.is_authenticated:
+        return True
+    
+    cache_key = f"{TOKEN_BUCKET_KEY_PREFIX}:{user.pk}"
+    now = timezone.now().timestamp()
+    
+    # Ambil state bucket saat ini
+    bucket_data = cache.get(cache_key)
+    
+    if bucket_data is None:
+        # Initialize bucket dengan kapasitas penuh
+        tokens = TOKEN_BUCKET_CAPACITY
+        last_update = now
+    else:
+        tokens, last_update = bucket_data
+        
+        # Refill token berdasarkan waktu yang berlalu
+        time_passed = now - last_update
+        tokens_to_add = time_passed * TOKEN_BUCKET_REFILL_RATE
+        tokens = min(TOKEN_BUCKET_CAPACITY, tokens + tokens_to_add)
+    
+    # Cek apakah ada cukup token
+    if tokens < tokens_required:
+        return False
+    
+    # Konsumsi token
+    tokens -= tokens_required
+    
+    # Simpan state bucket yang diupdate
+    cache.set(cache_key, (tokens, now), timeout=3600)  # TTL 1 jam
+    
+    return True
+
+
+def get_remaining_tokens(user: Any) -> dict:
+    """Dapatkan informasi sisa token dan quota untuk user.
+    
+    Returns dict dengan informasi:
+    - remaining_tokens: Token tersisa di bucket
+    - max_tokens: Kapasitas maksimum bucket
+    - refill_rate: Kecepatan refill token per detik
+    - requests_in_window: Jumlah request dalam sliding window saat ini
+    - max_requests_per_minute: Batas request per menit
+    """
+    if not user.is_authenticated:
+        return {
+            "remaining_tokens": TOKEN_BUCKET_CAPACITY,
+            "max_tokens": TOKEN_BUCKET_CAPACITY,
+            "refill_rate": TOKEN_BUCKET_REFILL_RATE,
+            "requests_in_window": 0,
+            "max_requests_per_minute": SLIDING_WINDOW_MAX_REQUESTS,
+        }
+    
+    # Get token bucket info
+    cache_key = f"{TOKEN_BUCKET_KEY_PREFIX}:{user.pk}"
+    bucket_data = cache.get(cache_key)
+    
+    if bucket_data is None:
+        tokens = TOKEN_BUCKET_CAPACITY
+    else:
+        tokens, last_update = bucket_data
+        time_passed = timezone.now().timestamp() - last_update
+        tokens_to_add = time_passed * TOKEN_BUCKET_REFILL_RATE
+        tokens = min(TOKEN_BUCKET_CAPACITY, tokens + tokens_to_add)
+    
+    # Get sliding window info
+    window_key = f"sliding_window:{user.pk}"
+    now = timezone.now().timestamp()
+    window_start = now - SLIDING_WINDOW_SIZE.total_seconds()
+    
+    # Cleanup dan hitung
+    cache.zremrangebyscore(window_key, '-inf', window_start)
+    requests_in_window = cache.zcard(window_key)
+    
+    return {
+        "remaining_tokens": int(tokens),
+        "max_tokens": TOKEN_BUCKET_CAPACITY,
+        "refill_rate": TOKEN_BUCKET_REFILL_RATE,
+        "requests_in_window": requests_in_window,
+        "max_requests_per_minute": SLIDING_WINDOW_MAX_REQUESTS,
+    }
+
+
 def check_and_increment_prompt(user: Any, request: HttpRequest) -> bool:
     """Periksa kuota chat harian dan inkremen jika masih tersedia.
     
     Menggunakan UPDATE atomic dengan kondisi WHERE untuk mencegah race condition.
-    Juga memeriksa batas concurrent requests.
+    Juga memeriksa batas concurrent requests, sliding window, dan token bucket.
+    
+    Lapisan pertahanan (defense in depth):
+    1. Concurrent request limit - Mencegah serangan paralel
+    2. Sliding window rate limit - Mencegah spam per-menit
+    3. Token bucket - Mengatur burst traffic dengan smooth rate limiting
+    4. Daily quota - Batas harian total
     """
-    # Cek concurrent request limit terlebih dahulu
+    # Layer 1: Cek concurrent request limit
     if not check_concurrent_request_limit(user, request):
         return False
     
+    # Layer 2: Cek sliding window rate limit (per menit)
+    if not check_sliding_window_rate_limit(user, request):
+        release_concurrent_request(user, request)
+        return False
+    
+    # Layer 3: Cek token bucket (burst control)
+    if not check_token_bucket(user, request, tokens_required=1):
+        release_concurrent_request(user, request)
+        return False
+    
     try:
-        # Gunakan query UPDATE atomik dengan kondisi WHERE
+        # Layer 4: Gunakan query UPDATE atomik dengan kondisi WHERE
         # Ini mencegah race condition karena database yang menangani locking
-        from django.db import connection
-        
         with transaction.atomic():
             today = timezone.localdate()
             ip_address = get_client_ip(request)
@@ -494,7 +647,6 @@ def check_and_increment_prompt(user: Any, request: HttpRequest) -> bool:
                 )
                 
                 if not created and usage.prompt_count >= settings.AI_DAILY_PROMPT_LIMIT:
-                    release_concurrent_request(user, request)
                     return False
                 
                 # Jika baru dibuat dan limit > 0, berarti berhasil
@@ -511,12 +663,30 @@ def check_and_increment_generate(user: Any, request: HttpRequest) -> bool:
     """Periksa kuota generate harian dan inkremen jika masih tersedia.
     
     Menggunakan UPDATE atomic dengan kondisi WHERE untuk mencegah race condition.
-    Juga memeriksa batas concurrent requests.
+    Juga memeriksa batas concurrent requests, sliding window, dan token bucket.
+    
+    Lapisan pertahanan (defense in depth):
+    1. Concurrent request limit - Mencegah serangan paralel
+    2. Sliding window rate limit - Mencegah spam per-menit
+    3. Token bucket - Mengatur burst traffic dengan smooth rate limiting
+    4. Daily quota - Batas harian total
     """
+    # Layer 1: Cek concurrent request limit
     if not check_concurrent_request_limit(user, request):
         return False
     
+    # Layer 2: Cek sliding window rate limit (per menit)
+    if not check_sliding_window_rate_limit(user, request):
+        release_concurrent_request(user, request)
+        return False
+    
+    # Layer 3: Cek token bucket (burst control)
+    if not check_token_bucket(user, request, tokens_required=2):  # Generate butuh 2 token
+        release_concurrent_request(user, request)
+        return False
+    
     try:
+        # Layer 4: Gunakan query UPDATE atomik dengan kondisi WHERE
         with transaction.atomic():
             today = timezone.localdate()
             ip_address = get_client_ip(request)
@@ -547,7 +717,6 @@ def check_and_increment_generate(user: Any, request: HttpRequest) -> bool:
                 )
                 
                 if not created and usage.generate_count >= settings.AI_DAILY_GENERATE_LIMIT:
-                    release_concurrent_request(user, request)
                     return False
                 
                 if created and settings.AI_DAILY_GENERATE_LIMIT > 0:
@@ -562,12 +731,30 @@ def check_and_increment_upload(user: Any, request: HttpRequest) -> bool:
     """Periksa kuota upload harian dan inkremen jika masih tersedia.
     
     Menggunakan UPDATE atomic dengan kondisi WHERE untuk mencegah race condition.
-    Juga memeriksa batas concurrent requests.
+    Juga memeriksa batas concurrent requests, sliding window, dan token bucket.
+    
+    Lapisan pertahanan (defense in depth):
+    1. Concurrent request limit - Mencegah serangan paralel
+    2. Sliding window rate limit - Mencegah spam per-menit
+    3. Token bucket - Mengatur burst traffic dengan smooth rate limiting
+    4. Daily quota - Batas harian total
     """
+    # Layer 1: Cek concurrent request limit
     if not check_concurrent_request_limit(user, request):
         return False
     
+    # Layer 2: Cek sliding window rate limit (per menit)
+    if not check_sliding_window_rate_limit(user, request):
+        release_concurrent_request(user, request)
+        return False
+    
+    # Layer 3: Cek token bucket (burst control)
+    if not check_token_bucket(user, request, tokens_required=3):  # Upload butuh 3 token
+        release_concurrent_request(user, request)
+        return False
+    
     try:
+        # Layer 4: Gunakan query UPDATE atomik dengan kondisi WHERE
         with transaction.atomic():
             today = timezone.localdate()
             ip_address = get_client_ip(request)
