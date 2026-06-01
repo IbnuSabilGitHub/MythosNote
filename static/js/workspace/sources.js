@@ -88,7 +88,10 @@
           btn.addEventListener("click", (e) => {
             e.stopPropagation();
             const sourceId = btn.dataset.deleteSource;
-            this.deleteSource(sourceId);
+            const fileName = btn.getAttribute("aria-label")?.replace("Hapus ", "") || "sumber";
+            if (confirm(`Apakah Anda yakin ingin menghapus sumber "${fileName}"?`)) {
+              this.deleteSource(sourceId);
+            }
           });
         });
     }
@@ -130,7 +133,7 @@
       const fileIcon = fileIconMap[ext] || 'tabler:txt';
       const isReady = source.status === 'ready';
       const checkboxClasses = isReady
-        ? 'h-4 w-4 rounded-xs border border-primary bg-primary accent-primary focus:ring-primary/40'
+        ? 'h-4 w-4 rounded-xs border border-primary bg-primary accent-primary focus:outline-none focus:ring-2 focus:ring-primary/40'
         : 'h-4 w-4 rounded-xs border border-neutral-700 bg-neutral-950 accent-primary opacity-40 cursor-not-allowed';
       const nameClasses = isReady
         ? 'text-zinc-200 text-sm font-medium'
@@ -150,28 +153,49 @@
       if (source.created_at) {
         const diff = Date.now() - new Date(source.created_at).getTime();
         const mins = Math.floor(diff / 60000);
-        if (mins < 60) timeLabel = `${mins || 1} min lalu`;
+        if (mins < 60) timeLabel = `${mins || 1} menit lalu`;
         else if (mins < 1440) timeLabel = `${Math.floor(mins / 60)} jam lalu`;
         else timeLabel = `${Math.floor(mins / 1440)} hari lalu`;
       }
 
-      const meta = [timeLabel, sizeLabel].filter(Boolean).join(' \u2022 ');
-      const isProcessing = source.status === 'processing' || source.status === 'pending';
+      const typeLabel = ext.toUpperCase();
+      const meta = [typeLabel, sizeLabel, timeLabel].filter(Boolean).join(' \u2022 ');
+      const isProcessing = source.status === 'processing' || source.status === 'pending' || source.status === 'queued';
       const isFailed = source.status === 'failed';
       const errorTitle = isFailed && source.error_message
         ? ` title="${this.escapeHTML(source.error_message.slice(0, 120))}"`
         : '';
       const badgeAnimClass = isProcessing ? ' animate-pulse' : '';
 
+      let progressHTML = '';
+      if (isProcessing) {
+        const prg = source.progress || 0;
+        progressHTML = `
+          <div class="progress-bar-wrap w-full bg-neutral-800 rounded-full h-1.5 mt-1.5 overflow-hidden">
+            <div class="progress-bar-inner bg-primary h-1.5 rounded-full transition-all duration-300" style="width: ${prg}%"></div>
+          </div>
+        `;
+      }
+
+      let errorHTML = '';
+      if (isFailed && source.error_message) {
+        errorHTML = `
+          <div class="error-reason-wrap self-stretch mt-1.5 text-red-400 text-xs font-normal font-['Manrope'] leading-5 truncate hover:text-red-300 transition" title="${this.escapeHTML(source.error_message)}">
+            Gagal: ${this.escapeHTML(source.error_message)}
+          </div>
+        `;
+      }
+
       return `
-        <div class="source-item self-stretch p-2.5 relative bg-neutral-900/45 rounded-lg border border-neutral-800 inline-flex justify-start items-start gap-2.5 ${isReady ? 'cursor-pointer hover:border-primary/35 hover:bg-neutral-900/80' : 'cursor-not-allowed opacity-80'} transition shadow-[0_8px_28px_rgba(0,0,0,0.10)]"
+        <div class="source-item self-stretch p-2.5 relative bg-neutral-900/45 rounded-lg border border-neutral-800 inline-flex justify-start items-start gap-2.5 ${isReady ? 'cursor-pointer hover:border-primary/35 hover:bg-neutral-900/80 focus-within:border-primary/35 focus-within:bg-neutral-900/80' : 'cursor-not-allowed opacity-80'} transition shadow-[0_8px_28px_rgba(0,0,0,0.10)]"
             data-source-id="${this.escapeHTML(source.id)}"
             data-source-item
             data-source-ready="${isReady ? 'true' : 'false'}"
             data-selected-classes="bg-neutral-900 border-primary/60 shadow-[inset_0_0_0_1px_rgba(255,200,128,0.18),0_12px_40px_rgba(0,0,0,0.18)]">
           <div class="pt-1 inline-flex flex-col justify-start items-start">
             <input type="checkbox" data-source-checkbox
-              class="${checkboxClasses}" ${isReady ? '' : 'disabled'} />
+              class="${checkboxClasses}" ${isReady ? '' : 'disabled'}
+              aria-label="Pilih ${this.escapeHTML(fileName)}" />
           </div>
           <div class="flex-1 inline-flex flex-col justify-start items-start gap-1 min-w-0">
             <div class="self-stretch inline-flex justify-start items-center gap-1">
@@ -188,10 +212,12 @@
                 ${statusLabel}
               </span>
             </div>
+            ${progressHTML}
+            ${errorHTML}
           </div>
           <button
             data-delete-source="${this.escapeHTML(source.id)}"
-            class="shrink-0 mt-0.5 p-1 rounded hover:bg-red-500/20 text-stone-500 hover:text-red-400 transition"
+            class="shrink-0 mt-0.5 p-1 rounded hover:bg-red-500/20 text-stone-500 hover:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-500/40 transition cursor-pointer"
             title="Hapus sumber"
             aria-label="Hapus ${this.escapeHTML(fileName)}"
           >
@@ -294,8 +320,8 @@
           const data = await response.json();
           const status = data.status || data;
 
-          // Update UI element
-          this.updateSourceItemStatus(sourceId, status);
+          // Update UI element with complete source data
+          this.updateSourceItemStatus(sourceId, data);
 
           // Stop polling if ready or failed
           if (status === "ready" || status === "failed") {
@@ -318,21 +344,72 @@
     }
 
     /**
-     * Update status badge for a source item
+     * Update status badge, progress bar, and error message for a source item dynamically
      * @param {string|number} sourceId - Source ID
-     * @param {string} status - New status
+     * @param {string|Object} statusOrData - New status string or complete source data object
      */
-    updateSourceItemStatus(sourceId, status) {
+    updateSourceItemStatus(sourceId, statusOrData) {
       const item = this.container?.querySelector(
         `[data-source-id="${sourceId}"]`
       );
 
       if (!item) return;
 
+      const status = typeof statusOrData === 'string' ? statusOrData : statusOrData.status;
+      const progress = typeof statusOrData === 'string' ? 0 : (statusOrData.progress || 0);
+      const errorMessage = typeof statusOrData === 'string' ? "" : (statusOrData.error_message || "");
+
       const badge = item.querySelector(".status-badge");
       if (badge) {
-        badge.className = `status-badge ${this.getStatusClass(status)} px-1.5 py-0.5 rounded-md text-[10px] font-semibold whitespace-nowrap`;
+        const isProcessing = status === 'processing' || status === 'pending' || status === 'queued';
+        const badgeAnimClass = isProcessing ? ' animate-pulse' : '';
+        badge.className = `status-badge ${this.getStatusClass(status)}${badgeAnimClass} px-1.5 py-0.5 rounded-md text-[10px] font-semibold whitespace-nowrap`;
         badge.textContent = this.getStatusLabel(status);
+        if (status === 'failed' && errorMessage) {
+          badge.setAttribute("title", this.escapeHTML(errorMessage.slice(0, 120)));
+        }
+      }
+
+      // Update progress bar
+      let prgBar = item.querySelector(".progress-bar-wrap");
+      const isProcessing = status === 'processing' || status === 'pending' || status === 'queued';
+      if (isProcessing) {
+        if (!prgBar) {
+          const flexContainer = item.querySelector(".flex-1");
+          if (flexContainer) {
+            prgBar = document.createElement("div");
+            prgBar.className = "progress-bar-wrap w-full bg-neutral-800 rounded-full h-1.5 mt-1.5 overflow-hidden";
+            prgBar.innerHTML = `<div class="progress-bar-inner bg-primary h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>`;
+            flexContainer.appendChild(prgBar);
+          }
+        }
+        if (prgBar) {
+          const innerBar = prgBar.querySelector(".progress-bar-inner");
+          if (innerBar) {
+            innerBar.style.width = `${progress}%`;
+          }
+        }
+      } else if (prgBar) {
+        prgBar.remove();
+      }
+
+      // Update error message
+      let errDiv = item.querySelector(".error-reason-wrap");
+      if (status === 'failed' && errorMessage) {
+        if (!errDiv) {
+          const flexContainer = item.querySelector(".flex-1");
+          if (flexContainer) {
+            errDiv = document.createElement("div");
+            errDiv.className = "error-reason-wrap self-stretch mt-1.5 text-red-400 text-xs font-normal font-['Manrope'] leading-5 truncate hover:text-red-300 transition";
+            flexContainer.appendChild(errDiv);
+          }
+        }
+        if (errDiv) {
+          errDiv.textContent = `Gagal: ${errorMessage}`;
+          errDiv.setAttribute("title", errorMessage);
+        }
+      } else if (errDiv) {
+        errDiv.remove();
       }
     }
 

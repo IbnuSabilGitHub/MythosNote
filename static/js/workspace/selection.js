@@ -42,7 +42,9 @@
 
   function updateSourceCounter() {
     const counterEl = document.getElementById("chat-source-counter");
-    if (!counterEl) return;
+    const selectionInfoContainer = document.getElementById("selection-info-container");
+    const selectedInfoText = document.getElementById("selected-info-text");
+
     const items = getItems();
     const readyItems = items.filter((item) => {
       const cb = item.querySelector("[data-source-checkbox]");
@@ -54,12 +56,25 @@
     });
     const total = readyItems.length;
     const selected = checkedItems.length;
-    if (total === 0) {
-      counterEl.textContent = "0 sumber";
-    } else if (selected === total || selected === 0) {
-      counterEl.textContent = `${total} sumber`;
-    } else {
-      counterEl.textContent = `${selected}/${total} sumber`;
+    if (counterEl) {
+      if (total === 0) {
+        counterEl.textContent = "0 sumber";
+      } else if (selected === total || selected === 0) {
+        counterEl.textContent = `${total} sumber`;
+      } else {
+        counterEl.textContent = `${selected}/${total} sumber`;
+      }
+    }
+
+    if (selectionInfoContainer && selectedInfoText) {
+      if (selected > 0) {
+        selectionInfoContainer.style.display = "flex";
+        selectionInfoContainer.classList.remove("hidden");
+        selectedInfoText.textContent = `${selected} sumber dipakai untuk chat`;
+      } else {
+        selectionInfoContainer.style.display = "none";
+        selectionInfoContainer.classList.add("hidden");
+      }
     }
   }
 
@@ -115,6 +130,15 @@
       if (e.target === selectAllCheckbox) return;
       selectAllCheckbox.checked = !selectAllCheckbox.checked;
       setAllItems(selectAllCheckbox.checked);
+      updateSelectAllState();
+    });
+  }
+
+  // Reset selection button
+  const resetBtn = document.getElementById("btn-reset-selection");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      setAllItems(false);
       updateSelectAllState();
     });
   }

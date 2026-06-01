@@ -3,6 +3,26 @@
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.2.46] - 2026-06-02
+### Summary
+Implementasi Chat 2 (Info Per File) dan Chat 4 (Safety + Polish) pada panel sumber workspace.
+
+### Added
+- **Selected info & Reset pilihan**: Ditambahkan panel informasi pilihan sumber (`1 sumber dipakai untuk chat`) dan tombol `Reset pilihan` di bawah "Semua File".
+
+### Changed
+- `apps/sources/serializers.py`: Menambahkan field `file_size`, `progress`, dan `error_message` ke `SourceListSerializer`.
+- `apps/sources/views.py`: `SourceListView.get_queryset` memuat data `file_size`, `progress`, dan `error_message` secara efisien via `.only()`.
+- `static/js/workspace/sources.js`:
+  - Format tipe berkas (misal: `PDF`, `TXT`) di meta item berkas.
+  - Penyesuaian string waktu dari `min lalu` ke `menit lalu`.
+  - Penambahan progress bar mini di item sumber saat status `pending`/`processing`.
+  - Penambahan visual pesan error berwarna merah di item sumber saat status `failed`.
+  - Dialog konfirmasi browser interaktif saat klik tombol hapus berkas.
+  - Penambahan focus style a11y pada check/button.
+- `static/js/workspace/selection.js`: update status counter visual dan integrasi Reset button event listener.
+- `templates/workspace.html`: penambahan markup `#selection-info-container`, penambahan styling keyboard focus ring, dan peningkatan accessibility (a11y) `aria-label`.
+
 ## [1.2.45] - 2026-06-01
 ### Summary
 Polish dan perbaikan UI/UX pada workspace (3-panel layout & berbagai improvement).

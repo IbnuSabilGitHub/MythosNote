@@ -88,7 +88,7 @@ class SourceListView(ListAPIView):
 
         return (
             Source.objects.filter(user=self.request.user, workspace=workspace)
-            .only("id", "original_filename", "status", "created_at")
+            .only("id", "original_filename", "status", "created_at", "file_size", "progress", "error_message")
             .order_by("-created_at")
         )
 
