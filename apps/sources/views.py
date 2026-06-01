@@ -320,13 +320,27 @@ class ChatView(APIView):
             embedding__isnull=False,
         )
 
-        # Filter by selected source_ids if provided and non-empty
-        if source_ids and isinstance(source_ids, list) and len(source_ids) > 0:
-            base_qs = base_qs.filter(source__id__in=source_ids)
-
         if not base_qs.exists():
             return Response(
                 {"detail": self.NO_CONTEXT_MESSAGE},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if source_ids is not None:
+            if not isinstance(source_ids, list) or len(source_ids) == 0:
+                return Response(
+                    {"detail": "Harap pilih setidaknya satu dokumen untuk chat."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            base_qs = base_qs.filter(source__id__in=source_ids)
+            if not base_qs.exists():
+                return Response(
+                    {"detail": "Dokumen yang dipilih tidak memiliki konteks yang siap."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            return Response(
+                {"detail": "Harap pilih setidaknya satu dokumen untuk chat."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -408,7 +422,7 @@ class ChatView(APIView):
         # Step 5: Generate response via LLM with retrieved context & history
         # Token efficiency: system prompt dipersingkat tanpa kehilangan instruksi inti
         system_context = (
-            "Jawab pertanyaan pengguna berdasarkan konteks dokumen berikut. "
+            "Hanya jawab pertanyaan berdasarkan konteks dokumen berikut. Tolak pertanyaan yang berada di luar topik dokumen. "
             "Jika informasi tidak ada dalam konteks, katakan tidak ditemukan — jangan mengarang.\n\n"
             f"Konteks:\n{context_text}"
         )

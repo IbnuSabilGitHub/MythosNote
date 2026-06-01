@@ -194,7 +194,7 @@
             data-selected-classes="bg-neutral-900 border-primary/60 shadow-[inset_0_0_0_1px_rgba(255,200,128,0.18),0_12px_40px_rgba(0,0,0,0.18)]">
           <div class="pt-1 inline-flex flex-col justify-start items-start">
             <input type="checkbox" data-source-checkbox
-              class="${checkboxClasses}" ${isReady ? '' : 'disabled'}
+              class="${checkboxClasses}" ${isReady ? 'checked' : 'disabled'}
               aria-label="Pilih ${this.escapeHTML(fileName)}" />
           </div>
           <div class="flex-1 inline-flex flex-col justify-start items-start gap-1 min-w-0">

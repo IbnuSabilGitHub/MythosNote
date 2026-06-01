@@ -3,6 +3,24 @@
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.2.48] - 2026-06-02
+### Summary
+Pencegahan chat di luar topik dan validasi pilihan dokumen.
+
+### Added
+- **Auto-check Ready Sources**: Di `sources.js`, dokumen dengan status `ready` dicentang otomatis saat pertama kali dimuat.
+
+### Changed
+- `apps/sources/views.py`:
+  - `ChatView.post` memvalidasi keberadaan `source_ids`. Menolak chat jika tidak ada dokumen yang terpilih.
+  - Perbarui system prompt LLM agar hanya menjawab berdasarkan dokumen terpilih dan menolak pertanyaan luar topik.
+- `static/js/workspace/selection.js`:
+  - `getSelectedSourceIds` selalu mengembalikan daftar ID yang dipilih secara akurat (tidak lagi fallback ke kosong).
+  - Mengirim event `sourceSelectionChanged` saat status pemilihan berubah.
+  - Memperbaiki visual `#chat-source-counter` agar menampilkan `0/total` ketika tidak ada dokumen terpilih.
+- `static/js/workspace/chat.js`:
+  - Input teks chat dinonaktifkan jika tidak ada dokumen terpilih, dengan placeholder instruktif.
+
 ## [1.2.47] - 2026-06-02
 ### Summary
 Implementasi Chat 3 (Quick Actions) pada panel sumber workspace.

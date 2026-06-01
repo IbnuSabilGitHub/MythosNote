@@ -40,8 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         messagesContainer.querySelectorAll('[data-chat-prompt]').forEach((button) => {
             button.addEventListener('click', () => {
+                if (chatInput.disabled) return;
                 chatInput.value = button.dataset.chatPrompt || '';
-                chatSubmitBtn.disabled = chatInput.value.trim().length === 0;
+                if (typeof checkSelection === 'function') checkSelection();
                 chatInput.focus();
             });
         });
@@ -162,12 +163,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 payload.session_id = currentSessionId;
             }
 
-            // Tahap 6: attach selected source IDs (empty = all ready sources)
+            // Attach selected source IDs
             if (window.WorkspaceSelection && typeof window.WorkspaceSelection.getSelectedSourceIds === 'function') {
-                const selectedIds = window.WorkspaceSelection.getSelectedSourceIds();
-                if (selectedIds.length > 0) {
-                    payload.source_ids = selectedIds;
-                }
+                payload.source_ids = window.WorkspaceSelection.getSelectedSourceIds();
             }
 
             const response = await fetch(`/api/workspace/${workspaceId}/chat/`, {
@@ -229,11 +227,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function checkSelection() {
+        if (window.WorkspaceSelection && typeof window.WorkspaceSelection.getSelectedSourceIds === 'function') {
+            const selectedIds = window.WorkspaceSelection.getSelectedSourceIds();
+            const hasSelection = selectedIds.length > 0;
+            
+            chatInput.disabled = !hasSelection;
+            chatSubmitBtn.disabled = !hasSelection || chatInput.value.trim().length === 0;
+            
+            if (!hasSelection) {
+                chatInput.placeholder = "Pilih setidaknya 1 dokumen di panel sumber...";
+            } else {
+                chatInput.placeholder = "Tanya sesuatu...";
+            }
+        }
+    }
+
+    document.addEventListener('sourceSelectionChanged', () => {
+        checkSelection();
+    });
+
     // Auto-resize textarea
     chatInput.addEventListener('input', function () {
         this.style.height = 'auto';
         this.style.height = Math.min(this.scrollHeight, 160) + 'px';
-        chatSubmitBtn.disabled = this.value.trim().length === 0;
+        checkSelection();
     });
 
     // Enter to send, Shift+Enter for newline
@@ -249,4 +267,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load initial history
     loadChatHistory();
     renderEmptyState();
+    setTimeout(() => { if (typeof checkSelection === 'function') checkSelection(); }, 100);
 });

@@ -59,7 +59,7 @@
     if (counterEl) {
       if (total === 0) {
         counterEl.textContent = "0 sumber";
-      } else if (selected === total || selected === 0) {
+      } else if (selected === total) {
         counterEl.textContent = `${total} sumber`;
       } else {
         counterEl.textContent = `${selected}/${total} sumber`;
@@ -76,6 +76,8 @@
         selectionInfoContainer.classList.add("hidden");
       }
     }
+    
+    document.dispatchEvent(new CustomEvent('sourceSelectionChanged'));
   }
 
   function setAllItems(checked) {
@@ -166,19 +168,12 @@
      */
     getSelectedSourceIds() {
       const items = getItems().filter((item) => item.dataset.sourceReady !== "false");
-      const allCount = items.length;
-      if (allCount === 0) return [];
-
-      const selected = items
+      return items
         .filter((item) => {
           const cb = item.querySelector("[data-source-checkbox]");
           return cb && cb.checked;
         })
         .map((item) => item.dataset.sourceId);
-
-      // If all selected (or none selected) → send empty = fallback all
-      if (selected.length === 0 || selected.length === allCount) return [];
-      return selected;
     },
 
     updateCounter() {
