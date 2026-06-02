@@ -17,6 +17,7 @@
     "search",
     "tailwind"
   ],
+  
   "author": "",
   "license": "MIT",
   "devDependencies": {

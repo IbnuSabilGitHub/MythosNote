@@ -357,7 +357,7 @@
                                 Baru saja • 1 Source</div>
                         </div>
                     </div>
-                    <div
+                    <div id="tabel-konsep-btn"
                         class="self-stretch p-2 bg-neutral-900/70 rounded-lg border border-neutral-800 flex flex-col justify-start items-start gap-2 cursor-pointer hover:bg-neutral-800/50 transition">
                         <div class="self-stretch inline-flex justify-between items-start">
                             <div class="flex justify-start items-center gap-2">
@@ -478,9 +478,29 @@
         </form>
     </div>
 </div>
+{% include 'components/table.html' %}
 {% endblock %}
 
 {% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const btn = document.getElementById('tabel-konsep-btn');
+        const modal = document.getElementById('table-modal');
+        const closeBtn = document.getElementById('btn-close-table-modal');
+        if (btn && modal) {
+            btn.addEventListener('click', () => {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            });
+        }
+        if (closeBtn && modal) {
+            closeBtn.addEventListener('click', () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            });
+        }
+    });
+</script>
 <script src="{% static 'js/workspace/sources.js' %}"></script>
 <script src="{% static 'js/workspace/layout.js' %}"></script>
 <script src="{% static 'js/workspace/selection.js' %}"></script>
