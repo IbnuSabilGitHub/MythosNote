@@ -2,7 +2,7 @@
 
 ## 1. Project Overview
 
-MythosNote is an AI-powered note-taking platform (NotebookLM-style): users manage workspaces, upload documents, and chat with AI over document context. **Current codebase state (v1.2.37):** production-ready **session-based authentication**, full **workspace management** (CRUD), **source upload, polling & processing APIs** (supporting PDF, TXT, MD, DOCX), **dynamic workspace dashboard UI**, fully implemented **RAG retrieval pipeline** (cosine distance search via pgvector), dynamic **frontend chat UI** with source filtering and counter badge, **chat persistence** (session and message logging), and complete migration to **Gemini/DeepSeek** (OpenAI fully removed).
+MythosNote is an AI-powered note-taking platform (NotebookLM-style): users manage workspaces, upload documents, and chat with AI over document context. **Current codebase state (v1.2.50):** production-ready **session-based authentication**, full **workspace management** (CRUD with rate limiting and quota enforcement), **source upload, polling & processing APIs** (supporting PDF, TXT, MD, DOCX with signature verification and secure file download), **dynamic workspace dashboard UI**, fully optimized **RAG retrieval pipeline** (pgvector cosine similarity with Dynamic Top-K, 800-token chunks, and token-efficient contexts), dynamic **frontend chat UI** (with source selection filtering, reset options, and safety/topic constraints), **chat persistence** (session/message logging), and comprehensive **AI Daily Quota limits & Security Hardening** (abuse prevention, rate throttling, secure post_delete signals, input validations, and pinned dependencies).
 
 - **Django:** 5.0.1 | **Python:** 3.12+ (venv uses 3.12.3)
 - **Database:** PostgreSQL recommended (with **pgvector** for embeddings); SQLite fallback when `DATABASE_URL` unset
@@ -73,7 +73,7 @@ MythosNote/
   identifier: CharField(255)  # e.g. "email|ip" bucket for anonymous/login tracking
   ip_address: GenericIPAddressField(null=True)
   date: DateField
-  prompt_count, generate_count: PositiveIntegerField(default=0)  # reserved for AI limits
+  prompt_count, generate_count, upload_count: PositiveIntegerField(default=0)  # AI limits and uploads
   failed_login_count: PositiveIntegerField(default=0)
   failed_login_window_started_at, last_failed_login_at: DateTimeField(null=True)
   ```
@@ -242,6 +242,11 @@ GET    /api/sources/<uuid:id>/status/
 Auth: required
 Output: {"id", "status", "progress", "chunks": [...]}
 Files: apps.sources.views.SourceStatusView
+
+GET    /api/sources/<uuid:id>/download/
+Auth: required
+Output: FileResponse (secure download)
+Files: apps.sources.views.SourceDownloadView
 ```
 
 ### Chat & Generate API ✅ **ACTIVE**
@@ -332,6 +337,10 @@ EMAIL_MODE          # console | smtp | brevo
 EMAIL_ASYNC         # enqueue mail via RQ
 UNVERIFIED_USER_CLEANUP_DAYS
 GOOGLE_OAUTH_CLIENT_ID
+AI_DAILY_PROMPT_LIMIT
+AI_DAILY_GENERATE_LIMIT
+AI_DAILY_UPLOAD_LIMIT
+WORKSPACE_MAX_SOURCES
 REST_FRAMEWORK      # SessionAuthentication, IsAuthenticated permission class
 SESSION/CSRF cookie security (strict when not DEBUG)
 SECURE_SSL_REDIRECT, HSTS, etc.
@@ -357,8 +366,10 @@ GEMINI_API_KEY
 DEEPSEEK_API_KEY
 DEEPSEEK_BASE_URL
 EMBEDDING_MODEL
-MAX_PROMPTS_PER_DAY
-MAX_GENERATES_PER_DAY
+AI_DAILY_PROMPT_LIMIT
+AI_DAILY_GENERATE_LIMIT
+AI_DAILY_UPLOAD_LIMIT
+WORKSPACE_MAX_SOURCES
 FRONTEND_URL
 SESSION_COOKIE_SECURE, CSRF_COOKIE_SECURE, etc. (optional overrides)
 ```
@@ -415,12 +426,13 @@ SESSION_COOKIE_SECURE, CSRF_COOKIE_SECURE, etc. (optional overrides)
 | Auth / sessions | **✅ Done** |
 | Workspace Dashboard (`/project/`) | **✅ Done** (Create, Rename, Delete) |
 | Workspaces app | **✅ Active** (model, views, quota, rate limit) |
-| Sources app (DB) | **✅ Active** (models, views, upload/delete/status endpoints) |
+| Sources app (DB) | **✅ Active** (models, views, upload/delete/status/download endpoints) |
 | REST `/api/*` | **✅ Done** (workspace/source/chat/generate CRUD & async) |
-| RAG / embeddings / Storage | **✅ Done** (Gemini embeddings, standard FileSystemStorage, pgvector) |
-| AI chat / generate | **✅ Done** (dynamic frontend chat, source filtering, Gemini & DeepSeek integration) |
+| RAG / embeddings / Storage | **✅ Done** (Gemini embeddings, FileSystemStorage, pgvector, Dynamic Top-K, 800-token chunks) |
+| AI chat / generate | **✅ Done** (dynamic frontend chat, source selection/filtering, Indonesian system prompt, topic security) |
+| Security Hardening & Quota | **✅ Done** (AI daily limits, password/email/filename length validation, post_delete resource cleanup, Gunicorn) |
 
-When extending the project: register new apps under `apps/`, add to `INSTALLED_APPS`, include URLs in `config/urls.py`, reuse `@verified_email_required` for user-facing features, scope data by `workspace_id`, and follow workspace quota patterns for multi-tenant constraints.
+When extending the project: register new apps under `apps/`, add to `INSTALLED_APPS`, include URLs in `config/urls.py`, reuse `@verified_email_required` for user-facing features, scope data by `workspace_id`, follow workspace quota and AI daily limit patterns, and adhere to strict security validation standards.
 
 ## Migration to Gemini/DeepSeek
 
