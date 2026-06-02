@@ -2,6 +2,18 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.54] - 2026-06-02
+### Summary
+Setup Vite untuk bundling frontend halaman `workspace` dan `project`, lalu pindahkan template agar memuat output bundle `static/dist`.
+
+### Changed
+- `package.json` + `package-lock.json`: tambah script `build:js` / `dev:js`, dan `build` jadi CSS+JS
+- `vite.config.js`: konfigurasi multi-entry (`workspace`, `project`) dengan output ke `static/dist`
+- `static/js/entries/workspace.js`, `static/js/entries/project.js`: entrypoint bundle per halaman
+- `templates/workspace.html`, `templates/project.html`: ganti banyak script tag jadi 1 script module dari `dist`
+- `static/js/workspace/chat.js`: import `marked` dari package npm
+- `Dockerfile`: jalankan `npm run build` (bukan hanya `build:css`)
+
 ## [1.2.53] - 2026-06-02
 ### Summary
 Refaktor struktur frontend workspace secara bertahap: pecah `WorkspaceSources` jadi modul-modul kecil dan pisahkan upload modal dari `index.js`.
