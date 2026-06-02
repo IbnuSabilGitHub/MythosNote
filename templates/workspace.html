@@ -216,20 +216,20 @@
             </div>
             <div data-generate-rail class="hidden self-stretch flex-1 py-4 px-2 border-b border-neutral-800/70">
                 <div class="flex h-full flex-col items-center justify-start gap-3 pt-2">
-                    <button type="button"
-                        class="workspace-icon-button mx-auto w-11 h-11" disabled title="Segera hadir">
+                    <button type="button" data-generate-action="summary"
+                        class="workspace-icon-button mx-auto w-11 h-11" title="Ringkasan">
                         <iconify-icon icon="mdi:paper-text" class="text-lg"></iconify-icon>
                     </button>
-                    <button type="button"
-                        class="workspace-icon-button mx-auto w-11 h-11" disabled title="Segera hadir">
+                    <button type="button" data-generate-action="mindmap"
+                        class="workspace-icon-button mx-auto w-11 h-11" title="Mindmap">
                         <iconify-icon icon="tdesign:mind-map" class="text-lg"></iconify-icon>
                     </button>
-                    <button type="button"
-                        class="workspace-icon-button mx-auto w-11 h-11" disabled title="Segera hadir">
+                    <button type="button" data-generate-action="quiz"
+                        class="workspace-icon-button mx-auto w-11 h-11" title="Quiz">
                         <iconify-icon icon="material-symbols:quiz-outline" class="text-lg"></iconify-icon>
                     </button>
-                    <button type="button"
-                        class="workspace-icon-button mx-auto w-11 h-11" disabled title="Segera hadir">
+                    <button type="button" data-generate-action="table"
+                        class="workspace-icon-button mx-auto w-11 h-11" title="Tabel">
                         <iconify-icon icon="ri:table-line" class="text-lg"></iconify-icon>
                     </button>
                 </div>
@@ -237,41 +237,41 @@
             <div data-generate-panel
                 class="self-stretch p-4 border-b border-neutral-800/70 flex flex-col justify-start items-start gap-4">
                 <div class="self-stretch grid grid-cols-2 gap-2">
-                    <button type="button" class="workspace-generate-button" disabled title="Segera hadir">
+                    <button type="button" data-generate-action="summary" class="workspace-generate-button" title="Buat ringkasan">
                         <iconify-icon icon="mdi:paper-text" class="text-primary text-xl"></iconify-icon>
                         <div class="flex flex-col justify-start items-center">
                             <div
                                 class="h-5 text-center justify-center text-primary text-xs font-semibold font-['Manrope'] leading-5">
                                 Ringkasan</div>
-                            <span class="text-[10px] text-stone-500 font-['Manrope']">Segera hadir</span>
+                            <span data-generate-hint class="hidden text-[10px] text-stone-500 font-['Manrope']"></span>
                         </div>
                     </button>
-                    <button type="button" class="workspace-generate-button" disabled title="Segera hadir">
+                    <button type="button" data-generate-action="mindmap" class="workspace-generate-button" title="Buat mindmap">
                         <iconify-icon icon="tdesign:mind-map" class="text-primary text-xl"></iconify-icon>
                         <div class="flex flex-col justify-start items-center">
                             <div
                                 class="h-5 text-center justify-center text-primary text-xs font-semibold font-['Manrope'] leading-5">
                                 Mindmap</div>
-                            <span class="text-[10px] text-stone-500 font-['Manrope']">Segera hadir</span>
+                            <span data-generate-hint class="hidden text-[10px] text-stone-500 font-['Manrope']"></span>
                         </div>
                     </button>
-                    <button type="button" class="workspace-generate-button" disabled title="Segera hadir">
+                    <button type="button" data-generate-action="quiz" class="workspace-generate-button" title="Buat kuis">
                         <iconify-icon icon="material-symbols:quiz-outline"
                             class="text-primary text-xl"></iconify-icon>
                         <div class="flex flex-col justify-start items-center">
                             <div
                                 class="h-5 text-center justify-center text-primary text-xs font-semibold font-['Manrope'] leading-5">
                                 Quiz</div>
-                            <span class="text-[10px] text-stone-500 font-['Manrope']">Segera hadir</span>
+                            <span data-generate-hint class="hidden text-[10px] text-stone-500 font-['Manrope']"></span>
                         </div>
                     </button>
-                    <button type="button" class="workspace-generate-button" disabled title="Segera hadir">
+                    <button type="button" data-generate-action="table" class="workspace-generate-button" title="Buat tabel">
                         <iconify-icon icon="ri:table-line" class="text-primary text-xl"></iconify-icon>
                         <div class="flex flex-col justify-start items-center">
                             <div
                                 class="h-5 text-center justify-center text-primary text-xs font-semibold font-['Manrope'] leading-5">
                                 Tabel</div>
-                            <span class="text-[10px] text-stone-500 font-['Manrope']">Segera hadir</span>
+                            <span data-generate-hint class="hidden text-[10px] text-stone-500 font-['Manrope']"></span>
                         </div>
                     </button>
                 </div>
@@ -285,105 +285,12 @@
                             HASIL GENERATE</div>
                     </div>
                 </div>
-                <div class="self-stretch flex-1 px-4 pb-4 flex flex-col justify-start items-start gap-2">
-                    <div
-                        class="self-stretch p-2 bg-neutral-900/70 rounded-lg border border-neutral-800 flex flex-col justify-start items-start gap-2 cursor-pointer hover:bg-neutral-800/50 transition">
-                        <div class="self-stretch inline-flex justify-between items-start">
-                            <div class="flex justify-start items-center gap-2">
-                                <iconify-icon icon="mdi:paper-text" class="text-primary text-sm"></iconify-icon>
-                                <div class="inline-flex flex-col justify-start items-start">
-                                    <div
-                                        class="h-5 justify-center text-zinc-200 text-xs font-medium font-['Manrope'] leading-5">
-                                        Ringkasan Eksekutif</div>
-                                </div>
-                            </div>
-                            <div
-                                class="px-2 py-0.5 bg-green-500/10 rounded-xs outline -outline-offset-1 outline-green-500/25 inline-flex flex-col justify-start items-start">
-                                <div
-                                    class="h-4 justify-center text-teal-400 text-[10px] font-normal font-['Manrope'] leading-4">
-                                    Berhasil</div>
-                            </div>
-                        </div>
-                        <div class="self-stretch flex flex-col justify-start items-start">
-                            <div
-                                class="self-stretch justify-center text-stone-300 text-xs font-normal font-['Manrope'] leading-4">
-                                Hari ini, 14:30 • 2 Sources</div>
-                        </div>
-                    </div>
-                    <div
-                        class="self-stretch p-2 bg-neutral-900/70 rounded-lg border border-neutral-800 flex flex-col justify-start items-start gap-2 cursor-pointer hover:bg-neutral-800/50 transition">
-                        <div class="self-stretch inline-flex justify-between items-start">
-                            <div class="flex justify-start items-center gap-2">
-                                <iconify-icon icon="tdesign:mind-map" class="text-primary text-sm"></iconify-icon>
-                                <div class="inline-flex flex-col justify-start items-start">
-                                    <div
-                                        class="h-5 justify-center text-zinc-200 text-xs font-normal font-['Manrope'] leading-5">
-                                        Mindmap Q3 Data</div>
-                                </div>
-                            </div>
-                            <div
-                                class="px-2 py-0.5 bg-primary/10 rounded-xs outline-1 -outline-offset-1 outline-primary/50 flex justify-start items-center gap-1">
-                                <div class="w-1.5 h-1.5 bg-yellow-400 rounded-xl"></div>
-                                <div
-                                    class="h-4 justify-center text-primary text-[10px] font-normal font-['Manrope'] leading-4">
-                                    Proses</div>
-                            </div>
-                        </div>
-                        <div class="self-stretch flex flex-col justify-start items-start">
-                            <div
-                                class="self-stretch justify-center text-stone-300 text-xs font-normal font-['Manrope'] leading-4">
-                                Baru saja • 1 Source</div>
-                        </div>
-                    </div>
-                    <div
-                        class="self-stretch p-2 bg-neutral-900/70 rounded-lg border border-neutral-800 flex flex-col justify-start items-start gap-2 cursor-pointer hover:bg-neutral-800/50 transition">
-                        <div class="self-stretch inline-flex justify-between items-start">
-                            <div class="flex justify-start items-center gap-2">
-                                <iconify-icon icon="material-symbols:quiz-outline"
-                                    class="text-primary text-sm"></iconify-icon>
-                                <div class="inline-flex flex-col justify-start items-start">
-                                    <div
-                                        class="h-5 justify-center text-zinc-200 text-xs font-normal font-['Manrope'] leading-5">
-                                        Quiz - Dasar Pemahaman</div>
-                                </div>
-                            </div>
-                            <div
-                                class="px-2 py-0.5 bg-green-500/10 rounded-xs outline -outline-offset-1 outline-green-500/25 inline-flex flex-col justify-start items-start">
-                                <div
-                                    class="h-4 justify-center text-teal-400 text-[10px] font-normal font-['Manrope'] leading-4">
-                                    Berhasil</div>
-                            </div>
-                        </div>
-                        <div class="self-stretch flex flex-col justify-start items-start">
-                            <div
-                                class="self-stretch justify-center text-stone-300 text-xs font-normal font-['Manrope'] leading-4">
-                                Baru saja • 1 Source</div>
-                        </div>
-                    </div>
-                    <div
-                        class="self-stretch p-2 bg-neutral-900/70 rounded-lg border border-neutral-800 flex flex-col justify-start items-start gap-2 cursor-pointer hover:bg-neutral-800/50 transition">
-                        <div class="self-stretch inline-flex justify-between items-start">
-                            <div class="flex justify-start items-center gap-2">
-                                <iconify-icon icon="ri:table-line" class="text-primary text-sm"></iconify-icon>
-                                <div class="inline-flex flex-col justify-start items-start">
-                                    <div
-                                        class="h-5 justify-center text-zinc-200 text-xs font-medium font-['Manrope'] leading-5">
-                                        Tabel Konsep Q3</div>
-                                </div>
-                            </div>
-                            <div
-                                class="px-2 py-0.5 bg-green-500/10 rounded-xs outline -outline-offset-1 outline-green-500/25 inline-flex flex-col justify-start items-start">
-                                <div
-                                    class="h-4 justify-center text-teal-400 text-[10px] font-normal font-['Manrope'] leading-4">
-                                    Berhasil</div>
-                            </div>
-                        </div>
-                        <div class="self-stretch flex flex-col justify-start items-start">
-                            <div
-                                class="self-stretch justify-center text-stone-300 text-xs font-normal font-['Manrope'] leading-4">
-                                Baru saja • 2 Sources</div>
-                        </div>
-                    </div>
+                <div data-generate-job-list
+                    class="self-stretch flex-1 px-4 pb-4 flex flex-col justify-start items-start gap-2">
+                    <p data-generate-empty
+                        class="self-stretch text-center text-stone-500 text-xs font-['Manrope'] py-6">
+                        Belum ada hasil generate. Pilih sumber lalu klik salah satu tombol di atas.
+                    </p>
                 </div>
             </div>
         </div>
@@ -409,6 +316,40 @@
             </button>
         </div>
     </nav>
+</div>
+
+<!-- Generate Result Modal -->
+<div id="generate-result-modal" class="fixed inset-0 z-50 hidden items-center justify-center" role="dialog"
+    aria-modal="true" aria-labelledby="generate-result-title">
+    <div id="generate-result-backdrop" class="absolute inset-0 bg-neutral-950/80 backdrop-blur-sm"></div>
+    <div
+        class="relative z-10 w-full max-w-3xl mx-4 max-h-[90dvh] flex flex-col bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl overflow-hidden">
+        <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-neutral-800 shrink-0">
+            <div class="min-w-0 pr-4">
+                <h2 id="generate-result-title" class="text-zinc-200 text-base font-semibold font-['Manrope'] truncate">
+                    Hasil Generate</h2>
+                <p id="generate-result-subtitle" class="text-stone-500 text-xs font-['Manrope'] mt-0.5"></p>
+            </div>
+            <button id="btn-close-generate-modal" type="button"
+                class="w-7 h-7 flex items-center justify-center rounded-md text-stone-400 hover:text-primary hover:bg-neutral-800 transition focus:outline-none focus:ring-2 focus:ring-primary/40"
+                aria-label="Tutup modal">
+                <iconify-icon icon="tabler:x" class="text-base"></iconify-icon>
+            </button>
+        </div>
+        <div id="generate-result-body"
+            class="flex-1 overflow-y-auto px-6 py-4 text-stone-200 font-['Manrope'] text-sm leading-6">
+        </div>
+        <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-neutral-800 shrink-0">
+            <button id="btn-delete-generate-job" type="button"
+                class="workspace-soft-button px-4 py-2 text-xs text-red-400 border-red-900/50 hover:border-red-500/40 hover:text-red-300">
+                Hapus
+            </button>
+            <button id="btn-close-generate-modal-footer" type="button"
+                class="workspace-soft-button px-4 py-2 text-xs">
+                Tutup
+            </button>
+        </div>
+    </div>
 </div>
 
 <!-- Upload Source Modal -->

@@ -2,6 +2,19 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.55] - 2026-06-03
+### Summary
+Aktifkan panel Generate di workspace: tombol ringkasan/mindmap/quiz/tabel memanggil API async, polling status job, daftar riwayat, dan modal pratinjau hasil.
+
+### Added
+- `static/js/workspace/generate/`: modul generate (API, render, polling)
+- `templates/workspace.html`: modal hasil generate + container daftar job dinamis
+
+### Changed
+- `static/js/entries/workspace.js`: import modul generate ke bundle workspace
+- `static/js/core/api.js`: dukung respons HTTP 204 (DELETE job)
+- `templates/workspace.html`: hapus placeholder mock; tombol generate aktif
+
 ## [1.2.54] - 2026-06-02
 ### Summary
 Setup Vite untuk bundling frontend halaman `workspace` dan `project`, lalu pindahkan template agar memuat output bundle `static/dist`.
