@@ -2,6 +2,17 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.53] - 2026-06-02
+### Summary
+Refaktor struktur frontend workspace secara bertahap: pecah `WorkspaceSources` jadi modul-modul kecil dan pisahkan upload modal dari `index.js`.
+
+### Changed
+- `static/js/workspace/sources.js`: jadi shim ES module (side effects)
+- `static/js/workspace/sources/*`: pecah logika sources (list/item/poll/delete)
+- `static/js/workspace/index.js`: jadi orchestrator init
+- `static/js/workspace/upload-modal.js`: pindahkan implementasi upload modal
+- `templates/workspace.html`: update script tags (module + urutan)
+
 ## [1.2.52] - 2026-06-02
 ### Summary
 Refaktor frontend secara bertahap: tambahkan shared core utilities untuk CSRF & escape HTML, dan sinkronkan UI kapasitas workspace dengan `WORKSPACE_MAX_SOURCES`.
