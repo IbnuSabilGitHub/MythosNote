@@ -5,7 +5,10 @@
 
 {% block content %}
 {# Bridge: pass Django context to JS #}
-<div id="workspace-data" data-workspace-id="{{ active_workspace.id }}" class="hidden"></div>
+<div id="workspace-data"
+    data-workspace-id="{{ active_workspace.id }}"
+    data-max-sources="{{ workspace_max_sources|default:0 }}"
+    class="hidden"></div>
 <div
     class="workspace-shell w-full h-[100dvh] overflow-hidden text-stone-200 inline-flex flex-col justify-start items-start font-sans pb-16 lg:pb-0">
     <!-- Header workspace -->
@@ -106,7 +109,7 @@
                             </span>
                         </div>
                         <span data-source-count class="text-xs font-semibold font-['Manrope'] text-primary">
-                            0/5 sumber
+                            0/{{ workspace_max_sources|default:0 }} sumber
                         </span>
                     </div>
                     <div data-source-stats class="mt-2 text-xs font-normal font-['Manrope'] leading-5 text-stone-400">
@@ -481,6 +484,9 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/core/csrf.js' %}"></script>
+<script src="{% static 'js/core/api.js' %}"></script>
+<script src="{% static 'js/core/dom.js' %}"></script>
 <script src="{% static 'js/workspace/sources.js' %}"></script>
 <script src="{% static 'js/workspace/layout.js' %}"></script>
 <script src="{% static 'js/workspace/selection.js' %}"></script>

@@ -54,12 +54,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getCsrfToken() {
-        const cookieValue = document.cookie.match(/(?:^|;)\s*csrftoken=([^;]+)/);
-        return cookieValue ? cookieValue[1] : '';
+        return window.MythosCsrf?.getCsrfToken?.() || (
+            document.cookie.match(/(?:^|;)\s*csrftoken=([^;]+)/)?.[1] || ''
+        );
     }
 
     function escapeHtml(unsafe) {
-        return (unsafe || '').toString()
+        return window.MythosDom?.escapeHtml?.(unsafe) || (unsafe || '').toString()
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")

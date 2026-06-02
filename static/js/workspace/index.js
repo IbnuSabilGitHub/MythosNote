@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── CSRF helper ────────────────────────────────────────────────────────────
   function getCSRFToken() {
-    return document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "";
+    return window.MythosCsrf?.getCsrfToken?.() || document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "";
   }
 
   // ── Modal open / close ─────────────────────────────────────────────────────

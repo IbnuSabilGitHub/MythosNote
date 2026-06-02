@@ -2,6 +2,15 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.52] - 2026-06-02
+### Summary
+Refaktor frontend secara bertahap: tambahkan shared core utilities untuk CSRF & escape HTML, dan sinkronkan UI kapasitas workspace dengan `WORKSPACE_MAX_SOURCES`.
+
+### Changed
+- `templates/workspace.html` + `config/views.py`: expose `workspace_max_sources` untuk UI
+- `static/js/workspace/sources.js`, `static/js/workspace/chat.js`, `static/js/workspace/index.js`: pakai utilitas CSRF/escape dari `static/js/core/`
+- `static/js/core/`: tambah `csrf.js`, `api.js`, `dom.js`
+
 ## [1.2.51] - 2026-06-02
 ### Summary
 Modularisasi dan refaktorisasi fitur "generate" (summary, mindmap, kuis, tabel) dengan memindahkannya dari `apps/sources` ke Django app terpisah `apps/generate`.

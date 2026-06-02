@@ -8,7 +8,11 @@
       this.container = document.querySelector("#source-list-container");
       this.countEl = document.querySelector("[data-source-count]");
       this.statsEl = document.querySelector("[data-source-stats]");
-      this.maxSources = 5;
+      const maxAttr = document
+        .querySelector("#workspace-data")
+        ?.dataset?.maxSources;
+      const parsed = Number.parseInt(maxAttr, 10);
+      this.maxSources = Number.isFinite(parsed) && parsed > 0 ? parsed : 5;
       this.pollIntervals = new Map(); // Track polling timers
     }
 
@@ -17,7 +21,11 @@
      * @returns {string} CSRF token
      */
     getCSRFToken() {
-      return document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+      return (
+        window.MythosCsrf?.getCsrfToken?.() ||
+        document.cookie.match(/csrftoken=([^;]+)/)?.[1] ||
+        ""
+      );
     }
 
     /**
@@ -40,7 +48,7 @@
       } catch (error) {
         console.error("Failed to fetch sources:", error);
         this.showErrorState(
-          "Failed to load sources. Please refresh the page."
+          "Gagal memuat sumber. Silakan refresh halaman."
         );
       }
     }
@@ -65,7 +73,7 @@
               <iconify-icon icon="tabler:file-upload" class="text-xl"></iconify-icon>
             </div>
             <div class="text-stone-300 text-sm font-medium font-['Manrope']">Belum ada sumber</div>
-            <div class="text-stone-500 text-xs mt-1 font-['Manrope']">Upload 1-5 file utama untuk mulai chat.</div>
+            <div class="text-stone-500 text-xs mt-1 font-['Manrope']">Upload 1-${this.maxSources} file utama untuk mulai chat.</div>
           </div>
         `;
         return;
@@ -518,7 +526,7 @@
      * Show error state in container
      * @param {string} message - Error message
      */
-    showErrorState(message = "Failed to load sources") {
+    showErrorState(message = "Gagal memuat sumber. Silakan refresh halaman.") {
       if (!this.container) return;
 
       this.container.innerHTML = `
@@ -528,7 +536,7 @@
             onclick="window.workspaceSources?.fetchSources()"
             class="mt-3 px-3 py-1.5 rounded bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-colors text-xs font-medium"
           >
-            Retry
+            Coba lagi
           </button>
         </div>
       `;
@@ -558,6 +566,10 @@
      * @returns {string} Escaped text
      */
     escapeHTML(text) {
+      const shared = window.MythosDom?.escapeHtml;
+      if (typeof shared === "function") return shared(text);
+
+      // Fallback escape (untuk case ketika core/dom belum diload).
       const div = document.createElement("div");
       div.textContent = text;
       return div.innerHTML;
