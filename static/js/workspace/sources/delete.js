@@ -51,6 +51,7 @@ export async function deleteSource(sourceId) {
     // Revert UI
     item.style.opacity = "1";
     item.style.pointerEvents = "auto";
+// eslint-disable-next-line no-unsanitized/property
     item.innerHTML = originalHTML;
 
     // Show error message

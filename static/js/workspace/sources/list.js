@@ -25,6 +25,7 @@ export function renderSourceList(sources) {
 
   // Handle empty state
   if (!sources || sources.length === 0) {
+// eslint-disable-next-line no-unsanitized/property
     this.container.innerHTML = `
       <div class="flex min-h-56 w-full flex-col items-center justify-center rounded-xl border border-dashed border-neutral-800 bg-neutral-900/30 px-4 py-8 text-center">
         <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -38,10 +39,12 @@ export function renderSourceList(sources) {
   }
 
   // Clear container
+ 
   this.container.innerHTML = "";
 
   // Create list items
   const listHTML = sources.map((source) => this.createSourceItemHTML(source)).join("");
+// eslint-disable-next-line no-unsanitized/property
   this.container.innerHTML = listHTML;
 
   // Attach event listeners to delete buttons
@@ -81,6 +84,7 @@ export function updatePanelSummary(sources) {
 export function showLoadingState() {
   if (!this.container) return;
 
+ 
   this.container.innerHTML = `
     <div class="flex items-center justify-center py-8">
       <div class="flex flex-col items-center gap-3">
@@ -99,6 +103,7 @@ export function showLoadingState() {
 export function showErrorState(message = "Gagal memuat sumber. Silakan refresh halaman.") {
   if (!this.container) return;
 
+// eslint-disable-next-line no-unsanitized/property
   this.container.innerHTML = `
     <div class="flex flex-col items-center justify-center py-8 text-center">
       <div class="text-red-400 text-sm font-medium">${this.escapeHTML(message)}</div>

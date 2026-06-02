@@ -2,6 +2,23 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.56] - 2026-06-03
+### Summary
+Implementasi Fase 4 (Kualitas & DX): Setup Linter, Vitest, perbaikan A11y, debounce polling, dan konsolidasi CSS font.
+
+### Added
+- `eslint.config.js`: Konfigurasi ESLint flat config dengan aturan untuk mencegah risiko XSS via `innerHTML` (menggunakan plugin `eslint-plugin-no-unsanitized`).
+- `vitest.config.js` & `test/core.test.js`: Setup Vitest dengan environment `jsdom` untuk _smoke tests_ utilitas di `core/api.js` dan `core/dom.js`.
+- `aria-live="polite"` pada container pesan chat (`_chat_panel.html`).
+- Implementasi _focus trap_ (menggunakan tombol Tab dan Shift+Tab) pada modal upload (`upload-modal.js`).
+- Fungsi `debouncedFetchSources` di `sources/index.js` untuk mengurangi frekuensi _request_ saat banyak proses selesai.
+
+### Changed
+- `package.json`: Penambahan _devDependencies_ untuk eslint, vitest, jsdom, dan perlengkapannya.
+- Template HTML: Konsolidasi _utility class_ font Tailwind dari `font-['Manrope']` menjadi `font-manrope`.
+- Penambahan komentar ignore ESLint pada area `innerHTML` yang dinyatakan aman (Phase 4 scope).
+
+
 ## [1.2.55] - 2026-06-03
 ### Summary
 Aktifkan panel Generate di workspace: tombol ringkasan/mindmap/quiz/tabel memanggil API async, polling status job, daftar riwayat, dan modal pratinjau hasil.

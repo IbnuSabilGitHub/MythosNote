@@ -181,7 +181,32 @@
     backdrop?.addEventListener("click", closeModal);
 
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && !modal?.classList.contains("hidden")) closeModal();
+      if (modal?.classList.contains("hidden")) return;
+      
+      if (e.key === "Escape") {
+        closeModal();
+        return;
+      }
+      
+      if (e.key === "Tab") {
+        const focusableElements = modal.querySelectorAll(
+          'a[href], button, textarea, input[type="text"], input[type="radio"], input[type="checkbox"], select, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            lastElement.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            firstElement.focus();
+            e.preventDefault();
+          }
+        }
+      }
     });
 
     fileInput?.addEventListener("change", () => handleFile(fileInput.files[0]));

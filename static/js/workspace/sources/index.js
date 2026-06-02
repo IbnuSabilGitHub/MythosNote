@@ -30,6 +30,19 @@ import { deleteSource } from "./delete.js";
       this.maxSources = Number.isFinite(parsed) && parsed > 0 ? parsed : 5;
 
       this.pollIntervals = new Map();
+      
+      let debounceTimeout = null;
+      this.debouncedFetchSources = async () => {
+        if (debounceTimeout) {
+          clearTimeout(debounceTimeout);
+        }
+        return new Promise((resolve) => {
+          debounceTimeout = setTimeout(async () => {
+            await this.fetchSources();
+            resolve();
+          }, 500);
+        });
+      };
     }
 
     getCSRFToken() {

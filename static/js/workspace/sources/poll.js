@@ -55,7 +55,11 @@ export async function pollSourceStatus(sourceId, interval = 2000) {
       if (status === "ready" || status === "failed") {
         clearInterval(this.pollIntervals.get(sourceId));
         this.pollIntervals.delete(sourceId);
-        await this.fetchSources();
+        if (this.debouncedFetchSources) {
+          await this.debouncedFetchSources();
+        } else {
+          await this.fetchSources();
+        }
       }
     } catch (error) {
       console.error(`Poll failed for source ${sourceId}:`, error);

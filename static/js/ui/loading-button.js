@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const loadingLabel = button.dataset.loadingText || button.textContent.trim() || 'Memproses';
 			button.disabled = true;
 			button.setAttribute('aria-busy', 'true');
+// eslint-disable-next-line no-unsanitized/property
 			button.innerHTML = `
 				<span class="inline-flex items-center justify-center gap-2">
 					${LOADING_SPINNER_SVG}
@@ -31,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		button.disabled = false;
 		button.removeAttribute('aria-busy');
+// eslint-disable-next-line no-unsanitized/property
 		button.innerHTML = button.dataset.originalHtml || button.innerHTML;
 		button.classList.remove(...LOADING_DISABLED_CLASSES);
 	};

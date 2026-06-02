@@ -24,7 +24,7 @@
             <div class="w-px h-4 bg-neutral-800"></div>
             <div class="min-w-0 inline-flex flex-col justify-start items-start">
                 <div
-                    class="max-w-36 sm:max-w-56 truncate justify-center text-stone-300/80 text-xs font-semibold font-['Manrope'] uppercase leading-3 tracking-wide">
+                    class="max-w-36 sm:max-w-56 truncate justify-center text-stone-300/80 text-xs font-semibold font-manrope uppercase leading-3 tracking-wide">
                     {{ active_workspace.name|default:"PROJECT ALPHA"|upper }}</div>
             </div>
         </div>
@@ -74,7 +74,7 @@
             <div data-sources-header
                 class="workspace-panel-header hidden lg:flex w-full p-2 border-b border-neutral-800/70 justify-between items-center">
                 <div data-sources-label
-                    class="h-3 justify-center text-stone-300 text-xs font-semibold font-['Manrope'] uppercase leading-3 tracking-wider">
+                    class="h-3 justify-center text-stone-300 text-xs font-semibold font-manrope uppercase leading-3 tracking-wider">
                     SUMBER</div>
                 <button type="button" data-sources-toggle aria-expanded="true" title="Tutup Panel"
                     class="workspace-icon-button w-8 h-8 cursor-pointer">
@@ -97,28 +97,28 @@
                     class="workspace-soft-button self-stretch py-2 cursor-pointer">
                     <iconify-icon icon="material-symbols:upload" class="text-primary text-sm"></iconify-icon>
                     <div
-                        class="text-center justify-center text-primary text-sm font-medium font-['Manrope'] leading-6">
+                        class="text-center justify-center text-primary text-sm font-medium font-manrope leading-6">
                         Tambah Sumber</div>
                 </button>
                 <div class="self-stretch rounded-lg border border-neutral-800 bg-neutral-900/45 p-3" aria-live="polite">
                     <div class="flex items-center justify-between gap-3">
                         <div class="flex items-center gap-2">
                             <iconify-icon icon="tabler:database" class="text-primary text-sm"></iconify-icon>
-                            <span class="text-xs font-semibold font-['Manrope'] uppercase tracking-wider text-stone-300">
+                            <span class="text-xs font-semibold font-manrope uppercase tracking-wider text-stone-300">
                                 Kapasitas
                             </span>
                         </div>
-                        <span data-source-count class="text-xs font-semibold font-['Manrope'] text-primary">
+                        <span data-source-count class="text-xs font-semibold font-manrope text-primary">
                             0/{{ workspace_max_sources|default:0 }} sumber
                         </span>
                     </div>
-                    <div data-source-stats class="mt-2 text-xs font-normal font-['Manrope'] leading-5 text-stone-400">
+                    <div data-source-stats class="mt-2 text-xs font-normal font-manrope leading-5 text-stone-400">
                         0 siap • 0 proses
                     </div>
                     <div class="mt-3 rounded-md border border-neutral-800/80 bg-neutral-950/40 px-2.5 py-2">
                         <div class="flex items-start gap-2">
                             <iconify-icon icon="tabler:info-circle" class="mt-0.5 shrink-0 text-primary/80 text-sm"></iconify-icon>
-                            <p class="text-xs font-normal font-['Manrope'] leading-5 text-stone-400">
+                            <p class="text-xs font-normal font-manrope leading-5 text-stone-400">
                                 PDF, TXT, MD, DOCX • maks 20 MB
                             </p>
                         </div>
@@ -130,13 +130,13 @@
                         class="h-4 w-4 rounded-xs border border-primary bg-primary accent-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                         aria-label="Pilih semua sumber" />
                     <div class="inline-flex flex-col justify-start items-start">
-                        <div class="h-5 justify-center text-stone-300 text-xs font-normal font-['Manrope'] leading-5 select-none">
+                        <div class="h-5 justify-center text-stone-300 text-xs font-normal font-manrope leading-5 select-none">
                             Semua File</div>
                     </div>
                 </div>
                 <!-- Selected info & Reset pilihan -->
                 <div id="selection-info-container" class="hidden w-full flex-row items-center justify-between gap-2 pt-2 border-t border-neutral-800/40">
-                    <span id="selected-info-text" class="text-[11px] text-stone-400 font-['Manrope'] truncate">
+                    <span id="selected-info-text" class="text-[11px] text-stone-400 font-manrope truncate">
                         0 sumber dipakai untuk chat
                     </span>
                     <button type="button" id="btn-reset-selection" class="text-[11px] shrink-0 font-medium text-primary hover:text-primary/80 focus:outline-none focus:ring-1 focus:ring-primary/40 rounded px-1 transition cursor-pointer">
@@ -164,14 +164,15 @@
                     <div class="w-2 h-2 bg-primary rounded-xl shadow-[0_0_12px_rgba(255,200,128,0.65)]"></div>
                     <div class="inline-flex flex-col justify-start items-start">
                         <div id="chat-source-counter"
-                            class="h-5 justify-center text-stone-300 text-xs font-normal font-['Manrope'] leading-5">
+                            class="h-5 justify-center text-stone-300 text-xs font-normal font-manrope leading-5">
                             0 sumber</div>
                     </div>
                 </div>
             </div>
             <!-- Messages -->
             <div id="chat-messages-container"
-                class="flex-1 w-full p-4 sm:p-6 pt-4 flex flex-col justify-start items-center gap-6 sm:gap-8 overflow-y-auto">
+                class="flex-1 w-full p-4 sm:p-6 pt-4 flex flex-col justify-start items-center gap-6 sm:gap-8 overflow-y-auto"
+                aria-live="polite">
                 <!-- Chat messages will be dynamically injected here by chat.js -->
             </div>
             <!-- Input area -->
@@ -181,7 +182,7 @@
                     class="workspace-input-shell relative flex flex-col justify-start items-start">
                     <div class="self-stretch min-h-16 pl-4 pr-16 pt-3 pb-10 relative">
                         <textarea id="chat-input" maxlength="4000"
-                            class="max-h-40 w-full bg-transparent text-stone-200 text-base font-normal font-['Manrope'] leading-6 placeholder:text-stone-300/50 focus:outline-none resize-none overflow-y-auto"
+                            class="max-h-40 w-full bg-transparent text-stone-200 text-base font-normal font-manrope leading-6 placeholder:text-stone-300/50 focus:outline-none resize-none overflow-y-auto"
                             rows="2" placeholder="Tanyakan apa pun tentang sumber yang Anda pilih..."></textarea>
                     </div>
                     <div class="absolute right-4 bottom-4 inline-flex justify-start items-start">
@@ -206,7 +207,7 @@
             <div data-generate-header
                 class="workspace-panel-header hidden lg:flex w-full p-2 border-b border-neutral-800/70 justify-between items-center">
                 <div data-generate-label
-                    class="h-3 justify-center text-stone-300 text-xs font-semibold font-['Manrope'] uppercase leading-3 tracking-wider">
+                    class="h-3 justify-center text-stone-300 text-xs font-semibold font-manrope uppercase leading-3 tracking-wider">
                     GENERATE</div>
                 <button type="button" data-generate-toggle aria-expanded="true" title="Tutup Panel"
                     class="workspace-icon-button w-8 h-8 cursor-pointer">
@@ -241,18 +242,18 @@
                         <iconify-icon icon="mdi:paper-text" class="text-primary text-xl"></iconify-icon>
                         <div class="flex flex-col justify-start items-center">
                             <div
-                                class="h-5 text-center justify-center text-primary text-xs font-semibold font-['Manrope'] leading-5">
+                                class="h-5 text-center justify-center text-primary text-xs font-semibold font-manrope leading-5">
                                 Ringkasan</div>
-                            <span data-generate-hint class="hidden text-[10px] text-stone-500 font-['Manrope']"></span>
+                            <span data-generate-hint class="hidden text-[10px] text-stone-500 font-manrope"></span>
                         </div>
                     </button>
                     <button type="button" data-generate-action="mindmap" class="workspace-generate-button" title="Buat mindmap">
                         <iconify-icon icon="tdesign:mind-map" class="text-primary text-xl"></iconify-icon>
                         <div class="flex flex-col justify-start items-center">
                             <div
-                                class="h-5 text-center justify-center text-primary text-xs font-semibold font-['Manrope'] leading-5">
+                                class="h-5 text-center justify-center text-primary text-xs font-semibold font-manrope leading-5">
                                 Mindmap</div>
-                            <span data-generate-hint class="hidden text-[10px] text-stone-500 font-['Manrope']"></span>
+                            <span data-generate-hint class="hidden text-[10px] text-stone-500 font-manrope"></span>
                         </div>
                     </button>
                     <button type="button" data-generate-action="quiz" class="workspace-generate-button" title="Buat kuis">
@@ -260,18 +261,18 @@
                             class="text-primary text-xl"></iconify-icon>
                         <div class="flex flex-col justify-start items-center">
                             <div
-                                class="h-5 text-center justify-center text-primary text-xs font-semibold font-['Manrope'] leading-5">
+                                class="h-5 text-center justify-center text-primary text-xs font-semibold font-manrope leading-5">
                                 Quiz</div>
-                            <span data-generate-hint class="hidden text-[10px] text-stone-500 font-['Manrope']"></span>
+                            <span data-generate-hint class="hidden text-[10px] text-stone-500 font-manrope"></span>
                         </div>
                     </button>
                     <button type="button" data-generate-action="table" class="workspace-generate-button" title="Buat tabel">
                         <iconify-icon icon="ri:table-line" class="text-primary text-xl"></iconify-icon>
                         <div class="flex flex-col justify-start items-center">
                             <div
-                                class="h-5 text-center justify-center text-primary text-xs font-semibold font-['Manrope'] leading-5">
+                                class="h-5 text-center justify-center text-primary text-xs font-semibold font-manrope leading-5">
                                 Tabel</div>
-                            <span data-generate-hint class="hidden text-[10px] text-stone-500 font-['Manrope']"></span>
+                            <span data-generate-hint class="hidden text-[10px] text-stone-500 font-manrope"></span>
                         </div>
                     </button>
                 </div>
@@ -281,14 +282,14 @@
                 <div class="self-stretch px-4 pt-4 pb-2 flex flex-col justify-start items-start">
                     <div class="self-stretch flex flex-col justify-start items-start">
                         <div
-                            class="self-stretch justify-center text-stone-300 text-xs font-semibold font-['Manrope'] uppercase leading-3 tracking-wider">
+                            class="self-stretch justify-center text-stone-300 text-xs font-semibold font-manrope uppercase leading-3 tracking-wider">
                             HASIL GENERATE</div>
                     </div>
                 </div>
                 <div data-generate-job-list
                     class="self-stretch flex-1 px-4 pb-4 flex flex-col justify-start items-start gap-2">
                     <p data-generate-empty
-                        class="self-stretch text-center text-stone-500 text-xs font-['Manrope'] py-6">
+                        class="self-stretch text-center text-stone-500 text-xs font-manrope py-6">
                         Belum ada hasil generate. Pilih sumber lalu klik salah satu tombol di atas.
                     </p>
                 </div>
@@ -300,17 +301,17 @@
         role="tablist" aria-label="Workspace tabs">
         <div class="grid grid-cols-3 px-3 pt-2">
             <button type="button" data-mobile-tab="sources" role="tab" aria-selected="false"
-                class="border-t-2 border-transparent text-stone-400 flex flex-col items-center gap-1 py-2 text-xs font-medium font-['Manrope'] transition">
+                class="border-t-2 border-transparent text-stone-400 flex flex-col items-center gap-1 py-2 text-xs font-medium font-manrope transition">
                 <iconify-icon icon="tabler:files" class="text-base"></iconify-icon>
                 <span>Sumber</span>
             </button>
             <button type="button" data-mobile-tab="chat" data-mobile-default role="tab" aria-selected="true"
-                class="border-t-2 border-primary text-primary flex flex-col items-center gap-1 py-2 text-xs font-semibold font-['Manrope'] transition">
+                class="border-t-2 border-primary text-primary flex flex-col items-center gap-1 py-2 text-xs font-semibold font-manrope transition">
                 <iconify-icon icon="tabler:message-circle" class="text-base"></iconify-icon>
                 <span>Chat</span>
             </button>
             <button type="button" data-mobile-tab="generate" role="tab" aria-selected="false"
-                class="border-t-2 border-transparent text-stone-400 flex flex-col items-center gap-1 py-2 text-xs font-medium font-['Manrope'] transition">
+                class="border-t-2 border-transparent text-stone-400 flex flex-col items-center gap-1 py-2 text-xs font-medium font-manrope transition">
                 <iconify-icon icon="tabler:sparkles" class="text-base"></iconify-icon>
                 <span>Generate</span>
             </button>
@@ -326,9 +327,9 @@
         class="relative z-10 w-full max-w-3xl mx-4 max-h-[90dvh] flex flex-col bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl overflow-hidden">
         <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-neutral-800 shrink-0">
             <div class="min-w-0 pr-4">
-                <h2 id="generate-result-title" class="text-zinc-200 text-base font-semibold font-['Manrope'] truncate">
+                <h2 id="generate-result-title" class="text-zinc-200 text-base font-semibold font-manrope truncate">
                     Hasil Generate</h2>
-                <p id="generate-result-subtitle" class="text-stone-500 text-xs font-['Manrope'] mt-0.5"></p>
+                <p id="generate-result-subtitle" class="text-stone-500 text-xs font-manrope mt-0.5"></p>
             </div>
             <button id="btn-close-generate-modal" type="button"
                 class="w-7 h-7 flex items-center justify-center rounded-md text-stone-400 hover:text-primary hover:bg-neutral-800 transition focus:outline-none focus:ring-2 focus:ring-primary/40"
@@ -337,7 +338,7 @@
             </button>
         </div>
         <div id="generate-result-body"
-            class="flex-1 overflow-y-auto px-6 py-4 text-stone-200 font-['Manrope'] text-sm leading-6">
+            class="flex-1 overflow-y-auto px-6 py-4 text-stone-200 font-manrope text-sm leading-6">
         </div>
         <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-neutral-800 shrink-0">
             <button id="btn-delete-generate-job" type="button"
@@ -360,7 +361,7 @@
     <div class="relative z-10 w-full max-w-md mx-4 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl overflow-hidden">
         <!-- Header -->
         <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-neutral-800">
-            <h2 id="upload-modal-title" class="text-zinc-200 text-base font-semibold font-['Manrope']">Tambah Sumber</h2>
+            <h2 id="upload-modal-title" class="text-zinc-200 text-base font-semibold font-manrope">Tambah Sumber</h2>
             <button id="btn-close-upload-modal" type="button"
                 class="w-7 h-7 flex items-center justify-center rounded-md text-stone-400 hover:text-primary hover:bg-neutral-800 transition focus:outline-none focus:ring-2 focus:ring-primary/40"
                 aria-label="Tutup modal">
@@ -376,8 +377,8 @@
                     class="workspace-dropzone group">
                     <iconify-icon icon="material-symbols:upload-file-outline" class="text-3xl text-primary/70 group-hover:text-primary transition"></iconify-icon>
                     <div class="text-center">
-                        <p class="text-sm text-stone-300 font-['Manrope']">Klik atau seret file ke sini</p>
-                        <p class="text-xs text-stone-500 mt-0.5 font-['Manrope']">PDF, TXT, Markdown, DOCX — maks. 20 MB</p>
+                        <p class="text-sm text-stone-300 font-manrope">Klik atau seret file ke sini</p>
+                        <p class="text-xs text-stone-500 mt-0.5 font-manrope">PDF, TXT, Markdown, DOCX — maks. 20 MB</p>
                     </div>
                     <input id="source-file-input" type="file" name="file" accept=".pdf,.txt,.md,.docx" class="sr-only" />
                 </label>
@@ -385,8 +386,8 @@
                 <div id="upload-file-preview" class="hidden items-center gap-3 px-3 py-2.5 bg-neutral-950/60 rounded-lg border border-neutral-800">
                     <iconify-icon id="upload-file-icon" icon="tabler:file" class="text-primary text-lg shrink-0"></iconify-icon>
                     <div class="flex-1 min-w-0">
-                        <p id="upload-file-name" class="text-sm text-zinc-200 font-['Manrope'] truncate"></p>
-                        <p id="upload-file-size" class="text-xs text-stone-500 font-['Manrope']"></p>
+                        <p id="upload-file-name" class="text-sm text-zinc-200 font-manrope truncate"></p>
+                        <p id="upload-file-size" class="text-xs text-stone-500 font-manrope"></p>
                     </div>
                     <button type="button" id="btn-clear-file" class="text-stone-500 hover:text-red-400 transition" aria-label="Hapus file">
                         <iconify-icon icon="tabler:x" class="text-sm"></iconify-icon>
@@ -395,8 +396,8 @@
                 <!-- Upload progress -->
                 <div id="upload-progress-wrap" class="hidden flex-col gap-1">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs text-stone-400 font-['Manrope']">Mengupload...</span>
-                        <span id="upload-progress-pct" class="text-xs text-primary font-['Manrope']">0%</span>
+                        <span class="text-xs text-stone-400 font-manrope">Mengupload...</span>
+                        <span id="upload-progress-pct" class="text-xs text-primary font-manrope">0%</span>
                     </div>
                     <div class="w-full h-1.5 bg-neutral-800 rounded-full overflow-hidden">
                         <div id="upload-progress-bar"
@@ -405,16 +406,16 @@
                     </div>
                 </div>
                 <!-- Error -->
-                <p id="upload-error" class="hidden text-xs text-red-400 font-['Manrope']"></p>
+                <p id="upload-error" class="hidden text-xs text-red-400 font-manrope"></p>
             </div>
             <!-- Footer -->
             <div class="px-6 pb-5 flex items-center gap-3 justify-end">
                 <button type="button" id="btn-cancel-upload"
-                    class="px-4 py-2 rounded-lg text-sm font-medium font-['Manrope'] text-stone-300 hover:text-zinc-200 hover:bg-neutral-800 transition">
+                    class="px-4 py-2 rounded-lg text-sm font-medium font-manrope text-stone-300 hover:text-zinc-200 hover:bg-neutral-800 transition">
                     Batal
                 </button>
                 <button type="submit" id="btn-submit-upload"
-                    class="px-5 py-2 rounded-lg text-sm font-semibold font-['Manrope'] bg-primary text-neutral-950 hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    class="px-5 py-2 rounded-lg text-sm font-semibold font-manrope bg-primary text-neutral-950 hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary/40"
                     disabled>
                     Upload
                 </button>
