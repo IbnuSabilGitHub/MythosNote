@@ -4,7 +4,6 @@ from django.urls import path
 
 from apps.sources.views import (
     ChatView,
-    GenerateView,
     SourceDeleteView,
     SourceListView,
     SourceStatusView,
@@ -26,5 +25,4 @@ urlpatterns = [
     path("api/workspace/<uuid:id>/chat/sessions/", ChatSessionListView.as_view(), name="workspace-chat-sessions"),
     path("api/chat/session/<uuid:session_id>/messages/", ChatMessageListView.as_view(), name="chat-session-messages"),
     path("api/workspace/<uuid:id>/chat/messages/", ChatMessageDeleteView.as_view(), name="workspace-chat-messages-delete"),
-    path("api/workspace/<uuid:id>/generate/", GenerateView.as_view(), name="workspace-generate"),
 ]

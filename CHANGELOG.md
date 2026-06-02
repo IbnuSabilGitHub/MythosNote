@@ -2,6 +2,24 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.51] - 2026-06-02
+### Summary
+Modularisasi dan refaktorisasi fitur "generate" (summary, mindmap, kuis, tabel) dengan memindahkannya dari `apps/sources` ke Django app terpisah `apps/generate`.
+
+### Added
+- `apps/generate/`: Standalone Django app baru untuk fitur AI generate.
+- `config/settings.py`: Registrasi `apps.generate.apps.GenerateConfig` ke `INSTALLED_APPS`.
+- `config/urls.py`: Routing `/` ke `apps.generate.urls`.
+
+### Changed
+- `apps/sources/models.py`: Penghapusan model `GenerateJob` (dipindah ke `apps/generate/models.py`).
+- `apps/sources/tasks.py`: Penghapusan task `process_generate_job` (dipindah ke `apps/generate/tasks.py`).
+- `apps/sources/urls.py`: Penghapusan routing `workspace-generate` (dipindah ke `apps/generate/urls.py`).
+- `apps/sources/views.py`: Penghapusan `GenerateView` dan throttling terkait (dipindah ke `apps/generate/views.py`).
+
+### Removed
+- Model `GenerateJob`, task `process_generate_job`, dan `GenerateView` dari modul `sources`.
+
 ## [1.2.50] - 2026-05-29
 ### Summary
 Implementasi AI Daily Quota + Security Mitigation untuk mencegah abuse (cost & storage exhaustion).

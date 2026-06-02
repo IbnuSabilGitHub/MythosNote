@@ -13,7 +13,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.sources.embeddings import EmbeddingProvider
-from apps.sources.models import GenerateJob, Source, SourceChunk
+from apps.sources.models import Source, SourceChunk
 from apps.sources.providers import ChatProvider
 
 
@@ -332,47 +332,6 @@ def process_source(source_id: str) -> None:
                 source.save(update_fields=['status', 'error_message', 'updated_at'])
 
         # Jangan hapus file mentah - file tetap di storage
-
-
-def process_generate_job(job_id: str, prompt: str) -> None:
-    """Async task to run generation prompt against workspace context."""
-    job = None
-    try:
-        with transaction.atomic():
-            job = GenerateJob.objects.select_for_update().get(id=job_id)
-            if job.status != "queued":
-                return
-            job.status = "processing"
-            job.error_message = ""
-            job.save(update_fields=["status", "error_message", "updated_at"])
-
-        response_text = ChatProvider.chat_complete(
-            messages=[{"role": "user", "content": prompt}],
-        )
-
-        with transaction.atomic():
-            job = GenerateJob.objects.select_for_update().get(id=job_id)
-            job.status = "success"
-            job.result = response_text or ""
-            job.error_message = ""
-            job.save(update_fields=["status", "result", "error_message", "updated_at"])
-
-    except GenerateJob.DoesNotExist:
-        error_msg = f"GenerateJob dengan ID {job_id} tidak ditemukan"
-        print(f"ERROR: {error_msg}")
-
-    except Exception:
-        error_traceback = traceback.format_exc()
-        print(f"ERROR processing generate job {job_id}: {error_traceback}")
-
-        if job is not None:
-            with transaction.atomic():
-                job = GenerateJob.objects.select_for_update().get(id=job.id)
-                job.status = "failed"
-                # Store short message for UI; full traceback is in logs above
-                short_error = error_traceback[:500] if error_traceback else 'Terjadi kesalahan saat memproses.'
-                job.error_message = short_error
-                job.save(update_fields=["status", "error_message", "updated_at"])
 
 
 if __name__ == '__main__':
