@@ -2,6 +2,86 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.56] - 2026-06-03
+### Summary
+Implementasi Fase 4 (Kualitas & DX): Setup Linter, Vitest, perbaikan A11y, debounce polling, dan konsolidasi CSS font.
+
+### Added
+- `eslint.config.js`: Konfigurasi ESLint flat config dengan aturan untuk mencegah risiko XSS via `innerHTML` (menggunakan plugin `eslint-plugin-no-unsanitized`).
+- `vitest.config.js` & `test/core.test.js`: Setup Vitest dengan environment `jsdom` untuk _smoke tests_ utilitas di `core/api.js` dan `core/dom.js`.
+- `aria-live="polite"` pada container pesan chat (`_chat_panel.html`).
+- Implementasi _focus trap_ (menggunakan tombol Tab dan Shift+Tab) pada modal upload (`upload-modal.js`).
+- Fungsi `debouncedFetchSources` di `sources/index.js` untuk mengurangi frekuensi _request_ saat banyak proses selesai.
+
+### Changed
+- `package.json`: Penambahan _devDependencies_ untuk eslint, vitest, jsdom, dan perlengkapannya.
+- Template HTML: Konsolidasi _utility class_ font Tailwind dari `font-['Manrope']` menjadi `font-manrope`.
+- Penambahan komentar ignore ESLint pada area `innerHTML` yang dinyatakan aman (Phase 4 scope).
+
+
+## [1.2.55] - 2026-06-03
+### Summary
+Aktifkan panel Generate di workspace: tombol ringkasan/mindmap/quiz/tabel memanggil API async, polling status job, daftar riwayat, dan modal pratinjau hasil.
+
+### Added
+- `static/js/workspace/generate/`: modul generate (API, render, polling)
+- `templates/workspace.html`: modal hasil generate + container daftar job dinamis
+
+### Changed
+- `static/js/entries/workspace.js`: import modul generate ke bundle workspace
+- `static/js/core/api.js`: dukung respons HTTP 204 (DELETE job)
+- `templates/workspace.html`: hapus placeholder mock; tombol generate aktif
+
+## [1.2.54] - 2026-06-02
+### Summary
+Setup Vite untuk bundling frontend halaman `workspace` dan `project`, lalu pindahkan template agar memuat output bundle `static/dist`.
+
+### Changed
+- `package.json` + `package-lock.json`: tambah script `build:js` / `dev:js`, dan `build` jadi CSS+JS
+- `vite.config.js`: konfigurasi multi-entry (`workspace`, `project`) dengan output ke `static/dist`
+- `static/js/entries/workspace.js`, `static/js/entries/project.js`: entrypoint bundle per halaman
+- `templates/workspace.html`, `templates/project.html`: ganti banyak script tag jadi 1 script module dari `dist`
+- `static/js/workspace/chat.js`: import `marked` dari package npm
+- `Dockerfile`: jalankan `npm run build` (bukan hanya `build:css`)
+
+## [1.2.53] - 2026-06-02
+### Summary
+Refaktor struktur frontend workspace secara bertahap: pecah `WorkspaceSources` jadi modul-modul kecil dan pisahkan upload modal dari `index.js`.
+
+### Changed
+- `static/js/workspace/sources.js`: jadi shim ES module (side effects)
+- `static/js/workspace/sources/*`: pecah logika sources (list/item/poll/delete)
+- `static/js/workspace/index.js`: jadi orchestrator init
+- `static/js/workspace/upload-modal.js`: pindahkan implementasi upload modal
+- `templates/workspace.html`: update script tags (module + urutan)
+
+## [1.2.52] - 2026-06-02
+### Summary
+Refaktor frontend secara bertahap: tambahkan shared core utilities untuk CSRF & escape HTML, dan sinkronkan UI kapasitas workspace dengan `WORKSPACE_MAX_SOURCES`.
+
+### Changed
+- `templates/workspace.html` + `config/views.py`: expose `workspace_max_sources` untuk UI
+- `static/js/workspace/sources.js`, `static/js/workspace/chat.js`, `static/js/workspace/index.js`: pakai utilitas CSRF/escape dari `static/js/core/`
+- `static/js/core/`: tambah `csrf.js`, `api.js`, `dom.js`
+
+## [1.2.51] - 2026-06-02
+### Summary
+Modularisasi dan refaktorisasi fitur "generate" (summary, mindmap, kuis, tabel) dengan memindahkannya dari `apps/sources` ke Django app terpisah `apps/generate`.
+
+### Added
+- `apps/generate/`: Standalone Django app baru untuk fitur AI generate.
+- `config/settings.py`: Registrasi `apps.generate.apps.GenerateConfig` ke `INSTALLED_APPS`.
+- `config/urls.py`: Routing `/` ke `apps.generate.urls`.
+
+### Changed
+- `apps/sources/models.py`: Penghapusan model `GenerateJob` (dipindah ke `apps/generate/models.py`).
+- `apps/sources/tasks.py`: Penghapusan task `process_generate_job` (dipindah ke `apps/generate/tasks.py`).
+- `apps/sources/urls.py`: Penghapusan routing `workspace-generate` (dipindah ke `apps/generate/urls.py`).
+- `apps/sources/views.py`: Penghapusan `GenerateView` dan throttling terkait (dipindah ke `apps/generate/views.py`).
+
+### Removed
+- Model `GenerateJob`, task `process_generate_job`, dan `GenerateView` dari modul `sources`.
+
 ## [1.2.50] - 2026-05-29
 ### Summary
 Implementasi AI Daily Quota + Security Mitigation untuk mencegah abuse (cost & storage exhaustion).

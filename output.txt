@@ -1,0 +1,78 @@
+commit 90a5fca257f5b18bab5e6366083d7a80d41444e1
+Author: IbnuSabilGitHub <ibnusabil2301@gmail.com>
+Commit: IbnuSabilGitHub <ibnusabil2301@gmail.com>
+
+    feat(frontend): fase3 aktifkan panel generate workspace
+    
+    Wire tombol generate ke API async dengan polling job, riwayat hasil, dan modal pratinjau (markdown, mermaid, quiz, tabel).
+    
+    Co-authored-by: Cursor <cursoragent@cursor.com>
+
+ CHANGELOG.md                              |  13 ++
+ static/js/core/api.js                     |  10 +-
+ static/js/entries/workspace.js            |   1 +
+ static/js/workspace/generate/api.js       |  34 ++++
+ static/js/workspace/generate/constants.js |  25 +++
+ static/js/workspace/generate/index.js     | 260 ++++++++++++++++++++++++++++++
+ static/js/workspace/generate/render.js    | 172 ++++++++++++++++++++
+ templates/workspace.html                  | 171 +++++++-------------
+ 8 files changed, 567 insertions(+), 119 deletions(-)
+
+commit 5dadb4d7fea4debdbd26136a7e7a2e7485ba1007
+Author: IbnuSabilGitHub <ibnusabil2301@gmail.com>
+Commit: IbnuSabilGitHub <ibnusabil2301@gmail.com>
+
+    build(frontend): fase2 setup vite bundles
+    
+    Co-authored-by: Cursor <cursoragent@cursor.com>
+
+ CHANGELOG.md                   |  12 +
+ Dockerfile                     |   2 +-
+ package-lock.json              | 525 ++++++++++++++++++++++++++++++++++++++++-
+ package.json                   |   7 +-
+ static/js/entries/project.js   |   2 +
+ static/js/entries/workspace.js |  11 +
+ static/js/workspace/chat.js    |   2 +-
+ templates/project.html         |   2 +-
+ templates/workspace.html       |  10 +-
+ vite.config.js                 |  21 ++
+ 10 files changed, 572 insertions(+), 22 deletions(-)
+
+commit 7b59b7f352776c31bfab7b6099ab0f9f6401dc4a
+Author: IbnuSabilGitHub <ibnusabil2301@gmail.com>
+Commit: IbnuSabilGitHub <ibnusabil2301@gmail.com>
+
+    refactor(frontend): fase1 split workspace sources
+    
+    Co-authored-by: Cursor <cursoragent@cursor.com>
+
+ CHANGELOG.md                          |  11 +
+ static/js/workspace/index.js          | 252 +--------------
+ static/js/workspace/sources.js        | 580 +---------------------------------
+ static/js/workspace/sources/delete.js |  60 ++++
+ static/js/workspace/sources/index.js  | 102 ++++++
+ static/js/workspace/sources/item.js   | 162 ++++++++++
+ static/js/workspace/sources/list.js   | 128 ++++++++
+ static/js/workspace/sources/poll.js   | 141 +++++++++
+ static/js/workspace/upload-modal.js   | 264 ++++++++++++++++
+ templates/workspace.html              |   3 +-
+ 10 files changed, 873 insertions(+), 830 deletions(-)
+
+commit 4929d5adc98c56518620f30887f3f079799abada
+Author: IbnuSabilGitHub <ibnusabil2301@gmail.com>
+Commit: IbnuSabilGitHub <ibnusabil2301@gmail.com>
+
+    refactor(frontend): fase0 shared core utils
+    
+    Co-authored-by: Cursor <cursoragent@cursor.com>
+
+ CHANGELOG.md                   |  9 +++++++
+ config/views.py                |  2 ++
+ static/js/core/api.js          | 56 ++++++++++++++++++++++++++++++++++++++++++
+ static/js/core/csrf.js         |  9 +++++++
+ static/js/core/dom.js          | 15 +++++++++++
+ static/js/workspace/chat.js    |  7 +++---
+ static/js/workspace/index.js   |  2 +-
+ static/js/workspace/sources.js | 24 +++++++++++++-----
+ templates/workspace.html       | 10 ++++++--
+ 9 files changed, 122 insertions(+), 12 deletions(-)

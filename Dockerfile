@@ -23,7 +23,7 @@ RUN python3 -m pip install --no-cache-dir --upgrade pip \
 
 COPY . .
 
-RUN npm run build:css
+RUN npm run build
 
 EXPOSE 8000
 

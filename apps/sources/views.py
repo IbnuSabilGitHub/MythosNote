@@ -20,12 +20,12 @@ from rest_framework.views import APIView
 
 from django.core.files.storage import default_storage
 
-from apps.sources.models import GenerateJob, Source, SourceChunk, ChatSession, ChatMessage
+from apps.sources.models import Source, SourceChunk, ChatSession, ChatMessage
 from apps.sources.providers import ChatProvider, EmbeddingProvider
 from apps.sources.serializers import SourceDetailSerializer, SourceListSerializer
 from apps.workspaces.models import Workspace
 from django.conf import settings
-from apps.accounts.utils import check_and_increment_prompt, check_and_increment_generate, check_and_increment_upload
+from apps.accounts.utils import check_and_increment_prompt, check_and_increment_upload
 
 
 ALLOWED_EXTENSIONS = {".pdf", ".md", ".txt", ".docx"}
@@ -58,10 +58,6 @@ class UploadRateThrottle(UserRateThrottle):
 
 class ChatRateThrottle(UserRateThrottle):
     scope = 'chat'
-
-
-class GenerateRateThrottle(UserRateThrottle):
-    scope = 'generate'
 
 
 class SourcePagination(PageNumberPagination):
@@ -260,31 +256,6 @@ class SourceStatusView(APIView):
         )
         serializer = SourceDetailSerializer(source)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-MAX_GENERATE_CHUNKS = 200
-MAX_GENERATE_CHARS = 15_000
-
-
-def _get_workspace_ready_chunks(request, workspace_id: str):
-    workspace = get_object_or_404(
-        Workspace.objects.filter(user=request.user),
-        id=workspace_id,
-    )
-
-    chunks = SourceChunk.objects.filter(
-        source__workspace=workspace,
-        source__user=request.user,
-        source__status="ready",
-    ).values_list("text_content", flat=True)[:MAX_GENERATE_CHUNKS]
-
-    if not chunks.exists():
-        return None, Response(
-            {"detail": "No ready source chunks found for this workspace."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-    return chunks, None
 
 
 class ChatView(APIView):
@@ -565,74 +536,3 @@ class ChatMessageDeleteView(APIView):
         )
         ChatSession.objects.filter(user=request.user, workspace=workspace).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class GenerateView(APIView):
-    """Generate summary/mindmap/quiz/table from workspace source chunks."""
-
-    permission_classes = [IsAuthenticated]
-    throttle_classes = [GenerateRateThrottle]
-    # Token efficiency: batasi context generate agar tidak kirim semua chunks
-    MAX_GENERATE_CHARS = 12_000  # ~3k token; cukup untuk dokumen panjang
-
-    PROMPT_TEMPLATES = {
-        "summary": "Summarize the following context into concise bullet points.",
-        "mindmap": "Create a mindmap outline with clear main branches and sub-branches.",
-        "quiz": "Create a quiz with questions and answers based on the context.",
-        "table": "Create a structured table with key entities and attributes.",
-    }
-
-    def post(self, request, id):
-        action = (request.data.get("action") or "").strip().lower()
-        if action not in self.PROMPT_TEMPLATES:
-            return Response(
-                {"action": "Invalid action. Use summary, mindmap, quiz, or table."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-            
-        if not check_and_increment_generate(request.user, request):
-            return Response(
-                {"detail": "Kuota harian generate telah habis."},
-                status=status.HTTP_429_TOO_MANY_REQUESTS,
-            )
-
-        chunks, error_response = _get_workspace_ready_chunks(request, id)
-        if error_response:
-            return error_response
-
-        # Bangun context dengan char-limit guard — hemat token, cegah blow-up
-        context_parts = []
-        total_chars = 0
-        for chunk in chunks:
-            if total_chars + len(chunk) > self.MAX_GENERATE_CHARS:
-                break
-            context_parts.append(chunk)
-            total_chars += len(chunk)
-        context_text = "\n\n".join(context_parts)
-
-        instruction = self.PROMPT_TEMPLATES[action]
-        prompt = f"{context_text}\n\nTask: {instruction}"
-
-        job = GenerateJob.objects.create(
-            user=request.user,
-            workspace_id=id,
-            action=action,
-            status="queued",
-        )
-
-        try:
-            queue = django_rq.get_queue("default")
-            queue.enqueue("apps.sources.tasks.process_generate_job", str(job.id), prompt)
-        except Exception as exc:
-            job.status = "failed"
-            job.error_message = f"Failed to queue generate job: {exc}"
-            job.save(update_fields=["status", "error_message", "updated_at"])
-            return Response(
-                {"detail": "Failed to queue generate job."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-        return Response(
-            {"generate_job": {"id": str(job.id), "status": job.status}},
-            status=status.HTTP_202_ACCEPTED,
-        )

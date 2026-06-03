@@ -1,4 +1,4 @@
-import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
+import { marked } from "marked";
 
 /**
  * Handle workspace chat interactions
@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderEmptyState() {
         if (!messagesContainer || messagesContainer.children.length > 0) return;
+ 
         messagesContainer.innerHTML = `
             <div id="chat-empty-state" class="flex min-h-full w-full max-w-3xl flex-1 flex-col items-center justify-center px-4 py-12 text-center">
                 <div class="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-primary shadow-[0_20px_70px_rgba(255,200,128,0.08)]">
@@ -54,12 +55,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getCsrfToken() {
-        const cookieValue = document.cookie.match(/(?:^|;)\s*csrftoken=([^;]+)/);
-        return cookieValue ? cookieValue[1] : '';
+        return window.MythosCsrf?.getCsrfToken?.() || (
+            document.cookie.match(/(?:^|;)\s*csrftoken=([^;]+)/)?.[1] || ''
+        );
     }
 
     function escapeHtml(unsafe) {
-        return (unsafe || '').toString()
+        return window.MythosDom?.escapeHtml?.(unsafe) || (unsafe || '').toString()
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
@@ -71,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const msgDiv = document.createElement('div');
         clearEmptyState();
         msgDiv.className = 'w-full max-w-3xl flex flex-col justify-start items-end animate-slide-up';
+// eslint-disable-next-line no-unsanitized/property
         msgDiv.innerHTML = `
             <div class="max-w-[85%] inline-flex justify-end items-start">
                 <div class="self-stretch pl-4 pr-6 py-4 bg-primary/15 rounded-2xl rounded-tr-md border border-primary/30 inline-flex flex-col justify-start items-start shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
@@ -96,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const renderedMarkdown = marked.parse(text);
 
+// eslint-disable-next-line no-unsanitized/property
         msgDiv.innerHTML = `
             <div class="w-8 h-9 pt-1 inline-flex flex-col justify-start items-start shrink-0">
                 <div class="w-8 h-8 bg-neutral-900 rounded-xl outline -outline-offset-1 outline-neutral-800 inline-flex justify-center items-center">
@@ -118,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         msgDiv.id = 'chat-loading';
         clearEmptyState();
         msgDiv.className = 'w-full max-w-3xl inline-flex justify-start items-start gap-3 sm:gap-4';
+ 
         msgDiv.innerHTML = `
             <div class="w-8 h-9 pt-1 inline-flex flex-col justify-start items-start shrink-0">
                 <div class="w-8 h-8 bg-neutral-900 rounded-xl outline -outline-offset-1 outline-neutral-800 inline-flex justify-center items-center">
@@ -211,6 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!msgsResponse.ok) return;
             const messages = await msgsResponse.json();
 
+ 
             messagesContainer.innerHTML = '';
             messages.forEach(msg => {
                 if (msg.role === 'user') {

@@ -1,6 +1,7 @@
 """Tampilan level proyek untuk landing page publik dan halaman proyek."""
 
 from django.http import HttpRequest, HttpResponse
+from django.conf import settings
 from django.contrib import messages
 from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
@@ -93,6 +94,7 @@ def workspace(request: HttpRequest) -> HttpResponse:
         {
             "show_navbar": False,
             "active_workspace": active_workspace,
+            "workspace_max_sources": settings.WORKSPACE_MAX_SOURCES,
         },
     )
 
