@@ -4,6 +4,22 @@ Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a 
 
 
 
+
+## [1.2.64] - 2026-06-04
+### Summary
+Menambahkan fitur salin (copy) pada pesan chat (user/bot) dan hasil generate (ringkasan dan tabel) dalam bentuk raw markdown.
+
+### Added
+- `templates/workspace.html`: Tombol salin (`btn-copy-generate-result`) pada footer modal hasil generate.
+
+### Changed
+- `static/js/workspace/chat.js`:
+  - Penambahan tombol salin pada gelembung chat user dan bot.
+  - Implementasi handler salin clipboard dengan perubahan ikon dinamis saat disalin.
+- `static/js/workspace/generate/index.js`:
+  - Integrasi tombol salin pada modal hasil generate.
+  - Menampilkan tombol salin hanya untuk hasil berupa ringkasan (summary) dan tabel (table).
+
 ## [1.2.63] - 2026-06-04
 ### Summary
 Menambahkan fitur hapus chat pada workspace dengan konfirmasi modal dan reset riwayat chat.

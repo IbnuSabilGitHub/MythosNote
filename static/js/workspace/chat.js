@@ -74,13 +74,41 @@ document.addEventListener('DOMContentLoaded', () => {
         msgDiv.className = 'w-full max-w-3xl flex flex-col justify-start items-end animate-slide-up';
 // eslint-disable-next-line no-unsanitized/property
         msgDiv.innerHTML = `
-            <div class="max-w-[85%] inline-flex justify-end items-start">
-                <div class="self-stretch pl-4 pr-6 py-4 bg-primary/15 rounded-2xl rounded-tr-md border border-primary/30 inline-flex flex-col justify-start items-start shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
+            <div class="max-w-[85%] inline-flex justify-end items-start relative group/msg">
+                <div class="absolute top-2 left-2 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                    <button type="button" class="btn-copy-msg p-1 rounded-lg bg-neutral-950/60 border border-neutral-800 hover:bg-neutral-800 text-stone-400 hover:text-primary transition cursor-pointer focus:outline-none" title="Salin Pesan">
+                        <iconify-icon icon="tabler:copy" class="text-xs"></iconify-icon>
+                    </button>
+                </div>
+                <div class="self-stretch pl-8 pr-6 py-4 bg-primary/15 rounded-2xl rounded-tr-md border border-primary/30 inline-flex flex-col justify-start items-start shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
                     <div class="text-zinc-200 text-base font-normal font-['Manrope'] leading-6 whitespace-pre-wrap">${escapeHtml(text)}</div>
                 </div>
             </div>
         `;
         messagesContainer.appendChild(msgDiv);
+
+        const copyBtn = msgDiv.querySelector('.btn-copy-msg');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(text).then(() => {
+                    const icon = copyBtn.querySelector('iconify-icon');
+                    if (icon) {
+                        icon.setAttribute('icon', 'tabler:check');
+                        icon.classList.add('text-green-400');
+                        setTimeout(() => {
+                            icon.setAttribute('icon', 'tabler:copy');
+                            icon.classList.remove('text-green-400');
+                        }, 2000);
+                    }
+                    if (window.ToastManager) {
+                        window.ToastManager.success('Pesan disalin ke clipboard.');
+                    }
+                }).catch(err => {
+                    console.error('Failed to copy message:', err);
+                });
+            });
+        }
+
         scrollToBottom();
     }
 
@@ -105,14 +133,42 @@ document.addEventListener('DOMContentLoaded', () => {
                     <img class="h-5 w-5" src="/static/svg/deepseek-logo.svg" alt="DeepSeek AI Logo" />
                 </div>
             </div>
-            <div class="flex-1 px-4 pt-3.5 pb-4 bg-neutral-900/70 rounded-2xl border border-neutral-800 inline-flex flex-col justify-start items-start gap-4">
-                <div class="self-stretch flex flex-col justify-start items-start gap-1.5">
+            <div class="flex-1 px-4 pt-3.5 pb-4 bg-neutral-900/70 rounded-2xl border border-neutral-800 inline-flex flex-col justify-start items-start gap-4 relative group/msg">
+                <div class="absolute top-3 right-3 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                    <button type="button" class="btn-copy-msg p-1.5 rounded-lg bg-neutral-950/60 border border-neutral-800 hover:bg-neutral-800 text-stone-400 hover:text-primary transition cursor-pointer focus:outline-none" title="Salin Markdown">
+                        <iconify-icon icon="tabler:copy" class="text-sm"></iconify-icon>
+                    </button>
+                </div>
+                <div class="self-stretch flex flex-col justify-start items-start gap-1.5 pr-6">
                     <div class="chat-markdown">${renderedMarkdown}</div>
                     ${sourcesHtml}
                 </div>
             </div>
         `;
         messagesContainer.appendChild(msgDiv);
+
+        const copyBtn = msgDiv.querySelector('.btn-copy-msg');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(text).then(() => {
+                    const icon = copyBtn.querySelector('iconify-icon');
+                    if (icon) {
+                        icon.setAttribute('icon', 'tabler:check');
+                        icon.classList.add('text-green-400');
+                        setTimeout(() => {
+                            icon.setAttribute('icon', 'tabler:copy');
+                            icon.classList.remove('text-green-400');
+                        }, 2000);
+                    }
+                    if (window.ToastManager) {
+                        window.ToastManager.success('Pesan disalin ke clipboard.');
+                    }
+                }).catch(err => {
+                    console.error('Failed to copy message:', err);
+                });
+            });
+        }
+
         scrollToBottom();
     }
 

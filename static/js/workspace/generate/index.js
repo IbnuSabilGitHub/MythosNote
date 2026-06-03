@@ -46,6 +46,7 @@ class WorkspaceGenerate {
     this.modalBody = document.getElementById("generate-result-body");
     this.modalTitle = document.getElementById("generate-result-title");
     this.modalSubtitle = document.getElementById("generate-result-subtitle");
+    this.btnCopy = document.getElementById("btn-copy-generate-result");
     this.activeJobId = null;
   }
 
@@ -76,6 +77,37 @@ class WorkspaceGenerate {
     document.getElementById("btn-delete-generate-job")?.addEventListener("click", () => {
       this.deleteActiveJob();
     });
+    if (this.btnCopy) {
+      this.btnCopy.addEventListener("click", () => {
+        if (!this.activeJobId) return;
+        const job = this.jobsById.get(this.activeJobId);
+        if (job && job.result) {
+          navigator.clipboard.writeText(job.result).then(() => {
+            const icon = this.btnCopy.querySelector("iconify-icon");
+            const textSpan = this.btnCopy.querySelector("span");
+            if (icon) {
+              icon.setAttribute("icon", "tabler:check");
+              icon.classList.add("text-green-400");
+            }
+            if (textSpan) {
+              textSpan.textContent = "Tersalin";
+            }
+            setTimeout(() => {
+              if (icon) {
+                icon.setAttribute("icon", "tabler:copy");
+                icon.classList.remove("text-green-400");
+              }
+              if (textSpan) {
+                textSpan.textContent = "Salin";
+              }
+            }, 2000);
+            showToast("Hasil generate berhasil disalin ke clipboard.", "success");
+          }).catch((err) => {
+            console.error("Gagal menyalin hasil generate:", err);
+          });
+        }
+      });
+    }
 
     this.loadJobs();
   }
@@ -218,6 +250,16 @@ class WorkspaceGenerate {
     }
 
     await renderResultBody(this.modalBody, current);
+
+    if (this.btnCopy) {
+      const canCopy = current.status === "success" && current.result && (current.action === "summary" || current.action === "table");
+      if (canCopy) {
+        this.btnCopy.classList.remove("hidden");
+      } else {
+        this.btnCopy.classList.add("hidden");
+      }
+    }
+
     this.modal.classList.remove("hidden");
     this.modal.classList.add("flex");
     document.body.classList.add("overflow-hidden");
@@ -228,6 +270,9 @@ class WorkspaceGenerate {
     this.modal.classList.add("hidden");
     this.modal.classList.remove("flex");
     document.body.classList.remove("overflow-hidden");
+    if (this.btnCopy) {
+      this.btnCopy.classList.add("hidden");
+    }
     this.activeJobId = null;
   }
 
