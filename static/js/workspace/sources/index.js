@@ -57,8 +57,8 @@ import { deleteSource } from "./delete.js";
       return fetchSources.call(this, workspaceId);
     }
 
-    renderSourceList(sources) {
-      return renderSourceList.call(this, sources);
+    renderSourceList(sources, selectionSnapshot = undefined) {
+      return renderSourceList.call(this, sources, selectionSnapshot);
     }
 
     updatePanelSummary(sources) {

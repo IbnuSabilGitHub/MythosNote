@@ -2,6 +2,25 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.2.62] - 2026-05-04
+### Summary
+Perbaikan bug reset pilihan source saat re-fetch (selections hilang setiap poll).
+
+### Fixed
+- Saat `fetchSources()` refresh list, unchecked sources kembali ter-check karena DOM diwipe dan default all-checked.
+
+### Changed
+- `static/js/workspace/sources/list.js`:
+  - Snapshot checked IDs sebelum wipe DOM
+  - `renderSourceList()` sekarang terima `selectionSnapshot` untuk restore pilihan user
+- `static/js/workspace/sources/index.js`: Proxied parameter `selectionSnapshot`
+
+### Notes
+- First render tetap all-checked (default)
+- Re-render akan restore pilihan user yang sudah di-set
+- Sync dengan `WorkspaceSelection.reinit()` dan counter
+
 ## [1.2.61] - 2026-06-03
 ### Summary
 Menambahkan halaman kuis interaktif dengan fitur navigasi soal, progress bar, dan skor akhir.

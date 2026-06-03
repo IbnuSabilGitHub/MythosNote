@@ -1,6 +1,21 @@
 export async function fetchSources(workspaceId = null) {
   try {
     const id = workspaceId || this.workspaceId;
+
+    // Snapshot selection BEFORE showLoadingState wipes the container
+    const existingItems = this.container?.querySelectorAll("[data-source-item]") ?? [];
+    const selectionSnapshot =
+      existingItems.length > 0
+        ? new Set(
+            Array.from(existingItems)
+              .filter((item) => {
+                const cb = item.querySelector("[data-source-checkbox]");
+                return cb && cb.checked && !cb.disabled;
+              })
+              .map((item) => item.dataset.sourceId)
+          )
+        : null; // null → first load, keep defaults
+
     this.showLoadingState();
 
     const response = await fetch(`/api/sources/?workspace_id=${id}`);
@@ -8,14 +23,14 @@ export async function fetchSources(workspaceId = null) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const data = await response.json();
-    this.renderSourceList(data.results || data);
+    this.renderSourceList(data.results || data, selectionSnapshot);
   } catch (error) {
     console.error("Failed to fetch sources:", error);
     this.showErrorState("Gagal memuat sumber. Silakan refresh halaman.");
   }
 }
 
-export function renderSourceList(sources) {
+export function renderSourceList(sources, selectionSnapshot = undefined) {
   if (!this.container) {
     console.warn("Source list container not found");
     return;
@@ -38,14 +53,45 @@ export function renderSourceList(sources) {
     return;
   }
 
+  // ── Determine previous selection ──────────────────────────────────────
+  // Priority: snapshot passed from fetchSources > items still in DOM > null (first render)
+  let previouslyChecked = selectionSnapshot;
+  if (previouslyChecked === undefined) {
+    // Called directly (e.g. after upload modal closes) — read current DOM
+    const existingItems = this.container.querySelectorAll("[data-source-item]");
+    if (existingItems.length > 0) {
+      previouslyChecked = new Set();
+      existingItems.forEach((item) => {
+        const cb = item.querySelector("[data-source-checkbox]");
+        if (cb && cb.checked && !cb.disabled) {
+          previouslyChecked.add(item.dataset.sourceId);
+        }
+      });
+    } else {
+      previouslyChecked = null; // first render
+    }
+  }
+
   // Clear container
- 
   this.container.innerHTML = "";
 
   // Create list items
   const listHTML = sources.map((source) => this.createSourceItemHTML(source)).join("");
 // eslint-disable-next-line no-unsanitized/property
   this.container.innerHTML = listHTML;
+
+  // ── Restore selection state ───────────────────────────────────────────
+  // previouslyChecked === null means first render: keep all-checked defaults.
+  // Otherwise, restore exactly the saved set.
+  if (previouslyChecked !== null) {
+    this.container.querySelectorAll("[data-source-item]").forEach((item) => {
+      const cb = item.querySelector("[data-source-checkbox]");
+      if (!cb || cb.disabled) return;
+      cb.checked = previouslyChecked.has(item.dataset.sourceId);
+    });
+    window.WorkspaceSelection?.reinit?.();
+    window.WorkspaceSelection?.updateCounter?.();
+  }
 
   // Attach event listeners to delete buttons
   this.container.querySelectorAll("[data-delete-source]").forEach((btn) => {
@@ -61,6 +107,7 @@ export function renderSourceList(sources) {
     });
   });
 }
+
 
 export function updatePanelSummary(sources) {
   const total = sources.length;
