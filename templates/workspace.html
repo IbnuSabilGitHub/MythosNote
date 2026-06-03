@@ -159,13 +159,19 @@
                     <div class="justify-center text-zinc-200 text-2xl font-normal font-['Newsreader'] leading-8">
                         Chat</div>
                 </div>
-                <div
-                    class="px-3 py-1 bg-neutral-900/80 rounded-xl outline -outline-offset-1 outline-neutral-800 flex justify-start items-center gap-2">
-                    <div class="w-2 h-2 bg-primary rounded-xl shadow-[0_0_12px_rgba(255,200,128,0.65)]"></div>
-                    <div class="inline-flex flex-col justify-start items-start">
-                        <div id="chat-source-counter"
-                            class="h-5 justify-center text-stone-300 text-xs font-normal font-manrope leading-5">
-                            0 sumber</div>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="btn-delete-chat" title="Hapus Chat"
+                        class="h-8 w-8 rounded-xl bg-neutral-900/80 hover:bg-neutral-800 border border-neutral-800/80 text-stone-400 hover:text-red-400 transition flex justify-center items-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500/40 opacity-50 cursor-not-allowed" disabled>
+                        <iconify-icon icon="tabler:trash" class="text-base"></iconify-icon>
+                    </button>
+                    <div
+                        class="px-3 py-1 bg-neutral-900/80 rounded-xl outline -outline-offset-1 outline-neutral-800 flex justify-start items-center gap-2">
+                        <div class="w-2 h-2 bg-primary rounded-xl shadow-[0_0_12px_rgba(255,200,128,0.65)]"></div>
+                        <div class="inline-flex flex-col justify-start items-start">
+                            <div id="chat-source-counter"
+                                class="h-5 justify-center text-stone-300 text-xs font-normal font-manrope leading-5">
+                                0 sumber</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -423,6 +429,40 @@
         </form>
     </div>
 </div>
+
+<!-- Delete Chat Confirmation Modal -->
+<div id="delete-chat-modal" class="fixed inset-0 z-50 hidden items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="delete-chat-title">
+    <!-- Backdrop -->
+    <div id="delete-chat-backdrop" class="absolute inset-0 bg-neutral-950/80 backdrop-blur-sm"></div>
+    <!-- Panel -->
+    <div class="relative z-10 w-full max-w-md mx-4 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl overflow-hidden">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-neutral-800">
+            <h2 id="delete-chat-title" class="text-zinc-200 text-base font-semibold font-manrope">Hapus Chat</h2>
+            <button id="btn-close-delete-chat-modal" type="button"
+                class="w-7 h-7 flex items-center justify-center rounded-md text-stone-400 hover:text-primary hover:bg-neutral-800 transition focus:outline-none focus:ring-2 focus:ring-primary/40"
+                aria-label="Tutup modal">
+                <iconify-icon icon="tabler:x" class="text-base"></iconify-icon>
+            </button>
+        </div>
+        <!-- Body -->
+        <div class="px-6 py-5 flex flex-col gap-3">
+            <p class="text-sm text-stone-300 font-manrope">Apakah Anda yakin ingin menghapus seluruh riwayat chat di workspace ini dan mereset semuanya? Tindakan ini tidak dapat dibatalkan.</p>
+        </div>
+        <!-- Footer -->
+        <div class="px-6 pb-5 flex items-center gap-3 justify-end">
+            <button type="button" id="btn-cancel-delete-chat"
+                class="px-4 py-2 rounded-lg text-sm font-medium font-manrope text-stone-300 hover:text-zinc-200 hover:bg-neutral-800 transition">
+                Batal
+            </button>
+            <button type="button" id="btn-confirm-delete-chat"
+                class="px-5 py-2 rounded-lg text-sm font-semibold font-manrope bg-red-600/80 text-stone-200 border border-red-800/80 hover:bg-red-600 hover:text-white transition focus:outline-none focus:ring-2 focus:ring-red-500/40">
+                Hapus
+            </button>
+        </div>
+    </div>
+</div>
+
 {% include 'components/table.html' %}
 {% endblock %}
 

@@ -197,22 +197,32 @@ document.addEventListener('DOMContentLoaded', () => {
             chatSubmitBtn.disabled = false;
             isWaitingForResponse = false;
             chatInput.focus();
+            updateDeleteButtonState();
         }
     }
 
     async function loadChatHistory() {
         try {
             const response = await fetch(`/api/workspace/${workspaceId}/chat/sessions/`);
-            if (!response.ok) return;
+            if (!response.ok) {
+                updateDeleteButtonState();
+                return;
+            }
             const sessions = await response.json();
-            if (sessions.length === 0) return;
+            if (sessions.length === 0) {
+                updateDeleteButtonState();
+                return;
+            }
 
             // Load the most recent session
             const activeSession = sessions[0];
             currentSessionId = activeSession.id;
 
             const msgsResponse = await fetch(`/api/chat/session/${currentSessionId}/messages/`);
-            if (!msgsResponse.ok) return;
+            if (!msgsResponse.ok) {
+                updateDeleteButtonState();
+                return;
+            }
             const messages = await msgsResponse.json();
 
  
@@ -229,6 +239,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error("Gagal memuat histori chat:", err);
             renderEmptyState();
+        } finally {
+            updateDeleteButtonState();
         }
     }
 
@@ -268,6 +280,97 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     chatSubmitBtn.addEventListener('click', () => sendMessage());
+
+    // Delete Chat UI Logic
+    const btnDeleteChat = document.getElementById('btn-delete-chat');
+    const deleteChatModal = document.getElementById('delete-chat-modal');
+    const btnConfirmDeleteChat = document.getElementById('btn-confirm-delete-chat');
+    const btnCancelDeleteChat = document.getElementById('btn-cancel-delete-chat');
+    const btnCloseDeleteChatModal = document.getElementById('btn-close-delete-chat-modal');
+    const deleteChatBackdrop = document.getElementById('delete-chat-backdrop');
+
+    function updateDeleteButtonState() {
+        if (btnDeleteChat) {
+            if (!currentSessionId) {
+                btnDeleteChat.disabled = true;
+                btnDeleteChat.classList.add('opacity-50', 'cursor-not-allowed');
+                btnDeleteChat.classList.remove('cursor-pointer');
+            } else {
+                btnDeleteChat.disabled = false;
+                btnDeleteChat.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnDeleteChat.classList.add('cursor-pointer');
+            }
+        }
+    }
+
+    function showDeleteChatModal() {
+        if (deleteChatModal) {
+            deleteChatModal.classList.remove('hidden');
+            deleteChatModal.classList.add('flex');
+        }
+    }
+
+    function hideDeleteChatModal() {
+        if (deleteChatModal) {
+            deleteChatModal.classList.add('hidden');
+            deleteChatModal.classList.remove('flex');
+        }
+    }
+
+    if (btnDeleteChat) {
+        btnDeleteChat.addEventListener('click', () => {
+            if (!currentSessionId) return;
+            showDeleteChatModal();
+        });
+    }
+
+    if (btnCancelDeleteChat) btnCancelDeleteChat.addEventListener('click', hideDeleteChatModal);
+    if (btnCloseDeleteChatModal) btnCloseDeleteChatModal.addEventListener('click', hideDeleteChatModal);
+    if (deleteChatBackdrop) deleteChatBackdrop.addEventListener('click', hideDeleteChatModal);
+
+    if (btnConfirmDeleteChat) {
+        btnConfirmDeleteChat.addEventListener('click', async () => {
+            hideDeleteChatModal();
+            if (isWaitingForResponse) return;
+
+            isWaitingForResponse = true;
+            if (btnDeleteChat) {
+                btnDeleteChat.disabled = true;
+                btnDeleteChat.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+
+            try {
+                const response = await fetch(`/api/workspace/${workspaceId}/chat/messages/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken()
+                    }
+                });
+
+                if (response.ok) {
+                    currentSessionId = null;
+                    messagesContainer.innerHTML = '';
+                    renderEmptyState();
+                    if (window.ToastManager) {
+                        window.ToastManager.success('Riwayat chat berhasil dihapus.');
+                    }
+                } else {
+                    const data = await response.json();
+                    if (window.ToastManager) {
+                        window.ToastManager.error(data.detail || data.message || 'Gagal menghapus chat.');
+                    }
+                }
+            } catch (error) {
+                console.error('Error deleting chat:', error);
+                if (window.ToastManager) {
+                    window.ToastManager.error('Gagal menghubungi server.');
+                }
+            } finally {
+                isWaitingForResponse = false;
+                updateDeleteButtonState();
+            }
+        });
+    }
 
     // Load initial history
     loadChatHistory();

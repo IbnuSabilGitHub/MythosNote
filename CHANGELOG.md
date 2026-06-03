@@ -3,6 +3,20 @@
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+
+## [1.2.63] - 2026-06-04
+### Summary
+Menambahkan fitur hapus chat pada workspace dengan konfirmasi modal dan reset riwayat chat.
+
+### Added
+- `templates/workspace.html`: Modal konfirmasi hapus chat (`delete-chat-modal`) dan tombol tempat sampah (`btn-delete-chat`) pada header chat panel.
+
+### Changed
+- `static/js/workspace/chat.js`:
+  - Logika UI untuk menampilkan modal konfirmasi hapus chat.
+  - Integrasi API `DELETE` ke `/api/workspace/<id>/chat/messages/` untuk menghapus seluruh riwayat chat.
+  - Fungsi `updateDeleteButtonState` untuk menonaktifkan tombol hapus jika tidak ada sesi aktif.
+
 ## [1.2.62] - 2026-05-04
 ### Summary
 Perbaikan bug reset pilihan source saat re-fetch (selections hilang setiap poll).
