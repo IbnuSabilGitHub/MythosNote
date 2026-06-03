@@ -1,4 +1,3 @@
-import { marked } from "marked";
 
 /**
  * Handle workspace chat interactions
