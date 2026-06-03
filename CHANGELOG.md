@@ -2,6 +2,14 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.59] - 2026-06-03
+### Summary
+Menambahkan routing Django untuk halaman mindmap dan kuis.
+
+### Added
+- `apps/generate/urls.py`: path baru untuk `/workspace/quiz/<job_id>/` dan `/workspace/mindmap/<job_id>/`.
+- `apps/generate/views.py`: view `workspace_quiz_view` dan `workspace_mindmap_view` untuk me-render template kuis dan mindmap.
+
 ## [1.2.58] - 2026-06-03
 ### Summary
 Batasi kedalaman mindmap Mermaid di system/user prompt menjadi maksimal 3 tingkat tanpa panah.

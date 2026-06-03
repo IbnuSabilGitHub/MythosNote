@@ -1,7 +1,7 @@
 """API views for workspace generate feature."""
 
 import django_rq
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
+from apps.accounts.decorators import verified_email_required
 from apps.accounts.utils import check_and_increment_generate
 from apps.generate.models import GenerateJob
 from apps.generate.serializers import (
@@ -123,3 +124,15 @@ class GenerateJobDetailView(APIView):
         )
         job.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@verified_email_required
+def workspace_quiz_view(request, job_id):
+    job = get_object_or_404(GenerateJob.objects.filter(user=request.user), id=job_id, action="quiz")
+    return render(request, "generate/quiz.html", {"job": job, "workspace": job.workspace, "show_navbar": False})
+
+
+@verified_email_required
+def workspace_mindmap_view(request, job_id):
+    job = get_object_or_404(GenerateJob.objects.filter(user=request.user), id=job_id, action="mindmap")
+    return render(request, "generate/mindmap.html", {"job": job, "workspace": job.workspace, "show_navbar": False})
