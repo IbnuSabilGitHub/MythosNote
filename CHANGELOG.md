@@ -2,6 +2,13 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.58] - 2026-06-03
+### Summary
+Batasi kedalaman mindmap Mermaid di system/user prompt menjadi maksimal 3 tingkat tanpa panah.
+
+### Changed
+- `apps/generate/prompts.py`: Tambah instruksi tegas batasan kedalaman dan format Mermaid mindmap (tanpa panah, spasi/indentasi wajib).
+
 ## [1.2.57] - 2026-06-03
 ### Summary
 Migrasi frontend ke Native JS (ES Modules) untuk menghilangkan ketergantungan pada bundler Vite.
