@@ -2,6 +2,13 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.61] - 2026-06-03
+### Summary
+Menambahkan halaman kuis interaktif dengan fitur navigasi soal, progress bar, dan skor akhir.
+
+### Added
+- `templates/generate/quiz.html`: Template baru untuk kuis pilihan ganda dengan UI card, efek transisi, evaluasi jawaban instan, dan ringkasan skor/penjelasan.
+
 ## [1.2.60] - 2026-06-03
 ### Summary
 Menambahkan halaman mindmap kustom dengan fitur zoom, pan, fullscreen, dan copy code.
