@@ -2,6 +2,13 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.60] - 2026-06-03
+### Summary
+Menambahkan halaman mindmap kustom dengan fitur zoom, pan, fullscreen, dan copy code.
+
+### Added
+- `templates/generate/mindmap.html`: Template baru dengan fitur interaktif untuk render dan manipulasi Mermaid SVG (zoom in/out, reset, fullscreen, dan tombol copy).
+
 ## [1.2.59] - 2026-06-03
 ### Summary
 Menambahkan routing Django untuk halaman mindmap dan kuis.
