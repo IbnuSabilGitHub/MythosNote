@@ -1,4 +1,3 @@
-import { marked } from "marked";
 import { ACTION_META, STATUS_META } from "./constants.js";
 
 marked.setOptions({ breaks: true });

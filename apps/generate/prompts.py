@@ -54,9 +54,12 @@ def build_messages(action: str, context_text: str, options: dict | None = None) 
         system = (
             "Anda membuat mind map dari dokumen. "
             "Output HANYA kode Mermaid mindmap (baris pertama: mindmap). "
+            "Batasi kedalaman mindmap maksimal 3 tingkat (Root -> Topik -> Detail). "
+            "Larang penggunaan panah (seperti --> atau ->) dalam mindmap. "
+            "Gunakan spasi/indentasi untuk menunjukkan hierarki hubungan secara visual. "
             "Tanpa penjelasan, tanpa fence markdown."
         )
-        user = f"Konteks dokumen:\n\n{context_text}\n\nBuat struktur mindmap Mermaid."
+        user = f"Konteks dokumen:\n\n{context_text}\n\nBuat struktur mindmap Mermaid dengan maksimal 3 tingkat kedalaman, tanpa panah, menggunakan indentasi."
 
     else:
         raise ValueError(f"Unknown action: {action}")

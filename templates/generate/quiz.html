@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Quiz - {{ workspace.name }}{% endblock %}
+
+{% block content %}
+<!-- Hidden data source -->
+<script type="application/json" id="quiz-data">
+  {{ job.result|safe }}
+</script>
+
+<div class="min-h-screen bg-neutral-950 flex flex-col font-manrope selection:bg-primary/30 text-stone-200">
+  
+  <!-- Header -->
+  <header class="flex items-center justify-between px-4 sm:px-8 py-4 bg-neutral-900/50 backdrop-blur-xl border-b border-neutral-800 sticky top-0 z-40">
+    <a href="{% url 'workspace' %}?workspace_id={{ workspace.id }}" class="group flex items-center gap-2 text-sm font-medium text-stone-400 hover:text-zinc-100 transition-colors">
+      <div class="p-1.5 rounded-full bg-neutral-800 group-hover:bg-primary/20 group-hover:text-primary transition-colors">
+        <iconify-icon icon="tabler:arrow-left" class="text-lg"></iconify-icon>
+      </div>
+      <span class="hidden sm:inline">Back to Workspace</span>
+    </a>
+    
+    <div class="flex-1 text-center px-4">
+      <h1 class="text-sm font-bold tracking-wide text-zinc-100 truncate">Quiz: {{ workspace.name }}</h1>
+    </div>
+    
+    <div class="flex items-center gap-3">
+      <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold uppercase shadow-sm">
+        {{ request.user.email|first }}
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 w-full max-w-3xl mx-auto px-4 py-8 md:py-12 flex flex-col relative">
+    
+    <!-- Quiz Container -->
+    <div id="quiz-container" class="w-full flex-1 flex flex-col transition-opacity duration-300">
+      
+      <!-- Progress Section -->
+      <div class="mb-8 w-full">
+        <div class="flex justify-between items-end mb-3">
+          <div class="flex flex-col">
+            <span class="text-xs font-bold text-stone-500 uppercase tracking-widest mb-1">Progress</span>
+            <span id="question-counter" class="text-sm font-semibold text-zinc-300">Question 1 of 5</span>
+          </div>
+          <span id="progress-percentage" class="text-2xl font-black text-primary drop-shadow-[0_0_8px_rgba(var(--color-primary),0.3)]">0%</span>
+        </div>
+        <div class="h-2.5 w-full bg-neutral-800 rounded-full overflow-hidden shadow-inner border border-neutral-700/50">
+          <div id="progress-bar" class="h-full bg-gradient-to-r from-primary to-teal-400 rounded-full transition-all duration-500 ease-out w-0 shadow-[0_0_10px_rgba(var(--color-primary),0.5)]"></div>
+        </div>
+      </div>
+
+      <!-- Question Card -->
+      <div class="bg-neutral-900 border border-neutral-800 rounded-2xl shadow-xl overflow-hidden flex-1 flex flex-col mb-6 relative">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 to-transparent"></div>
+        
+        <div class="p-6 md:p-10 flex-1 flex flex-col">
+          <h2 id="question-text" class="text-lg md:text-xl font-semibold text-zinc-100 mb-8 leading-relaxed">
+            <!-- Question loads here -->
+          </h2>
+          
+          <div id="options-container" class="flex flex-col gap-3 mt-auto">
+            <!-- Options load here -->
+          </div>
+        </div>
+      </div>
+      
+      <!-- Footer Navigation -->
+      <div class="flex items-center justify-between mt-auto">
+        <button id="btn-prev" class="px-6 py-3 rounded-xl font-semibold text-sm bg-neutral-800 text-stone-400 hover:text-zinc-100 hover:bg-neutral-700 transition-all border border-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2">
+          <iconify-icon icon="tabler:chevron-left"></iconify-icon> Previous
+        </button>
+        <button id="btn-next" class="px-8 py-3 rounded-xl font-bold text-sm bg-primary text-neutral-950 hover:bg-primary/90 transition-all shadow-[0_0_15px_rgba(var(--color-primary),0.3)] hover:shadow-[0_0_25px_rgba(var(--color-primary),0.5)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+          Next <iconify-icon icon="tabler:chevron-right"></iconify-icon>
+        </button>
+        <button id="btn-submit" class="hidden px-8 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-green-500 to-emerald-400 text-neutral-950 hover:from-green-400 hover:to-emerald-300 transition-all shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:shadow-[0_0_25px_rgba(34,197,94,0.5)] flex items-center gap-2">
+          Submit Quiz <iconify-icon icon="tabler:check"></iconify-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Result Container (Hidden initially) -->
+    <div id="result-container" class="hidden w-full flex-1 flex-col items-center justify-center animate-fade-in py-8">
+      <div class="w-24 h-24 mb-6 rounded-full bg-gradient-to-tr from-primary to-teal-400 p-1 shadow-[0_0_30px_rgba(var(--color-primary),0.4)]">
+        <div class="w-full h-full bg-neutral-900 rounded-full flex items-center justify-center">
+          <iconify-icon icon="tabler:award" class="text-4xl text-primary"></iconify-icon>
+        </div>
+      </div>
+      
+      <h2 class="text-3xl font-black text-zinc-100 mb-2">Quiz Completed!</h2>
+      <p class="text-stone-400 mb-8">You scored <span id="final-score" class="text-primary font-bold text-xl"></span> out of <span id="total-questions" class="text-zinc-200 font-bold"></span></p>
+      
+      <div class="w-full bg-neutral-900 border border-neutral-800 rounded-2xl shadow-xl overflow-hidden mb-8">
+        <div class="p-4 border-b border-neutral-800 bg-neutral-900/50">
+          <h3 class="font-bold text-zinc-200">Review Answers</h3>
+        </div>
+        <div id="review-container" class="divide-y divide-neutral-800/50 max-h-[60vh] overflow-y-auto p-2">
+          <!-- Review items load here -->
+        </div>
+      </div>
+      
+      <a href="{% url 'workspace' %}?workspace_id={{ workspace.id }}" class="px-8 py-3 rounded-xl font-bold text-sm bg-neutral-800 text-zinc-200 hover:bg-neutral-700 transition-all border border-neutral-700 shadow-sm flex items-center gap-2">
+        <iconify-icon icon="tabler:home"></iconify-icon> Back to Workspace
+      </a>
+    </div>
+    
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+  .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  
+  .option-btn {
+    position: relative;
+    overflow: hidden;
+  }
+  .option-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; w: 100%; height: 100%;
+    background: currentColor;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .option-btn:hover::before { opacity: 0.05; }
+  .option-btn:active::before { opacity: 0.1; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  let quizData = { questions: [] };
+  
+  try {
+    const rawData = document.getElementById('quiz-data').textContent.trim();
+    // Sometimes the LLM wraps JSON in markdown blocks even if instructed not to.
+    let cleanData = rawData;
+    if (cleanData.startsWith('```json')) {
+      cleanData = cleanData.replace(/^```json/, '').replace(/```$/, '').trim();
+    } else if (cleanData.startsWith('```')) {
+      cleanData = cleanData.replace(/^```/, '').replace(/```$/, '').trim();
+    }
+    quizData = JSON.parse(cleanData);
+  } catch (err) {
+    console.error("Failed to parse quiz JSON:", err);
+    document.getElementById('question-text').innerHTML = `<span class="text-red-400">Failed to load quiz data. Invalid format from AI.</span>`;
+    return;
+  }
+
+  const questions = quizData.questions || [];
+  if (questions.length === 0) {
+    document.getElementById('question-text').textContent = "No questions generated.";
+    return;
+  }
+
+  // State
+  let currentIndex = 0;
+  const userAnswers = new Array(questions.length).fill(null);
+  
+  // DOM Elements
+  const container = document.getElementById('quiz-container');
+  const resultContainer = document.getElementById('result-container');
+  const progressText = document.getElementById('question-counter');
+  const progressPercent = document.getElementById('progress-percentage');
+  const progressBar = document.getElementById('progress-bar');
+  const questionText = document.getElementById('question-text');
+  const optionsContainer = document.getElementById('options-container');
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  const btnSubmit = document.getElementById('btn-submit');
+
+  function renderQuestion(index) {
+    const q = questions[index];
+    
+    // Update Progress
+    const pct = Math.round(((index) / questions.length) * 100);
+    progressText.textContent = `Question ${index + 1} of ${questions.length}`;
+    progressPercent.textContent = `${pct}%`;
+    progressBar.style.width = `${pct}%`;
+    
+    // Update Question
+    questionText.textContent = q.question;
+    
+    // Update Options
+    optionsContainer.innerHTML = '';
+    const prefixes = ['A', 'B', 'C', 'D'];
+    
+    (q.options || []).forEach((opt, i) => {
+      const isSelected = userAnswers[index] === opt;
+      
+      const btn = document.createElement('button');
+      btn.className = `option-btn w-full text-left p-4 rounded-xl border-2 transition-all flex items-start gap-4 focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+        isSelected 
+          ? 'border-primary bg-primary/10 text-primary shadow-[0_0_15px_rgba(var(--color-primary),0.15)]' 
+          : 'border-neutral-800 bg-neutral-900 hover:border-neutral-600 text-stone-300'
+      }`;
+      
+      const prefixSpan = document.createElement('span');
+      prefixSpan.className = `shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
+        isSelected ? 'bg-primary text-neutral-950' : 'bg-neutral-800 text-stone-400'
+      }`;
+      prefixSpan.textContent = prefixes[i] || String.fromCharCode(65+i);
+      
+      const textSpan = document.createElement('span');
+      textSpan.className = 'pt-1.5 font-medium leading-relaxed';
+      
+      // Remove prefix from option text if LLM included it (e.g., "A. Option")
+      let cleanOptText = opt;
+      const match = cleanOptText.match(/^[A-D][\.\)]\s*(.*)/);
+      if (match) {
+        cleanOptText = match[1];
+      }
+      textSpan.textContent = cleanOptText;
+      
+      btn.appendChild(prefixSpan);
+      btn.appendChild(textSpan);
+      
+      btn.addEventListener('click', () => {
+        userAnswers[index] = opt;
+        renderQuestion(currentIndex); // Re-render to show selection
+      });
+      
+      optionsContainer.appendChild(btn);
+    });
+    
+    // Update Buttons
+    btnPrev.disabled = index === 0;
+    
+    if (index === questions.length - 1) {
+      btnNext.classList.add('hidden');
+      btnSubmit.classList.remove('hidden');
+      btnSubmit.disabled = userAnswers[index] === null;
+    } else {
+      btnNext.classList.remove('hidden');
+      btnSubmit.classList.add('hidden');
+      btnNext.disabled = userAnswers[index] === null;
+    }
+  }
+
+  btnPrev.addEventListener('click', () => {
+    if (currentIndex > 0) {
+      currentIndex--;
+      renderQuestion(currentIndex);
+    }
+  });
+
+  btnNext.addEventListener('click', () => {
+    if (currentIndex < questions.length - 1) {
+      currentIndex++;
+      renderQuestion(currentIndex);
+    }
+  });
+
+  btnSubmit.addEventListener('click', async () => {
+    // Show 100% progress momentarily
+    progressPercent.textContent = `100%`;
+    progressBar.style.width = `100%`;
+    
+    // Optional: Send data to API in background if needed
+    try {
+      if (window.MythosApi && typeof window.MythosApi.apiFetch === 'function') {
+         // Placeholder for future DB save
+         // await window.MythosApi.apiFetch(`/api/generate/{{ job.id }}/submit/`, { method: 'POST', body: { answers: userAnswers } });
+      }
+    } catch(e) { console.warn(e); }
+
+    setTimeout(() => {
+      showResults();
+    }, 400);
+  });
+
+  function showResults() {
+    container.classList.add('hidden');
+    resultContainer.classList.remove('hidden');
+    
+    let score = 0;
+    const reviewContainer = document.getElementById('review-container');
+    reviewContainer.innerHTML = '';
+    
+    questions.forEach((q, i) => {
+      const userAns = userAnswers[i];
+      // LLM answer might be just 'A' or the full text. We do a loose check.
+      const isCorrect = typeof q.answer === 'string' && 
+                        (userAns.startsWith(q.answer) || q.answer.startsWith(userAns.charAt(0)));
+      
+      if (isCorrect) score++;
+      
+      const item = document.createElement('div');
+      item.className = 'p-5 flex flex-col gap-3';
+      
+      item.innerHTML = `
+        <div class="flex items-start gap-3">
+          <div class="mt-0.5 w-6 h-6 rounded-full shrink-0 flex items-center justify-center ${isCorrect ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
+            <iconify-icon icon="${isCorrect ? 'tabler:check' : 'tabler:x'}"></iconify-icon>
+          </div>
+          <div>
+            <h4 class="text-sm font-semibold text-zinc-200 leading-snug mb-2">${i+1}. ${q.question}</h4>
+            <div class="text-xs space-y-1.5">
+              <p class="text-stone-400"><span class="font-medium text-stone-500">Your Answer:</span> <span class="${isCorrect ? 'text-green-400' : 'text-red-400'}">${userAns || '-'}</span></p>
+              ${!isCorrect ? `<p class="text-stone-400"><span class="font-medium text-stone-500">Correct Answer:</span> <span class="text-green-400">${q.answer}</span></p>` : ''}
+            </div>
+            ${q.explanation ? `
+            <div class="mt-3 p-3 bg-neutral-800/50 rounded-lg border border-neutral-700/50 text-xs text-stone-300 leading-relaxed">
+              <span class="font-semibold text-primary block mb-1">Explanation:</span>
+              ${q.explanation}
+            </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+      reviewContainer.appendChild(item);
+    });
+    
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('total-questions').textContent = questions.length;
+  }
+
+  // Init
+  renderQuestion(0);
+});
+</script>
+{% endblock %}

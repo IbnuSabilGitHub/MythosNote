@@ -2,6 +2,35 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.61] - 2026-06-03
+### Summary
+Menambahkan halaman kuis interaktif dengan fitur navigasi soal, progress bar, dan skor akhir.
+
+### Added
+- `templates/generate/quiz.html`: Template baru untuk kuis pilihan ganda dengan UI card, efek transisi, evaluasi jawaban instan, dan ringkasan skor/penjelasan.
+
+## [1.2.60] - 2026-06-03
+### Summary
+Menambahkan halaman mindmap kustom dengan fitur zoom, pan, fullscreen, dan copy code.
+
+### Added
+- `templates/generate/mindmap.html`: Template baru dengan fitur interaktif untuk render dan manipulasi Mermaid SVG (zoom in/out, reset, fullscreen, dan tombol copy).
+
+## [1.2.59] - 2026-06-03
+### Summary
+Menambahkan routing Django untuk halaman mindmap dan kuis.
+
+### Added
+- `apps/generate/urls.py`: path baru untuk `/workspace/quiz/<job_id>/` dan `/workspace/mindmap/<job_id>/`.
+- `apps/generate/views.py`: view `workspace_quiz_view` dan `workspace_mindmap_view` untuk me-render template kuis dan mindmap.
+
+## [1.2.58] - 2026-06-03
+### Summary
+Batasi kedalaman mindmap Mermaid di system/user prompt menjadi maksimal 3 tingkat tanpa panah.
+
+### Changed
+- `apps/generate/prompts.py`: Tambah instruksi tegas batasan kedalaman dan format Mermaid mindmap (tanpa panah, spasi/indentasi wajib).
+
 ## [1.2.57] - 2026-06-03
 ### Summary
 Migrasi frontend ke Native JS (ES Modules) untuk menghilangkan ketergantungan pada bundler Vite.
