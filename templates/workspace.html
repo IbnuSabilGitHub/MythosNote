@@ -29,6 +29,70 @@
             </div>
         </div>
         <div class="flex justify-start items-center gap-2">
+            <!-- Quota Badge -->
+            <div class="relative">
+                <button id="quota-badge-btn" type="button" title="Sisa kuota harian"
+                    class="hidden h-8 px-2.5 items-center gap-1.5 rounded-xl bg-neutral-900/80 border border-neutral-800/80 text-stone-400 hover:text-primary hover:border-primary/40 transition focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer text-xs font-manrope font-medium"
+                    aria-haspopup="true" aria-expanded="false">
+                    <iconify-icon icon="tabler:bolt" class="text-sm" id="quota-badge-icon"></iconify-icon>
+                    <span id="quota-badge-label">–</span>
+                </button>
+                <!-- Quota Popover -->
+                <div id="quota-popover"
+                    class="hidden absolute right-0 top-10 z-50 w-64 rounded-2xl border border-neutral-800 bg-neutral-900 shadow-2xl shadow-black/40 overflow-hidden"
+                    role="dialog" aria-label="Detail kuota AI">
+                    <div class="px-4 pt-4 pb-3 border-b border-neutral-800/70">
+                        <p class="font-manrope text-xs font-semibold text-zinc-200">Kuota AI Harian</p>
+                        <p class="font-manrope text-[11px] text-stone-500 mt-0.5">Reset tengah malam</p>
+                    </div>
+                    <div class="px-4 py-3 flex flex-col gap-3">
+                        <!-- Chat -->
+                        <div class="flex flex-col gap-1.5">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-1.5">
+                                    <iconify-icon icon="tabler:message-circle" class="text-stone-500 text-sm"></iconify-icon>
+                                    <span class="font-manrope text-xs text-stone-300">Chat</span>
+                                </div>
+                                <span id="quota-prompt-label" class="font-manrope text-xs font-semibold text-stone-400">–/–</span>
+                            </div>
+                            <div class="h-1.5 w-full rounded-full bg-neutral-800 overflow-hidden">
+                                <div id="quota-prompt-bar" class="h-full rounded-full transition-all duration-500 bg-primary" style="width:0%"></div>
+                            </div>
+                        </div>
+                        <!-- Generate -->
+                        <div class="flex flex-col gap-1.5">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-1.5">
+                                    <iconify-icon icon="tabler:sparkles" class="text-stone-500 text-sm"></iconify-icon>
+                                    <span class="font-manrope text-xs text-stone-300">Generate</span>
+                                </div>
+                                <span id="quota-generate-label" class="font-manrope text-xs font-semibold text-stone-400">–/–</span>
+                            </div>
+                            <div class="h-1.5 w-full rounded-full bg-neutral-800 overflow-hidden">
+                                <div id="quota-generate-bar" class="h-full rounded-full transition-all duration-500 bg-primary" style="width:0%"></div>
+                            </div>
+                        </div>
+                        <!-- Upload -->
+                        <div class="flex flex-col gap-1.5">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-1.5">
+                                    <iconify-icon icon="tabler:upload" class="text-stone-500 text-sm"></iconify-icon>
+                                    <span class="font-manrope text-xs text-stone-300">Upload</span>
+                                </div>
+                                <span id="quota-upload-label" class="font-manrope text-xs font-semibold text-stone-400">–/–</span>
+                            </div>
+                            <div class="h-1.5 w-full rounded-full bg-neutral-800 overflow-hidden">
+                                <div id="quota-upload-bar" class="h-full rounded-full transition-all duration-500 bg-primary" style="width:0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-4 pb-3 pt-1 border-t border-neutral-800/70">
+                        <a href="{% url 'project' %}" class="font-manrope text-[11px] text-primary hover:text-primary/80 transition">
+                            Lihat di Project Dashboard →
+                        </a>
+                    </div>
+                </div>
+            </div>
             <div class="relative">
                 <button id="workspaceUserMenuButton" data-dropdown-toggle="workspaceUserDropdown"
                     data-dropdown-placement="bottom-end"

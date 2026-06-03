@@ -5,6 +5,24 @@ Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a 
 
 
 
+## [1.2.65] - 2026-06-04
+### Summary
+Menambahkan fitur monitor penggunaan dan limit kuota AI harian agar user dapat memantau sisa kuota chat, generate, dan upload beserta kapan kuota akan direset.
+
+### Added
+- `apps/accounts/api.py`: Endpoint baru `GET /api/quota/` (`QuotaStatusView`) yang mengembalikan status kuota harian user dalam format JSON (used, limit, remaining, pct untuk tiap tipe + reset_at).
+- `static/js/workspace/quota.js`: Modul JS baru untuk fetch kuota, render badge kompak di header workspace, dan popover detail dengan tiga mini-progress bar (chat, generate, upload). Badge warna dinamis: hijau/kuning/merah sesuai tingkat penggunaan.
+
+### Changed
+- `apps/accounts/utils.py`: Tambah fungsi `get_user_quota_status()` yang mengambil data `UserUsage` hari ini dan menghitung persentase pemakaian untuk tiap kuota.
+- `apps/accounts/urls.py`: Tambah route `api/quota/` ke `QuotaStatusView`.
+- `config/views.py`: Inject `ai_quota` dari `get_user_quota_status()` ke context `_render_project()`.
+- `templates/project.html`: Tambah widget kartu kuota AI harian dengan tiga progress bar berwarna dinamis dan badge status (Aman/Waspada/Hampir Habis).
+- `templates/workspace.html`: Tambah quota badge kompak (ikon bolt + sisa chat) di header kanan workspace, klik membuka popover detail tiga kuota.
+- `static/js/workspace/chat.js`: Dispatch `CustomEvent('quotaUsed')` setelah pesan chat berhasil terkirim untuk refresh badge secara real-time.
+- `static/js/workspace/generate/index.js`: Dispatch `CustomEvent('quotaUsed')` setelah generate job berhasil dibuat.
+- `static/js/entries/workspace.js`: Tambah import `quota.js`.
+
 ## [1.2.64] - 2026-06-04
 ### Summary
 Menambahkan fitur salin (copy) pada pesan chat (user/bot) dan hasil generate (ringkasan dan tabel) dalam bentuk raw markdown.

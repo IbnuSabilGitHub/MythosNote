@@ -183,6 +183,7 @@ class WorkspaceGenerate {
       };
       this.upsertJob(fullJob);
       this.startPolling(job.id);
+      document.dispatchEvent(new CustomEvent('quotaUsed'));
       showToast(`${ACTION_META[action]?.label || action} dimulai.`, "success");
     } catch (err) {
       showToast(err.message || "Gagal memulai generate.", "error");

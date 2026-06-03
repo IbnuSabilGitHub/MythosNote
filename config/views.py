@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from apps.accounts.decorators import verified_email_required
+from apps.accounts.utils import get_user_quota_status
 from apps.workspaces.models import Workspace
 from apps.workspaces.utils import (
     WORKSPACE_LIMIT,
@@ -59,6 +60,7 @@ def project(request: HttpRequest) -> HttpResponse:
 
 def _render_project(request: HttpRequest, *, status_code: int = 200) -> HttpResponse:
     workspace_quota = get_workspace_quota(request.user)
+    ai_quota = get_user_quota_status(request.user, request)
 
     workspaces = (
         Workspace.objects.filter(user=request.user)
@@ -72,6 +74,7 @@ def _render_project(request: HttpRequest, *, status_code: int = 200) -> HttpResp
         {
             "workspaces": workspaces,
             "workspace_quota": workspace_quota,
+            "ai_quota": ai_quota,
             "workspace_name_max_length": WORKSPACE_NAME_MAX_LENGTH,
         },
         status=status_code,

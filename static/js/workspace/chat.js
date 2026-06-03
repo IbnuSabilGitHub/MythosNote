@@ -243,6 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 currentSessionId = data.session_id;
                 renderBotMessage(data.response, data.sources);
+                document.dispatchEvent(new CustomEvent('quotaUsed'));
             } else {
                 renderBotMessage(`Error: ${data.detail || data.message || 'Terjadi kesalahan'}`);
             }

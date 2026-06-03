@@ -3,6 +3,7 @@
 from django.urls import path
 
 from . import views
+from .api import QuotaStatusView
 
 
 urlpatterns = [
@@ -15,4 +16,6 @@ urlpatterns = [
     path("resend-verification/", views.resend_verification, name="resend_verification"),
     path("verify-email/<uidb64>/<token>/", views.verify_email, name="verify_email"),
     path("logout/", views.sign_out, name="logout"),
+    path("api/quota/", QuotaStatusView.as_view(), name="quota-status"),
 ]
+

@@ -424,3 +424,47 @@ def check_and_increment_upload(user: Any, request: HttpRequest) -> bool:
         locked_usage.upload_count = F("upload_count") + 1
         locked_usage.save(update_fields=["upload_count"])
         return True
+
+
+def get_user_quota_status(user: Any, request: HttpRequest) -> dict:
+    """Ambil status kuota harian pengguna saat ini."""
+    from datetime import datetime, time, timedelta
+
+    today = timezone.localdate()
+    identifier = user.email if hasattr(user, 'email') else f"anon|{get_client_ip(request) or 'unknown'}"
+
+    try:
+        usage = UserUsage.objects.get(
+            user=user if user.is_authenticated else None,
+            identifier=identifier,
+            date=today,
+        )
+        prompt_used = usage.prompt_count
+        generate_used = usage.generate_count
+        upload_used = usage.upload_count
+    except UserUsage.DoesNotExist:
+        prompt_used = 0
+        generate_used = 0
+        upload_used = 0
+
+    prompt_limit = settings.AI_DAILY_PROMPT_LIMIT
+    generate_limit = settings.AI_DAILY_GENERATE_LIMIT
+    upload_limit = settings.AI_DAILY_UPLOAD_LIMIT
+
+    # Reset terjadi saat pergantian hari (midnight lokal)
+    tomorrow = today + timedelta(days=1)
+    reset_at = timezone.make_aware(datetime.combine(tomorrow, time.min))
+
+    def _quota(used, limit):
+        remaining = max(limit - used, 0)
+        pct = round((used / limit) * 100) if limit > 0 else 0
+        return {"used": used, "limit": limit, "remaining": remaining, "pct": pct}
+
+    return {
+        "date": today.isoformat(),
+        "reset_at": reset_at.isoformat(),
+        "prompt": _quota(prompt_used, prompt_limit),
+        "generate": _quota(generate_used, generate_limit),
+        "upload": _quota(upload_used, upload_limit),
+    }
+
