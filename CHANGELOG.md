@@ -2,6 +2,14 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.57] - 2026-06-03
+### Summary
+Migrasi frontend ke Native JS (ES Modules) untuk menghilangkan ketergantungan pada bundler Vite.
+
+### Changed
+- `templates/project.html` & `templates/workspace.html`: Muat script Native JS (`js/project.js` & `js/entries/workspace.js`) secara langsung alih-alih bundle dari `dist`.
+- `package.json`: Hapus task `dev:js` dan `build:js` serta hilangkan kompilasi JavaScript dari task `build`.
+
 ## [1.2.56] - 2026-06-03
 ### Summary
 Implementasi Fase 4 (Kualitas & DX): Setup Linter, Vitest, perbaikan A11y, debounce polling, dan konsolidasi CSS font.

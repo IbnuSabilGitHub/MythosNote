@@ -7,10 +7,8 @@
   "scripts": {
     "build:css": "./node_modules/.bin/tailwindcss -i ./static/css/input.css -o ./static/css/output.css",
     "watch:css": "./node_modules/.bin/tailwindcss -i ./static/css/input.css -o ./static/css/output.css --watch",
-    "dev:js": "vite build --watch",
-    "build:js": "vite build",
     "dev": "npm run watch:css",
-    "build": "npm run build:css && npm run build:js"
+    "build": "npm run build:css"
   },
   "keywords": [
     "ai",
