@@ -2,7 +2,9 @@ FROM node:20-bookworm-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_BREAK_SYSTEM_PACKAGES=1
+    PIP_BREAK_SYSTEM_PACKAGES=1 \
+    PIP_DEFAULT_TIMEOUT=120 \
+    PIP_RETRIES=10
 
 WORKDIR /app
 
@@ -17,9 +19,9 @@ RUN apt-get update \
 
 COPY requirements.txt package.json package-lock.json ./
 
-RUN python3 -m pip install --no-cache-dir --upgrade pip \
-    && python3 -m pip install --no-cache-dir -r requirements.txt \
-    && npm ci
+RUN python3 -m pip install --no-cache-dir -r requirements.txt
+
+RUN npm ci
 
 COPY . .
 
