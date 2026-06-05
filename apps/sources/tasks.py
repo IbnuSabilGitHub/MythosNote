@@ -283,26 +283,28 @@ def process_source(source_id: str) -> None:
             raise ValueError("Tidak ada chunks yang dihasilkan dari teks")
 
         total_chunks = len(chunks)
-        processed_chunks = 0
+        # Fetch all embeddings in a single batch request
+        embeddings = EmbeddingProvider.get_embeddings(chunks)
 
+        chunk_objects = []
         for idx, chunk_text_content in enumerate(chunks):
-            embedding = EmbeddingProvider.get_embedding(chunk_text_content)
-
-            SourceChunk.objects.create(
-                source=source,
-                chunk_index=idx,
-                text_content=chunk_text_content,
-                token_count=count_tokens_approx(chunk_text_content),
-                embedding=embedding,
-                metadata={'status': 'ready'},
+            chunk_objects.append(
+                SourceChunk(
+                    source=source,
+                    chunk_index=idx,
+                    text_content=chunk_text_content,
+                    token_count=count_tokens_approx(chunk_text_content),
+                    embedding=embeddings[idx],
+                    metadata={'status': 'ready'},
+                )
             )
 
-            processed_chunks += 1
-            progress_percentage = int((processed_chunks / total_chunks) * 100)
-            Source.objects.filter(id=source.id, status='processing').update(
-                progress=progress_percentage,
-                updated_at=timezone.now(),
-            )
+        SourceChunk.objects.bulk_create(chunk_objects)
+
+        Source.objects.filter(id=source.id, status='processing').update(
+            progress=100,
+            updated_at=timezone.now(),
+        )
 
         with transaction.atomic():
             source = Source.objects.select_for_update().get(id=source_id)

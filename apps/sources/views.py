@@ -339,6 +339,8 @@ class ChatView(APIView):
         try:
             query_embedding = EmbeddingProvider.get_embedding(user_question)
         except Exception:
+            import traceback
+            traceback.print_exc()
             return Response(
                 {"detail": self.EMBEDDING_ERROR_MESSAGE},
                 status=status.HTTP_502_BAD_GATEWAY,
@@ -436,6 +438,8 @@ class ChatView(APIView):
                 messages=messages,
             )
         except Exception:
+            import traceback
+            traceback.print_exc()
             return Response(
                 {"detail": self.LLM_ERROR_MESSAGE},
                 status=status.HTTP_502_BAD_GATEWAY,

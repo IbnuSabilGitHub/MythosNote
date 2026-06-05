@@ -9,6 +9,7 @@ from django.conf import settings
 
 
 # Embedding Providers
+# Embedding Providers
 class BaseEmbeddingProvider(ABC):
     """Abstract base for text embedding backends.
     
@@ -23,6 +24,10 @@ class BaseEmbeddingProvider(ABC):
         
         Output vector length must match pgvector dimension.
         """
+
+    def get_embeddings(self, texts: list[str]) -> list[list[float]]:
+        """Return list of embedding vectors for the given list of texts."""
+        return [self.get_embedding(text) for text in texts]
 
 
 # OpenAI embedding provider removed. Default is Gemini.
@@ -66,6 +71,30 @@ class GeminiEmbeddingProvider(BaseEmbeddingProvider):
                 delay *= 2.0  # Exponential backoff
         raise ConnectionError("Failed to get embedding from Gemini after multiple retries.")
 
+    def get_embeddings(self, texts: list[str]) -> list[list[float]]:
+        """Return list of embedding vectors in a single batch request with exponential backoff."""
+        if not texts:
+            return []
+        retries = 3
+        delay = 1.0  # seconds
+        for i in range(retries):
+            try:
+                response = self._client.models.embed_content(
+                    model=self.model_name,
+                    contents=texts,
+                    config=types.EmbedContentConfig(
+                        task_type="RETRIEVAL_DOCUMENT",
+                        output_dimensionality=self.output_dimensionality,
+                    ),
+                )
+                return [list(emb.values) for emb in response.embeddings]
+            except exceptions.GoogleAPICallError as e:
+                if i == retries - 1:
+                    raise  # Re-raise the last exception
+                time.sleep(delay)
+                delay *= 2.0  # Exponential backoff
+        raise ConnectionError("Failed to get embeddings from Gemini after multiple retries.")
+
 
 class LocalEmbeddingProvider(BaseEmbeddingProvider):
     """Local/on-device embedding provider (placeholder).
@@ -78,6 +107,10 @@ class LocalEmbeddingProvider(BaseEmbeddingProvider):
         raise NotImplementedError("LocalEmbeddingProvider is not yet implemented.")
 
     def get_embedding(self, text: str) -> list[float]:
+        """Not implemented."""
+        raise NotImplementedError("LocalEmbeddingProvider is not yet implemented.")
+
+    def get_embeddings(self, texts: list[str]) -> list[list[float]]:
         """Not implemented."""
         raise NotImplementedError("LocalEmbeddingProvider is not yet implemented.")
 
@@ -103,6 +136,11 @@ class _DefaultEmbeddingProvider(BaseEmbeddingProvider):
         if self._delegate is None:
             self._delegate = _create_embedding_provider()
         return self._delegate.get_embedding(text)
+
+    def get_embeddings(self, texts: list[str]) -> list[list[float]]:
+        if self._delegate is None:
+            self._delegate = _create_embedding_provider()
+        return self._delegate.get_embeddings(texts)
 
 
 EmbeddingProvider: BaseEmbeddingProvider = _DefaultEmbeddingProvider()

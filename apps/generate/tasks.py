@@ -50,7 +50,7 @@ def process_generate_job(job_id: str) -> None:
                 job.error_message = str(exc)[:500]
                 job.save(update_fields=["status", "error_message", "updated_at"])
 
-    except Exception:
+    except Exception as exc:
         error_traceback = traceback.format_exc()
         print(f"ERROR processing generate job {job_id}: {error_traceback}")
 
@@ -58,8 +58,16 @@ def process_generate_job(job_id: str) -> None:
             with transaction.atomic():
                 job = GenerateJob.objects.select_for_update().get(id=job.id)
                 job.status = "failed"
-                short_error = error_traceback[:500] if error_traceback else (
-                    "Terjadi kesalahan saat memproses."
-                )
-                job.error_message = short_error
+                
+                exc_str = str(exc)
+                if "503" in exc_str or "experiencing high demand" in exc_str.lower() or "429" in exc_str or "quota" in exc_str.lower():
+                    user_msg = "Layanan sedang padat. Silakan coba beberapa saat lagi."
+                elif "timeout" in exc_str.lower() or "deadline" in exc_str.lower():
+                    user_msg = "Koneksi terputus. Silakan coba lagi."
+                elif "403" in exc_str or "api key" in exc_str.lower() or "500" in exc_str:
+                    user_msg = "Terjadi gangguan sistem."
+                else:
+                    user_msg = "Terjadi kesalahan saat memproses data."
+                
+                job.error_message = user_msg[:500]
                 job.save(update_fields=["status", "error_message", "updated_at"])
