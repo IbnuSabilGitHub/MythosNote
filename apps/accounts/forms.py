@@ -101,3 +101,20 @@ class PasswordResetConfirmForm(SetPasswordForm):
         if password and self.user.check_password(password):
             raise forms.ValidationError("Password baru tidak boleh sama dengan password lama.")
         return password
+
+
+class ProfileUpdateForm(forms.ModelForm):
+    """Form untuk memperbarui profil user."""
+
+    first_name = forms.CharField(
+        max_length=150,
+        required=True,
+        widget=forms.TextInput(attrs={
+            "class": "block w-full rounded-lg border border-neutral-800 bg-neutral-950 px-4 py-2.5 font-manrope text-sm text-zinc-100 placeholder-stone-600 focus:border-primary focus:outline-none",
+            "placeholder": "Nama Lengkap Anda"
+        })
+    )
+
+    class Meta:
+        model = User
+        fields = ["first_name"]

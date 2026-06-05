@@ -53,7 +53,7 @@
           </div>
           <div>
             <h2 class="font-manrope text-sm font-semibold text-zinc-200">Penggunaan AI Harian</h2>
-            <p class="font-manrope text-xs text-stone-500 mt-0.5">Reset setiap tengah malam</p>
+            <p id="quota-reset-text" data-reset-at="{{ ai_quota.reset_at }}" class="font-manrope text-xs text-stone-500 mt-0.5">Reset setiap tengah malam</p>
           </div>
         </div>
         {% if ai_quota.prompt.pct >= 90 or ai_quota.generate.pct >= 90 or ai_quota.upload.pct >= 90 %}

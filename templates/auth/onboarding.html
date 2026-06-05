@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Selamat Datang - MythosNote{% endblock %}
+
+{% block content %}
+<div class="flex min-h-screen w-full items-center justify-center bg-neutral-950 px-6 py-12">
+    <div class="flex w-full max-w-md flex-col items-center justify-start gap-8 text-center">
+        <!-- Interactive Avatar Preview -->
+        <div class="flex justify-center w-full">
+            <div id="avatarPreview" class="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary-container text-3xl font-bold text-on-primary-container border border-neutral-800 shadow-xl">
+                U
+            </div>
+        </div>
+
+        <!-- Header -->
+        <div class="flex flex-col gap-2">
+            <h1 class="font-newsreader text-3xl font-normal text-zinc-100 tracking-tight">Sesuaikan profil Anda</h1>
+            <p class="font-manrope text-sm text-stone-500">Nama ini akan digunakan untuk menyapa Anda di MythosNote.</p>
+        </div>
+
+        <!-- Form -->
+        <form method="post" action="{% url 'onboarding' %}" class="flex w-full flex-col gap-6">
+            {% csrf_token %}
+
+            <div class="flex flex-col items-start gap-2 text-left">
+                <label for="first_name" class="font-manrope text-xs font-semibold uppercase tracking-wider text-stone-400">NAMA ANDA</label>
+                <input type="text" id="first_name" name="first_name" required autofocus placeholder="Masukkan nama panggilan / lengkap"
+                    class="block w-full rounded-lg border border-neutral-800 bg-neutral-900/60 px-4 py-3 font-manrope text-sm text-zinc-100 placeholder-stone-600 focus:border-primary focus:outline-none transition-all duration-200">
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" id="submitBtn" disabled class="flex w-full items-center justify-center rounded-lg bg-primary px-5 py-3 font-manrope text-sm font-semibold text-neutral-950 transition hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed">
+                Lanjutkan
+                <iconify-icon icon="tabler:arrow-narrow-right" class="ml-2 text-lg"></iconify-icon>
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const nameInput = document.getElementById('first_name');
+        const avatarPreview = document.getElementById('avatarPreview');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function updateFormState() {
+            const val = nameInput.value.trim();
+            if (val) {
+                avatarPreview.textContent = val.charAt(0).toUpperCase();
+                submitBtn.removeAttribute('disabled');
+            } else {
+                avatarPreview.textContent = 'U';
+                submitBtn.setAttribute('disabled', 'true');
+            }
+        }
+
+        nameInput.addEventListener('input', updateFormState);
+        updateFormState(); // run initial
+    });
+</script>
+{% endblock %}

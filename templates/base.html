@@ -70,7 +70,7 @@
           <button id="userMenuButton" data-dropdown-toggle="userDropdown" data-dropdown-placement="bottom-end"
             class="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-on-primary focus:outline-none"
             type="button" aria-expanded="false">
-            {{ request.user.email|first|upper }}
+            {% if request.user.first_name %}{{ request.user.first_name|first|upper }}{% else %}{{ request.user.email|first|upper }}{% endif %}
           </button>
 
           <div id="userDropdown"
@@ -85,6 +85,17 @@
                   <iconify-icon icon="tabler:home"
                     class="text-md text-on-surface group-hover:text-primary"></iconify-icon>
                   Project
+                </a>
+              </li>
+
+              <li role="none">
+                <a href="{% url 'user_settings' %}"
+                  class="flex items-center gap-3 w-full px-4 py-2.5 transition-all duration-200 hover:pl-5 hover:text-primary focus:pl-5 focus:outline-none group"
+                  role="menuitem">
+
+                  <iconify-icon icon="tabler:settings"
+                    class="text-md text-on-surface group-hover:text-primary"></iconify-icon>
+                  Settings
                 </a>
               </li>
 

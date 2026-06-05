@@ -98,6 +98,7 @@ def workspace(request: HttpRequest) -> HttpResponse:
             "show_navbar": False,
             "active_workspace": active_workspace,
             "workspace_max_sources": settings.WORKSPACE_MAX_SOURCES,
+            "ai_provider": settings.AI_PROVIDER,
         },
     )
 
