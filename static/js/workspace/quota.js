@@ -89,6 +89,37 @@ document.addEventListener('DOMContentLoaded', () => {
         uploadLabel.className = `font-manrope text-xs font-semibold ${labelColour(upload.pct)}`;
         uploadBar.style.width = `${upload.pct}%`;
         uploadBar.className = `h-full rounded-full transition-all duration-500 ${barColour(upload.pct)}`;
+        
+        // Dynamic reset time
+        const resetTextEl = document.getElementById('quota-reset-text');
+        if (resetTextEl && quota.reset_at) {
+            try {
+                const date = new Date(quota.reset_at);
+                const timeString = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+                
+                const timeZoneName = Intl.DateTimeFormat('id-ID', { timeZoneName: 'short' })
+                    .formatToParts(date)
+                    .find(part => part.type === 'timeZoneName')?.value;
+                    
+                let tz = timeZoneName || '';
+                if (tz.includes('WIB')) tz = 'WIB';
+                else if (tz.includes('WITA')) tz = 'WITA';
+                else if (tz.includes('WIT')) tz = 'WIT';
+                else if (tz.includes('GMT') || tz.includes('UTC')) {
+                    // keep as is
+                } else {
+                    const offset = -date.getTimezoneOffset();
+                    const sign = offset >= 0 ? '+' : '-';
+                    const offsetHours = Math.floor(Math.abs(offset) / 60);
+                    tz = `GMT${sign}${offsetHours}`;
+                }
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                resetTextEl.textContent = `Reset otomatis pada pukul ${hours}.${minutes} ${tz}`;
+            } catch (e) {
+                console.error('Failed to parse reset date:', e);
+            }
+        }
     }
 
     // ─── Fetch quota from API ─────────────────────────────────────────────────

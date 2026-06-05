@@ -17,6 +17,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatSubmitBtn = document.getElementById('chat-submit-btn');
     const messagesContainer = document.getElementById('chat-messages-container');
 
+    const aiProvider = (workspaceData.dataset.aiProvider || 'gemini').toLowerCase();
+    
+    function getAiAvatarHtml() {
+        if (aiProvider === 'deepseek') {
+            return `<img class="h-5 w-5 shrink-0" src="/static/svg/deepseek-logo.svg" alt="DeepSeek AI Logo" />`;
+        }
+        return `<iconify-icon icon="simple-icons:googlegemini" class="text-base text-primary shrink-0"></iconify-icon>`;
+    }
+
     let currentSessionId = null;
     let isWaitingForResponse = false;
 
@@ -115,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderBotMessage(text, sources) {
         const msgDiv = document.createElement('div');
         clearEmptyState();
-        msgDiv.className = 'w-full max-w-3xl inline-flex justify-start items-start gap-3 sm:gap-4 animate-slide-up';
+        msgDiv.className = 'w-full max-w-3xl flex justify-start items-start gap-3 sm:gap-4 animate-slide-up';
 
         let sourcesHtml = '';
         if (sources && sources.length > 0) {
@@ -130,10 +139,10 @@ document.addEventListener('DOMContentLoaded', () => {
         msgDiv.innerHTML = `
             <div class="w-8 h-9 pt-1 inline-flex flex-col justify-start items-start shrink-0">
                 <div class="w-8 h-8 bg-neutral-900 rounded-xl outline -outline-offset-1 outline-neutral-800 inline-flex justify-center items-center">
-                    <img class="h-5 w-5" src="/static/svg/deepseek-logo.svg" alt="DeepSeek AI Logo" />
+                    ${getAiAvatarHtml()}
                 </div>
             </div>
-            <div class="flex-1 px-4 pt-3.5 pb-4 bg-neutral-900/70 rounded-2xl border border-neutral-800 inline-flex flex-col justify-start items-start gap-4 relative group/msg">
+            <div class="max-w-[85%] px-4 pt-3.5 pb-4 bg-neutral-900/70 rounded-2xl border border-neutral-800 inline-flex flex-col justify-start items-start gap-4 relative group/msg">
                 <div class="absolute top-3 right-3 opacity-0 group-hover/msg:opacity-100 transition-opacity">
                     <button type="button" class="btn-copy-msg p-1.5 rounded-lg bg-neutral-950/60 border border-neutral-800 hover:bg-neutral-800 text-stone-400 hover:text-primary transition cursor-pointer focus:outline-none" title="Salin Markdown">
                         <iconify-icon icon="tabler:copy" class="text-sm"></iconify-icon>
@@ -176,15 +185,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const msgDiv = document.createElement('div');
         msgDiv.id = 'chat-loading';
         clearEmptyState();
-        msgDiv.className = 'w-full max-w-3xl inline-flex justify-start items-start gap-3 sm:gap-4';
+        msgDiv.className = 'w-full max-w-3xl flex justify-start items-start gap-3 sm:gap-4';
  
         msgDiv.innerHTML = `
             <div class="w-8 h-9 pt-1 inline-flex flex-col justify-start items-start shrink-0">
                 <div class="w-8 h-8 bg-neutral-900 rounded-xl outline -outline-offset-1 outline-neutral-800 inline-flex justify-center items-center">
-                    <img class="h-5 w-5" src="/static/svg/deepseek-logo.svg" alt="DeepSeek AI Logo" />
+                    ${getAiAvatarHtml()}
                 </div>
             </div>
-            <div class="min-w-0 flex-1 px-4 pt-3.5 pb-4 bg-neutral-900/70 rounded-2xl border border-neutral-800 inline-flex flex-col justify-start items-start gap-3 animate-pulse">
+            <div class="w-72 max-w-[85%] px-4 pt-3.5 pb-4 bg-neutral-900/70 rounded-2xl border border-neutral-800 inline-flex flex-col justify-start items-start gap-3 animate-pulse">
                 <div class="h-3.5 bg-neutral-800 rounded w-1/4"></div>
                 <div class="h-3.5 bg-neutral-800/80 rounded w-2/3"></div>
             </div>

@@ -101,8 +101,45 @@ export function renderSourceList(sources, selectionSnapshot = undefined) {
       const fileName =
         btn.getAttribute("aria-label")?.replace("Hapus ", "") || "sumber";
 
-      if (confirm(`Apakah Anda yakin ingin menghapus sumber "${fileName}"?`)) {
-        this.deleteSource(sourceId);
+      const modal = document.getElementById("delete-source-modal");
+      if (modal) {
+        const filenameSpan = document.getElementById("delete-source-filename");
+        const confirmBtn = document.getElementById("btn-confirm-delete-source");
+        const cancelBtn = document.getElementById("btn-cancel-delete-source");
+        const closeBtn = document.getElementById("btn-close-delete-source-modal");
+        const backdrop = document.getElementById("delete-source-backdrop");
+
+        if (filenameSpan) {
+          filenameSpan.textContent = `"${fileName}"`;
+        }
+
+        // Show modal
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+
+        // Clone confirm button to remove old event listeners safely
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+        newConfirmBtn.addEventListener("click", () => {
+          modal.classList.add("hidden");
+          modal.classList.remove("flex");
+          this.deleteSource(sourceId);
+        });
+
+        const closeModal = () => {
+          modal.classList.add("hidden");
+          modal.classList.remove("flex");
+        };
+
+        if (cancelBtn) cancelBtn.onclick = closeModal;
+        if (closeBtn) closeBtn.onclick = closeModal;
+        if (backdrop) backdrop.onclick = closeModal;
+      } else {
+        // Fallback to native confirm if modal template not present
+        if (confirm(`Apakah Anda yakin ingin menghapus sumber "${fileName}"?`)) {
+          this.deleteSource(sourceId);
+        }
       }
     });
   });
