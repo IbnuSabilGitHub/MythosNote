@@ -160,7 +160,10 @@ def google_sign_in(request: HttpRequest) -> HttpResponse:
 
     try:
         payload = verify_google_credential(credential)
-    except Exception:
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.exception("Google OAuth validation failed")
         messages.error(request, "Login Google gagal divalidasi.")
         return redirect("signin")
 
@@ -184,7 +187,7 @@ def get_or_create_google_user(payload: Mapping[str, Any]) -> Any:
         user = User.objects.select_for_update().filter(email__iexact=payload["email"]).first()
         if user is None:
             user = User(
-                username=None,
+                username=build_unique_username(payload["email"]),
                 email=payload["email"],
                 first_name=payload.get("name", "")[:150]
             )

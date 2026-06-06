@@ -79,7 +79,15 @@ class SignUpForm(forms.ModelForm):
         """Simpan user baru dengan password yang benar."""
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]
-        user.username = None
+        
+        seed = user.email.split("@", 1)[0].replace(".", "_")[:140] or "user"
+        username = seed
+        suffix = 1
+        while User.objects.filter(username__iexact=username).exists():
+            suffix += 1
+            username = f"{seed}_{suffix}"
+        user.username = username
+        
         user.set_password(self.cleaned_data["password"])
         if commit:
             user.save()
