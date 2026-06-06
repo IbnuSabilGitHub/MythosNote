@@ -1,9 +1,9 @@
 """AI provider implementations for embeddings and chat/completions.
 
 Shared providers used by apps.chat and apps.generate.
-Moved from apps.sources.providers during refactor (2026-06-06).
 """
 
+import ipaddress as _ipaddress  # noqa: F401 — re-exported via providers shim
 import time
 from abc import ABC, abstractmethod
 from typing import Any
@@ -12,9 +12,19 @@ import requests
 from django.conf import settings
 
 
-# ==============================================================================
-# Embedding Providers
-# ==============================================================================
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _openrouter_headers(api_key: str) -> dict[str, str]:
+    """Standard headers required by every OpenRouter API call."""
+    return {
+        "Authorization": f"Bearer {api_key}",
+        "HTTP-Referer": getattr(settings, "FRONTEND_URL", "http://localhost:8000"),
+        "X-Title": "MythosNote",
+        "Content-Type": "application/json",
+    }
+
+
+# ── Embedding Providers ───────────────────────────────────────────────────────
 
 class BaseEmbeddingProvider(ABC):
     """Abstract base for text embedding backends.
@@ -36,9 +46,6 @@ class BaseEmbeddingProvider(ABC):
         return [self.get_embedding(text) for text in texts]
 
 
-
-
-
 class LocalEmbeddingProvider(BaseEmbeddingProvider):
     """Local/on-device embedding provider (placeholder).
 
@@ -50,11 +57,6 @@ class LocalEmbeddingProvider(BaseEmbeddingProvider):
         raise NotImplementedError("LocalEmbeddingProvider is not yet implemented.")
 
     def get_embedding(self, text: str) -> list[float]:
-        """Not implemented."""
-        raise NotImplementedError("LocalEmbeddingProvider is not yet implemented.")
-
-    def get_embeddings(self, texts: list[str]) -> list[list[float]]:
-        """Not implemented."""
         raise NotImplementedError("LocalEmbeddingProvider is not yet implemented.")
 
 
@@ -69,25 +71,13 @@ class OpenRouterEmbeddingProvider(BaseEmbeddingProvider):
         self.url = "https://openrouter.ai/api/v1/embeddings"
 
     def get_embedding(self, text: str) -> list[float]:
-        """Return embedding vector for the given text."""
         return self.get_embeddings([text])[0]
 
     def get_embeddings(self, texts: list[str]) -> list[list[float]]:
-        """Return list of embedding vectors for the given list of texts."""
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "HTTP-Referer": getattr(settings, "FRONTEND_URL", "http://localhost:8000"),
-            "X-Title": "MythosNote",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "model": self.model_name,
-            "input": texts,
-        }
-        response = requests.post(self.url, headers=headers, json=payload, timeout=(5, 60))
+        payload = {"model": self.model_name, "input": texts}
+        response = requests.post(self.url, headers=_openrouter_headers(self.api_key), json=payload, timeout=(5, 60))
         response.raise_for_status()
-        data = response.json()["data"]
-        return [item["embedding"] for item in data]
+        return [item["embedding"] for item in response.json()["data"]]
 
 
 def _create_embedding_provider(name: str | None = None) -> BaseEmbeddingProvider:
@@ -97,9 +87,7 @@ def _create_embedding_provider(name: str | None = None) -> BaseEmbeddingProvider
         return OpenRouterEmbeddingProvider()
     if provider_name == "local":
         return LocalEmbeddingProvider()
-    raise ValueError(
-        f"Unsupported EMBEDDING_PROVIDER: {provider_name!r}. Use 'openrouter', or 'local'."
-    )
+    raise ValueError(f"Unsupported EMBEDDING_PROVIDER: {provider_name!r}. Use 'openrouter' or 'local'.")
 
 
 class _DefaultEmbeddingProvider(BaseEmbeddingProvider):
@@ -121,9 +109,7 @@ class _DefaultEmbeddingProvider(BaseEmbeddingProvider):
 EmbeddingProvider: BaseEmbeddingProvider = _DefaultEmbeddingProvider()
 
 
-# ==============================================================================
-# Chat/Completion Providers
-# ==============================================================================
+# ── Chat/Completion Providers ─────────────────────────────────────────────────
 
 class BaseChatProvider(ABC):
     """Abstract base for chat/completion backends."""
@@ -133,11 +119,10 @@ class BaseChatProvider(ABC):
         """Generate chat completion response."""
 
 
-
-
-
 class OpenRouterChatProvider(BaseChatProvider):
     """OpenRouter chat completion provider using REST API."""
+
+    DEFAULT_MODEL = "deepseek/deepseek-chat"
 
     def __init__(self) -> None:
         self.api_key = getattr(settings, "OPENROUTER_API_KEY", "")
@@ -146,24 +131,20 @@ class OpenRouterChatProvider(BaseChatProvider):
         self.url = "https://openrouter.ai/api/v1/chat/completions"
 
     def chat_complete(self, messages: list[dict[str, str]], **kwargs: Any) -> str:
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "HTTP-Referer": getattr(settings, "FRONTEND_URL", "http://localhost:8000"),
-            "X-Title": "MythosNote",
-            "Content-Type": "application/json",
-        }
         payload = {
-            "model": kwargs.get("model", "deepseek/deepseek-chat"),
+            "model": kwargs.get("model", self.DEFAULT_MODEL),
             "messages": messages,
             "stream": False,
         }
-        response = requests.post(self.url, headers=headers, json=payload, timeout=(5, 60))
+        response = requests.post(self.url, headers=_openrouter_headers(self.api_key), json=payload, timeout=(5, 60))
         response.raise_for_status()
         return response.json()["choices"][0]["message"]["content"]
 
 
 class GroqChatProvider(BaseChatProvider):
     """Groq chat completion provider using REST API."""
+
+    DEFAULT_MODEL = "llama-3.3-70b-versatile"
 
     def __init__(self) -> None:
         self.api_key = getattr(settings, "GROQ_API_KEY", "")
@@ -177,7 +158,7 @@ class GroqChatProvider(BaseChatProvider):
             "Content-Type": "application/json",
         }
         payload = {
-            "model": kwargs.get("model", "llama-3.3-70b-versatile"),
+            "model": kwargs.get("model", self.DEFAULT_MODEL),
             "messages": messages,
             "stream": False,
         }
@@ -193,9 +174,7 @@ def _create_chat_provider(name: str | None = None) -> BaseChatProvider:
         return OpenRouterChatProvider()
     if provider_name == "groq":
         return GroqChatProvider()
-    raise ValueError(
-        f"Unsupported AI_PROVIDER: {provider_name!r}. Use 'openrouter' or 'groq'."
-    )
+    raise ValueError(f"Unsupported AI_PROVIDER: {provider_name!r}. Use 'openrouter' or 'groq'.")
 
 
 class _DefaultChatProvider(BaseChatProvider):

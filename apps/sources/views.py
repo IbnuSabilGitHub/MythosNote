@@ -1,12 +1,17 @@
 """Views for source management APIs."""
 
+import mimetypes
 import os
 import uuid
 
 import django_rq
+from django.core.files.storage import default_storage
+from django.core.files.uploadedfile import UploadedFile
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
+from django.utils.text import get_valid_filename
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView
@@ -16,17 +21,15 @@ from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
-from django.core.files.storage import default_storage
-
+from apps.accounts.utils import check_and_increment_upload
 from apps.sources.models import Source, SourceChunk
 from apps.sources.serializers import SourceDetailSerializer, SourceListSerializer
 from apps.workspaces.models import Workspace
-from django.conf import settings
-from apps.accounts.utils import check_and_increment_upload
 
 
 ALLOWED_EXTENSIONS = {".pdf", ".md", ".txt", ".docx"}
-MAX_FILE_SIZE = 20 * 1024 * 1024
+MAX_FILE_SIZE_MB = 20
+MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024
 
 # Magic bytes for file type validation
 FILE_MAGIC_BYTES = {
@@ -35,14 +38,14 @@ FILE_MAGIC_BYTES = {
 }
 
 
-def _validate_file_magic(uploaded_file, extension: str) -> bool:
+def _validate_file_magic(uploaded_file: UploadedFile, extension: str) -> bool:
     """Validate file content matches expected magic bytes for the extension.
 
-    Returns True if validation passes (magic matches or no magic check needed).
+    Returns True if validation passes (no magic check needed, or magic matches).
     """
     expected = FILE_MAGIC_BYTES.get(extension.lower())
     if not expected:
-        return True  # No magic bytes check for .txt/.md
+        return True
     pos = uploaded_file.tell()
     header = uploaded_file.read(8)
     uploaded_file.seek(pos)
@@ -77,7 +80,6 @@ class SourceListView(ListAPIView):
             Workspace.objects.filter(user=self.request.user),
             id=workspace_id,
         )
-
         return (
             Source.objects.filter(user=self.request.user, workspace=workspace)
             .only("id", "original_filename", "status", "created_at", "file_size", "progress", "error_message")
@@ -94,15 +96,9 @@ class SourceUploadView(APIView):
     def post(self, request):
         workspace_id = request.data.get("workspace_id")
         if not workspace_id:
-            return Response(
-                {"workspace_id": "This field is required."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"workspace_id": "This field is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        workspace = get_object_or_404(
-            Workspace.objects.filter(user=request.user),
-            id=workspace_id,
-        )
+        workspace = get_object_or_404(Workspace.objects.filter(user=request.user), id=workspace_id)
 
         if Source.objects.filter(workspace=workspace).count() >= settings.WORKSPACE_MAX_SOURCES:
             return Response(
@@ -118,10 +114,7 @@ class SourceUploadView(APIView):
 
         uploaded_file = request.FILES.get("file")
         if uploaded_file is None:
-            return Response(
-                {"file": "This field is required."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"file": "This field is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         _, extension = os.path.splitext(uploaded_file.name)
         if extension.lower() not in ALLOWED_EXTENSIONS:
@@ -132,7 +125,7 @@ class SourceUploadView(APIView):
 
         if uploaded_file.size > MAX_FILE_SIZE:
             return Response(
-                {"file": "File terlalu besar. Maksimal 20 MB."},
+                {"file": f"File terlalu besar. Maksimal {MAX_FILE_SIZE_MB} MB."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -148,22 +141,16 @@ class SourceUploadView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        safe_name = os.path.basename(uploaded_file.name)
-        from django.utils.text import get_valid_filename
-        safe_name = get_valid_filename(safe_name)
+        safe_name = get_valid_filename(os.path.basename(uploaded_file.name))
         unique_name = f"{uuid.uuid4().hex[:8]}_{safe_name}"
         storage_path = f"workspaces/{workspace.id}/sources/{unique_name}"
         try:
             saved_path = default_storage.save(storage_path, uploaded_file)
         except Exception:
-            return Response(
-                {'detail': 'Failed to save file. Please try again.'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            return Response({"detail": "Failed to save file. Please try again."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         try:
             with transaction.atomic():
-                import mimetypes
                 detected_mime, _ = mimetypes.guess_type(uploaded_file.name)
                 source = Source.objects.create(
                     user=request.user,
@@ -178,10 +165,7 @@ class SourceUploadView(APIView):
                 )
         except IntegrityError:
             default_storage.delete(saved_path)
-            return Response(
-                {"file": "File dengan nama ini sudah ada di workspace."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"file": "File dengan nama ini sudah ada di workspace."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             queue = django_rq.get_queue("default")
@@ -191,8 +175,7 @@ class SourceUploadView(APIView):
             source.error_message = f"Failed to queue source processing: {exc}"
             source.save(update_fields=["status", "error_message", "updated_at"])
 
-        serializer = SourceDetailSerializer(source)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(SourceDetailSerializer(source).data, status=status.HTTP_201_CREATED)
 
 
 class SourceDeleteView(APIView):
@@ -205,12 +188,10 @@ class SourceDeleteView(APIView):
             Source.objects.filter(user=request.user).select_related("workspace"),
             id=id,
         )
-
         storage_path = source.storage_path
         source.delete()
         if storage_path:
             default_storage.delete(storage_path)
-
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -220,16 +201,10 @@ class SourceDownloadView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id):
-        source = get_object_or_404(
-            Source.objects.filter(user=request.user),
-            id=id,
-        )
+        source = get_object_or_404(Source.objects.filter(user=request.user), id=id)
 
         if not default_storage.exists(source.storage_path):
-            return Response(
-                {"detail": "File tidak ditemukan di storage."},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"detail": "File tidak ditemukan di storage."}, status=status.HTTP_404_NOT_FOUND)
 
         file_handle = default_storage.open(source.storage_path, "rb")
         response = FileResponse(file_handle, content_type=source.mime_type)
@@ -247,5 +222,4 @@ class SourceStatusView(APIView):
             Source.objects.filter(user=request.user).prefetch_related("chunks"),
             id=id,
         )
-        serializer = SourceDetailSerializer(source)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(SourceDetailSerializer(source).data, status=status.HTTP_200_OK)

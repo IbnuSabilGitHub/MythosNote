@@ -1,6 +1,7 @@
 """Utilitas auth bersama untuk akun, login, dan alur email."""
 
-from datetime import timedelta
+import ipaddress
+from datetime import datetime, time, timedelta
 from typing import Any
 import logging
 
@@ -63,8 +64,6 @@ def get_client_ip(request: HttpRequest) -> str | None:
     daftar proxy terpercaya (settings.TRUSTED_PROXY_IPS).  Tanpa
     konfigurasi tersebut, header XFF diabaikan untuk mencegah spoofing.
     """
-    import ipaddress
-
     remote_addr = request.META.get("REMOTE_ADDR")
     trusted_proxies = getattr(settings, "TRUSTED_PROXY_IPS", [])
 
@@ -381,55 +380,37 @@ def get_api_usage(user: Any, request: HttpRequest) -> UserUsage:
     return usage
 
 
-def check_and_increment_prompt(user: Any, request: HttpRequest) -> bool:
-    """Periksa kuota chat harian dan inkremen jika masih tersedia."""
-
+def _check_and_increment(user: Any, request: HttpRequest, field: str, limit_setting: str) -> bool:
+    """Periksa kuota harian dan inkremen jika masih tersedia."""
     with transaction.atomic():
         usage = get_api_usage(user, request)
         locked_usage = UserUsage.objects.select_for_update().get(pk=usage.pk)
-        
-        if locked_usage.prompt_count >= settings.AI_DAILY_PROMPT_LIMIT:
+
+        limit = getattr(settings, limit_setting)
+        if getattr(locked_usage, field) >= limit:
             return False
-            
-        locked_usage.prompt_count = F("prompt_count") + 1
-        locked_usage.save(update_fields=["prompt_count"])
+
+        UserUsage.objects.filter(pk=locked_usage.pk).update(**{field: F(field) + 1})
         return True
+
+
+def check_and_increment_prompt(user: Any, request: HttpRequest) -> bool:
+    """Periksa kuota chat harian dan inkremen jika masih tersedia."""
+    return _check_and_increment(user, request, "prompt_count", "AI_DAILY_PROMPT_LIMIT")
 
 
 def check_and_increment_generate(user: Any, request: HttpRequest) -> bool:
     """Periksa kuota generate harian dan inkremen jika masih tersedia."""
-
-    with transaction.atomic():
-        usage = get_api_usage(user, request)
-        locked_usage = UserUsage.objects.select_for_update().get(pk=usage.pk)
-        
-        if locked_usage.generate_count >= settings.AI_DAILY_GENERATE_LIMIT:
-            return False
-            
-        locked_usage.generate_count = F("generate_count") + 1
-        locked_usage.save(update_fields=["generate_count"])
-        return True
+    return _check_and_increment(user, request, "generate_count", "AI_DAILY_GENERATE_LIMIT")
 
 
 def check_and_increment_upload(user: Any, request: HttpRequest) -> bool:
     """Periksa kuota upload harian dan inkremen jika masih tersedia."""
-
-    with transaction.atomic():
-        usage = get_api_usage(user, request)
-        locked_usage = UserUsage.objects.select_for_update().get(pk=usage.pk)
-        
-        if locked_usage.upload_count >= settings.AI_DAILY_UPLOAD_LIMIT:
-            return False
-            
-        locked_usage.upload_count = F("upload_count") + 1
-        locked_usage.save(update_fields=["upload_count"])
-        return True
+    return _check_and_increment(user, request, "upload_count", "AI_DAILY_UPLOAD_LIMIT")
 
 
 def get_user_quota_status(user: Any, request: HttpRequest) -> dict:
     """Ambil status kuota harian pengguna saat ini."""
-    from datetime import datetime, time, timedelta
-
     today = timezone.localdate()
     identifier = user.email if hasattr(user, 'email') else f"anon|{get_client_ip(request) or 'unknown'}"
 
