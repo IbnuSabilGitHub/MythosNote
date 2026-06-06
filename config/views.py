@@ -38,7 +38,7 @@ def project(request: HttpRequest) -> HttpResponse:
             return _render_project(request, status_code=429)
 
         try:
-            workspace_name = clean_workspace_name(request.POST.get("name"), default_if_blank="Untitled Note")
+            workspace_name = clean_workspace_name(request.POST.get("name"), default_if_blank="Note Tanpa Judul")
         except WorkspaceNameValidationError as exc:
             messages.error(request, exc.messages[0])
             return _render_project(request, status_code=400)

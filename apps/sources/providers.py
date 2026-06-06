@@ -115,15 +115,49 @@ class LocalEmbeddingProvider(BaseEmbeddingProvider):
         raise NotImplementedError("LocalEmbeddingProvider is not yet implemented.")
 
 
+class OpenRouterEmbeddingProvider(BaseEmbeddingProvider):
+    """OpenRouter embedding provider using REST API."""
+
+    def __init__(self) -> None:
+        self.api_key = getattr(settings, "OPENROUTER_API_KEY", "")
+        if not self.api_key:
+            raise ValueError("OPENROUTER_API_KEY is not configured")
+        self.model_name = getattr(settings, "EMBEDDING_MODEL", "openai/text-embedding-3-small")
+        self.url = "https://openrouter.ai/api/v1/embeddings"
+
+    def get_embedding(self, text: str) -> list[float]:
+        """Return embedding vector for the given text."""
+        return self.get_embeddings([text])[0]
+
+    def get_embeddings(self, texts: list[str]) -> list[list[float]]:
+        """Return list of embedding vectors for the given list of texts."""
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "HTTP-Referer": getattr(settings, "FRONTEND_URL", "http://localhost:8000"),
+            "X-Title": "MythosNote",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": self.model_name,
+            "input": texts,
+        }
+        response = requests.post(self.url, headers=headers, json=payload, timeout=(5, 60))
+        response.raise_for_status()
+        data = response.json()["data"]
+        return [item["embedding"] for item in data]
+
+
 def _create_embedding_provider(name: str | None = None) -> BaseEmbeddingProvider:
-    # Default to Gemini for embedding provider
+    # Default to gemini for embedding provider
     provider_name = (name or getattr(settings, "EMBEDDING_PROVIDER", "gemini")).strip().lower()
     if provider_name == "gemini":
         return GeminiEmbeddingProvider()
+    if provider_name == "openrouter":
+        return OpenRouterEmbeddingProvider()
     if provider_name == "local":
         return LocalEmbeddingProvider()
     raise ValueError(
-        f"Unsupported EMBEDDING_PROVIDER: {provider_name!r}. Use 'gemini', 'openai', or 'local'."
+        f"Unsupported EMBEDDING_PROVIDER: {provider_name!r}. Use 'gemini', 'openrouter', or 'local'."
     )
 
 
@@ -222,14 +256,68 @@ class DeepSeekChatProvider(BaseChatProvider):
         return response.json()["choices"][0]["message"]["content"]
 
 
+class OpenRouterChatProvider(BaseChatProvider):
+    """OpenRouter chat completion provider using REST API."""
+
+    def __init__(self) -> None:
+        self.api_key = getattr(settings, "OPENROUTER_API_KEY", "")
+        if not self.api_key:
+            raise ValueError("OPENROUTER_API_KEY is not configured")
+        self.url = "https://openrouter.ai/api/v1/chat/completions"
+
+    def chat_complete(self, messages: list[dict[str, str]], **kwargs: Any) -> str:
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "HTTP-Referer": getattr(settings, "FRONTEND_URL", "http://localhost:8000"),
+            "X-Title": "MythosNote",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": kwargs.get("model", "deepseek/deepseek-chat"),
+            "messages": messages,
+            "stream": False,
+        }
+        response = requests.post(self.url, headers=headers, json=payload, timeout=(5, 60))
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"]
+
+
+class GroqChatProvider(BaseChatProvider):
+    """Groq chat completion provider using REST API."""
+
+    def __init__(self) -> None:
+        self.api_key = getattr(settings, "GROQ_API_KEY", "")
+        if not self.api_key:
+            raise ValueError("GROQ_API_KEY is not configured")
+        self.url = "https://api.groq.com/openai/v1/chat/completions"
+
+    def chat_complete(self, messages: list[dict[str, str]], **kwargs: Any) -> str:
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": kwargs.get("model", "llama-3.3-70b-versatile"),
+            "messages": messages,
+            "stream": False,
+        }
+        response = requests.post(self.url, headers=headers, json=payload, timeout=(5, 60))
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"]
+
+
 def _create_chat_provider(name: str | None = None) -> BaseChatProvider:
     provider_name = (name or getattr(settings, "AI_PROVIDER", "gemini")).strip().lower()
     if provider_name == "gemini":
         return GeminiChatProvider()
     if provider_name == "deepseek":
         return DeepSeekChatProvider()
+    if provider_name == "openrouter":
+        return OpenRouterChatProvider()
+    if provider_name == "groq":
+        return GroqChatProvider()
     raise ValueError(
-        f"Unsupported AI_PROVIDER: {provider_name!r}. Use 'gemini' or 'deepseek'."
+        f"Unsupported AI_PROVIDER: {provider_name!r}. Use 'gemini', 'deepseek', 'openrouter', or 'groq'."
     )
 
 

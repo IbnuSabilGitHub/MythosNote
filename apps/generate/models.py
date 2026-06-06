@@ -57,8 +57,24 @@ class GenerateJob(models.Model):
     def save(self, *args, **kwargs):
         if not self.title and self.action:
             from apps.generate.constants import ACTION_LABELS
+            from apps.sources.models import Source
 
             label = ACTION_LABELS.get(self.action, self.action)
-            stamp = timezone.localtime().strftime("%d %b %Y %H:%M")
-            self.title = f"{label} · {stamp}"
+            title_text = label
+            
+            if getattr(self, "source_ids", None) and isinstance(self.source_ids, list) and len(self.source_ids) > 0:
+                try:
+                    first_source = Source.objects.filter(id=self.source_ids[0]).first()
+                    if first_source:
+                        title_text = f"{label} - {first_source.name}"
+                        if len(self.source_ids) > 1:
+                            title_text += f" (+{len(self.source_ids) - 1} lainnya)"
+                except Exception:
+                    pass
+                    
+            if title_text == label:
+                stamp = timezone.localtime().strftime("%d %b %Y %H:%M")
+                title_text = f"{label} · {stamp}"
+                
+            self.title = title_text[:120]
         super().save(*args, **kwargs)

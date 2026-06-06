@@ -55,9 +55,9 @@
       <!-- Desktop Navigation (hidden on mobile) -->
       {% if navbar_type == 'home' %}
       <div class="hidden items-center gap-6 text-sm text-outline md:flex">
-        <a class="transition hover:text-primary" href="#features">Features</a>
-        <a class="transition hover:text-primary" href="#how">How It Works</a>
-        <a class="transition hover:text-primary" href="#start">Start Free</a>
+        <a class="transition hover:text-primary" href="#features">Fitur</a>
+        <a class="transition hover:text-primary" href="#how">Cara Kerja</a>
+        <a class="transition hover:text-primary" href="#start">Mulai Gratis</a>
       </div>
       {% endif %}
 
@@ -95,7 +95,7 @@
 
                   <iconify-icon icon="tabler:settings"
                     class="text-md text-on-surface group-hover:text-primary"></iconify-icon>
-                  Settings
+                  Pengaturan
                 </a>
               </li>
 
@@ -110,7 +110,7 @@
                     role="menuitem">
                     <iconify-icon icon="tabler:logout"
                       class="shrink-0 text-md transition-colors group-hover:text-error"></iconify-icon>
-                    <span>Logout</span>
+                    <span>Keluar</span>
                   </button>
                 </form>
               </li>
@@ -120,20 +120,20 @@
         {% else %}
         <a class="rounded bg-primary-container px-5 py-2 text-sm font-bold text-on-primary-container transition hover:bg-primary"
           href="{% url 'project' %}">
-          Go to Project
+          Buka Project
         </a>
         {% endif %}
         {% else %}
         <!-- Sign In (hidden on mobile) -->
         <a class="hidden px-4 py-2 text-sm text-outline transition hover:text-primary md:block"
           href="{% url 'signin' %}">
-          Sign In
+          Masuk
         </a>
 
         <!-- Get Started (visible on all devices) -->
         <a class="rounded bg-primary-container px-5 py-2 text-sm font-bold text-on-primary-container transition hover:bg-primary"
           href="{% url 'signup' %}">
-          Get Started
+          Mulai Sekarang
         </a>
         {% endif %}
       </div>

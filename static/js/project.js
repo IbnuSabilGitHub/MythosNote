@@ -343,26 +343,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (resetTextEl && resetTextEl.dataset.resetAt) {
     try {
       const date = new Date(resetTextEl.dataset.resetAt);
-      const timeString = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+      const timeString = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
       
-      const timeZoneName = Intl.DateTimeFormat('id-ID', { timeZoneName: 'short' })
-          .formatToParts(date)
-          .find(part => part.type === 'timeZoneName')?.value;
-          
-      let tz = timeZoneName || '';
-      if (tz.includes('WIB')) tz = 'WIB';
-      else if (tz.includes('WITA')) tz = 'WITA';
-      else if (tz.includes('WIT')) tz = 'WIT';
-      else if (tz.includes('GMT') || tz.includes('UTC')) {
-          // keep as is
-      } else {
-          const offset = -date.getTimezoneOffset();
-          const sign = offset >= 0 ? '+' : '-';
-          const offsetHours = Math.floor(Math.abs(offset) / 60);
-          tz = `GMT${sign}${offsetHours}`;
-      }
-      
-      resetTextEl.textContent = `Reset otomatis pada pukul ${timeString} ${tz}`;
+      resetTextEl.textContent = `Reset otomatis pada pukul ${timeString} waktu setempat`;
     } catch (e) {
       console.error('Failed to parse reset date:', e);
     }
