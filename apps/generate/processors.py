@@ -25,23 +25,40 @@ def _strip_outer_fence(text: str) -> str:
     return text
 
 
-def process_output(action: str, raw: str) -> str:
-    """Normalize and validate model output. Returns stored result string."""
+def process_output(action: str, raw: str) -> tuple[str | None, str]:
+    """Normalize and validate model output. Returns (title, stored_result_string)."""
     raw = (raw or "").strip()
     if not raw:
         raise ProcessOutputError("Model mengembalikan respons kosong.")
 
-    if action in ("summary", "table"):
-        return _strip_outer_fence(raw)
+    cleaned = _strip_outer_fence(raw)
+    
+    try:
+        data = json.loads(cleaned)
+    except json.JSONDecodeError as exc:
+        raise ProcessOutputError(f"Output {action} bukan JSON valid.") from exc
+
+    if not isinstance(data, dict):
+        raise ProcessOutputError(f"Output {action} harus berupa object JSON.")
+
+    title = data.get("title")
+    if title and not isinstance(title, str):
+        title = str(title)
+
+    content = data.get("content")
+    if content is None:
+        raise ProcessOutputError(f"Output {action} tidak memiliki field 'content'.")
+
+    if action == "summary":
+        if not isinstance(content, str):
+            raise ProcessOutputError("Content summary harus berupa string.")
+        return title, content
 
     if action == "quiz":
-        cleaned = _strip_outer_fence(raw)
-        try:
-            data = json.loads(cleaned)
-        except json.JSONDecodeError as exc:
-            raise ProcessOutputError("Output kuis bukan JSON valid.") from exc
-
-        questions = data.get("questions")
+        if not isinstance(content, dict) or "questions" not in content:
+            raise ProcessOutputError("Content kuis harus berupa object berisi 'questions'.")
+            
+        questions = content.get("questions")
         if not isinstance(questions, list) or len(questions) == 0:
             raise ProcessOutputError("JSON kuis harus berisi array 'questions'.")
 
@@ -54,18 +71,9 @@ def process_output(action: str, raw: str) -> str:
             if not isinstance(item["options"], list) or len(item["options"]) < 2:
                 raise ProcessOutputError(f"Pertanyaan #{idx + 1} butuh minimal 2 opsi.")
 
-        return json.dumps(data, ensure_ascii=False)
+        return title, json.dumps(content, ensure_ascii=False)
 
-    if action == "mindmap":
-        text = raw
-        mermaid_match = _MERMAID_FENCE_RE.search(text)
-        if mermaid_match:
-            text = mermaid_match.group(1).strip()
-        else:
-            text = _strip_outer_fence(text)
-
-        if not text.lower().startswith("mindmap"):
-            raise ProcessOutputError("Mindmap harus diawali dengan 'mindmap'.")
-        return text
+    if action in ("table", "mindmap"):
+        return title, json.dumps(content, ensure_ascii=False)
 
     raise ProcessOutputError(f"Action tidak dikenal: {action}")

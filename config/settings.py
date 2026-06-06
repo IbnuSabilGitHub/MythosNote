@@ -254,9 +254,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'id'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Makassar'
 
 USE_I18N = True
 
@@ -308,10 +308,13 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip()
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY', '').strip()
 DEEPSEEK_BASE_URL = os.getenv('DEEPSEEK_BASE_URL', 'https://api.deepseek.com/v1').strip()
 
+OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '').strip()
+GROQ_API_KEY = os.getenv('GROQ_API_KEY', '').strip()
+
 # AI Provider options and validation
 AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini').strip().lower()
-if AI_PROVIDER not in ('gemini', 'deepseek'):
-    raise ValueError(f"Unsupported AI_PROVIDER: {AI_PROVIDER!r}. Use 'gemini' or 'deepseek'.")
+if AI_PROVIDER not in ('gemini', 'deepseek', 'openrouter', 'groq'):
+    raise ValueError(f"Unsupported AI_PROVIDER: {AI_PROVIDER!r}. Use 'gemini', 'deepseek', 'openrouter', or 'groq'.")
 
 DEFAULT_EMBEDDING_PROVIDER = 'gemini'
 EMBEDDING_PROVIDER = os.getenv('EMBEDDING_PROVIDER', DEFAULT_EMBEDDING_PROVIDER).strip().lower()

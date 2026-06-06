@@ -30,14 +30,16 @@ def process_generate_job(job_id: str) -> None:
         )
         messages = build_messages(job.action, context_text, job.options)
         response_text = ChatProvider.chat_complete(messages=messages)
-        processed = process_output(job.action, response_text or "")
+        title, processed = process_output(job.action, response_text or "")
 
         with transaction.atomic():
             job = GenerateJob.objects.select_for_update().get(id=job_id)
             job.status = "success"
             job.result = processed
+            if title:
+                job.title = title[:120]
             job.error_message = ""
-            job.save(update_fields=["status", "result", "error_message", "updated_at"])
+            job.save(update_fields=["status", "result", "title", "error_message", "updated_at"])
 
     except GenerateJob.DoesNotExist:
         print(f"ERROR: GenerateJob {job_id} tidak ditemukan")
