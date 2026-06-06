@@ -346,38 +346,34 @@ class ChatView(APIView):
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
-        # Step 2: pgvector ANN search — fetch TOP_K_MAX, potong dengan dynamic top-k
-        candidates = list(
-            base_qs
-            .annotate(distance=CosineDistance("embedding", query_embedding))
-            .order_by("distance")
-            .select_related("source")[: self.TOP_K_MAX]
-        )
+        # Step 2: Multi-Document RAG (Federated Search)
+        top_chunks = []
+        per_source_k = max(2, self.TOP_K_MAX // len(source_ids))
 
-        if not candidates:
+        for sid in source_ids:
+            source_candidates = list(
+                base_qs.filter(source__id=sid)
+                .annotate(distance=CosineDistance("embedding", query_embedding))
+                .order_by("distance")
+                .select_related("source")[:per_source_k]
+            )
+            top_chunks.extend(source_candidates)
+
+        if not top_chunks:
             return Response(
                 {"detail": self.NO_CONTEXT_MESSAGE},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Dynamic Top-K: gunakan similarity teratas untuk tentukan berapa chunk dipakai
-        # CosineDistance ∈ [0, 2]; similarity = 1 - distance ∈ [-1, 1]
-        best_similarity = 1.0 - candidates[0].distance
-        if best_similarity >= self.SIM_HIGH:
-            dynamic_k = self.TOP_K_MIN          # sangat relevan: cukup 2 chunk
-        elif best_similarity >= self.SIM_MED:
-            dynamic_k = 4                       # relevan: 4 chunk
-        else:
-            dynamic_k = self.TOP_K_MAX          # kurang relevan: ambil semua 8
-
-        top_chunks = candidates[:dynamic_k]
+        # Urutkan global dari yang paling mirip
+        top_chunks.sort(key=lambda x: x.distance)
 
         # Step 3: Build context string and keep list of unique sources
         context_parts = []
         unique_sources = []
         seen_source_ids = set()
-        # Token efficiency: format kompak + naikkan limit karena format lebih hemat
-        max_context_chars = 8000
+        # Token efficiency: format kompak + naikkan limit karena multi-dokumen
+        max_context_chars = 20000
         current_len = 0
 
         for chunk in top_chunks:
