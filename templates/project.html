@@ -178,14 +178,14 @@
                     <button type="button" data-action="rename" data-workspace-id="{{ workspace.id }}" data-workspace-name="{{ workspace.name|escapejs }}" data-modal-target="renameWorkspaceModal" data-modal-toggle="renameWorkspaceModal"
                       class="w-full flex items-center gap-2 px-4 py-2 text-left hover:bg-surface/40 ">
                       <iconify-icon icon="tabler:edit" class="text-md text-on-surface-variant"></iconify-icon>
-                      Rename
+                      Ubah Nama
                     </button>
                   </li>
                   <li role="none">
                     <button type="button" data-action="delete" data-workspace-id="{{ workspace.id }}" data-workspace-name="{{ workspace.name|escapejs }}"
                       class="w-full flex items-center gap-2 px-4 py-2 text-left text-red-400 hover:bg-surface/40">
                       <iconify-icon icon="tabler:trash" class="text-md text-red-400"></iconify-icon>
-                      Delete
+                      Hapus
                     </button>
                   </li>
                 </ul>
@@ -199,7 +199,7 @@
 
         <div class="relative z-10 flex items-center justify-between border-t border-outline-variant bg-[rgba(42,41,46,0.5)] px-4 py-2">
           <span class="rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
-            {{ workspace.created_at|date:"d M" }} - {{ workspace.source_count|default:"0" }} sources
+            {{ workspace.created_at|date:"d M" }} - {{ workspace.source_count|default:"0" }} sumber
           </span>
           <iconify-icon icon="tabler:arrow-right" class="h-4 w-4 text-on-surface-variant transition group-hover:text-primary-fixed-dim"></iconify-icon>
         </div>

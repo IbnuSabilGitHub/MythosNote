@@ -25,13 +25,7 @@ function showToast(message, type = "error") {
 }
 
 function getReadySourceIds() {
-  const selected = window.WorkspaceSelection?.getSelectedSourceIds?.() || [];
-  if (selected.length > 0) return selected;
-
-  return Array.from(document.querySelectorAll("[data-source-item]"))
-    .filter((item) => item.dataset.sourceReady !== "false")
-    .map((item) => item.dataset.sourceId)
-    .filter(Boolean);
+  return window.WorkspaceSelection?.getSelectedSourceIds?.() || [];
 }
 
 class WorkspaceGenerate {
@@ -239,6 +233,11 @@ class WorkspaceGenerate {
       } catch {
         /* pakai data cache */
       }
+    }
+
+    if (current.status === "success" && (current.action === "quiz" || current.action === "mindmap")) {
+      window.location.href = `/workspace/${current.action}/${current.id}/`;
+      return;
     }
 
     this.activeJobId = current.id;

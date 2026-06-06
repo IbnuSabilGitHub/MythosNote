@@ -15,17 +15,16 @@
     <!-- Header workspace -->
     <div
         class="self-stretch h-14 px-4 sm:px-6 bg-neutral-950/90 border-b border-neutral-800/70 inline-flex justify-between items-center shrink-0 backdrop-blur relative z-30">
-        <div class="flex min-w-0 justify-start items-center gap-3 sm:gap-4">
-            <div class="inline-flex flex-col justify-start items-start">
-                <a href="{% url 'home' %}" class="inline-flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-primary/40 rounded-md">
+        <div class="flex-1 min-w-0 flex justify-start items-center gap-2 sm:gap-4">
+            <div class="flex-none inline-flex flex-col justify-start items-start">
+                <a href="{% url 'home' %}" class="inline-flex items-center gap-2 sm:gap-3 focus:outline-none focus:ring-2 focus:ring-primary/40 rounded-md">
                     <img src="{% static 'svg/mythosnote-logo.svg' %}" alt="MythosNote Logo" class="h-7 w-auto" />
-                    <span class="font-newsreader text-2xl italic text-primary-container">MythosNote</span>
+                    <span class="hidden sm:inline font-newsreader text-2xl italic text-primary-container">MythosNote</span>
                 </a>
             </div>
-            <div class="w-px h-4 bg-neutral-800"></div>
-            <div class="min-w-0 inline-flex flex-col justify-start items-start">
-                <div
-                    class="max-w-36 sm:max-w-56 truncate justify-center text-stone-300/80 text-xs font-semibold font-manrope uppercase leading-3 tracking-wide">
+            <div class="flex-none w-px h-4 bg-neutral-800"></div>
+            <div class="flex-1 min-w-0 inline-flex flex-col justify-start items-start">
+                <div class="w-full truncate text-stone-300/80 text-xs font-semibold font-manrope uppercase leading-3 tracking-wide" title="{{ active_workspace.name|default:'PROJECT ALPHA'|upper }}">
                     {{ active_workspace.name|default:"PROJECT ALPHA"|upper }}</div>
             </div>
         </div>
@@ -99,7 +98,7 @@
                     data-dropdown-placement="bottom-end"
                     class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-neutral-950 text-xs font-bold shadow-[0_0_0_1px_rgba(255,255,255,0.08)] focus:outline-none focus:ring-2 focus:ring-primary/40"
                     type="button" aria-expanded="false">
-                    {{ request.user.email|first|upper }}
+                    {{ request.user.first_name|default:request.user.email|make_list|first|upper }}
                 </button>
                 <div id="workspaceUserDropdown"
                     class="z-50 hidden w-44 rounded-lg border border-neutral-800 bg-neutral-900 shadow-lg overflow-hidden"
@@ -123,7 +122,7 @@
                                     role="menuitem">
                                     <iconify-icon icon="tabler:logout"
                                         class="shrink-0 text-md text-stone-300 transition-colors group-hover:text-red-300"></iconify-icon>
-                                    <span>Logout</span>
+                                    <span>Keluar</span>
                                 </button>
                             </form>
                         </li>
@@ -215,6 +214,7 @@
                 <!-- JS renders source items here -->
             </div>
         </div>
+
         <!-- Panel chat (tengah) -->
         <div data-mobile-panel="chat" class="flex-1 self-stretch min-w-0 relative bg-neutral-950/70 flex flex-col">
             <!-- Chat header -->
@@ -272,6 +272,7 @@
                 </div>
             </div>
         </div>
+
         <!-- Panel generate (kanan) -->
         <div data-generate-shell data-mobile-panel="generate"
             class="workspace-panel hidden lg:inline-flex w-full lg:w-80 self-stretch border-t lg:border-t-0 lg:border-l border-neutral-800/70 flex-col justify-start items-start shrink-0">

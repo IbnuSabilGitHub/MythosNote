@@ -160,6 +160,36 @@ export async function renderResultBody(container, job) {
     return;
   }
 
+  if (job.action === "table") {
+    try {
+      const data = JSON.parse(result);
+      if (!Array.isArray(data) || data.length === 0) {
+        container.innerHTML = "<p>Tabel kosong.</p>";
+        return;
+      }
+      const cols = Object.keys(data[0]);
+      let html = `<div class="overflow-x-auto"><table class="w-full text-sm text-left text-stone-300 border border-stone-700"><thead class="text-xs uppercase bg-stone-800 text-stone-400"><tr>`;
+      cols.forEach(c => {
+        html += `<th class="px-4 py-3 border-b border-stone-700">${escapeHtml(c)}</th>`;
+      });
+      html += `</tr></thead><tbody>`;
+      data.forEach(row => {
+        html += `<tr class="border-b border-stone-700 hover:bg-stone-800/50">`;
+        cols.forEach(c => {
+          html += `<td class="px-4 py-3">${escapeHtml(row[c])}</td>`;
+        });
+        html += `</tr>`;
+      });
+      html += `</tbody></table></div>`;
+// eslint-disable-next-line no-unsanitized/property
+      container.innerHTML = html;
+    } catch (err) {
+// eslint-disable-next-line no-unsanitized/property
+      container.innerHTML = `<pre class="text-xs text-red-400 whitespace-pre-wrap">${escapeHtml(err.message || "Gagal render tabel.")}</pre>`;
+    }
+    return;
+  }
+
   const markdownWrap = document.createElement("div");
   markdownWrap.className = "chat-markdown";
 // eslint-disable-next-line no-unsanitized/property
