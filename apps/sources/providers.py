@@ -7,12 +7,9 @@ Import dari apps.core.providers untuk kode baru.
 # Re-export agar kode lama yang masih import dari sini tidak langsung patah.
 from apps.core.providers import (  # noqa: F401
     BaseEmbeddingProvider,
-    GeminiEmbeddingProvider,
     LocalEmbeddingProvider,
     OpenRouterEmbeddingProvider,
     BaseChatProvider,
-    GeminiChatProvider,
-    DeepSeekChatProvider,
     OpenRouterChatProvider,
     GroqChatProvider,
     EmbeddingProvider,

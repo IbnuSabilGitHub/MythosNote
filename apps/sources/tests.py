@@ -8,12 +8,9 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 
-from apps.sources.providers import (
-    DeepSeekChatProvider,
-    GeminiChatProvider,
+from apps.core.providers import (
     _create_chat_provider,
     _create_embedding_provider,
-    GeminiEmbeddingProvider,
 )
 from apps.accounts.utils import get_client_ip
 from apps.sources.tasks import extract_text_from_file
@@ -22,46 +19,12 @@ from apps.sources.tasks import extract_text_from_file
 class AIProviderTests(TestCase):
     """Test suite for AI Provider selection, validation, and error fallback."""
 
-    @override_settings(AI_PROVIDER="gemini", GEMINI_API_KEY="test-key")
-    @patch("google.genai.Client")
-    def test_provider_selection_gemini(self, mock_client) -> None:
-        """Verify Gemini chat provider is selected when AI_PROVIDER is gemini."""
-        provider = _create_chat_provider()
-        self.assertIsInstance(provider, GeminiChatProvider)
-
-    @override_settings(AI_PROVIDER="deepseek", DEEPSEEK_API_KEY="test-key")
-    def test_provider_selection_deepseek(self) -> None:
-        """Verify DeepSeek chat provider is selected when AI_PROVIDER is deepseek."""
-        provider = _create_chat_provider()
-        self.assertIsInstance(provider, DeepSeekChatProvider)
-
     @override_settings(AI_PROVIDER="invalid")
     def test_provider_selection_invalid(self) -> None:
         """Verify ValueError is raised for invalid AI_PROVIDER settings."""
         with self.assertRaises(ValueError) as ctx:
             _create_chat_provider()
         self.assertIn("Unsupported AI_PROVIDER", str(ctx.exception))
-
-    @override_settings(DEEPSEEK_API_KEY="")
-    def test_deepseek_missing_api_key_raises_error(self) -> None:
-        """Verify DeepSeekChatProvider raises ValueError if api key is missing."""
-        with self.assertRaises(ValueError) as ctx:
-            DeepSeekChatProvider()
-        self.assertIn("DEEPSEEK_API_KEY is not configured", str(ctx.exception))
-
-    @override_settings(GEMINI_API_KEY="")
-    def test_gemini_missing_api_key_raises_error(self) -> None:
-        """Verify GeminiChatProvider raises ValueError if api key is missing."""
-        with self.assertRaises(ValueError) as ctx:
-            GeminiChatProvider()
-        self.assertIn("GEMINI_API_KEY is not configured", str(ctx.exception))
-
-    @override_settings(EMBEDDING_PROVIDER="gemini", GEMINI_API_KEY="test-key")
-    @patch("google.genai.Client")
-    def test_embedding_provider_selection_gemini(self, mock_configure) -> None:
-        """Verify Gemini embedding provider is selected when EMBEDDING_PROVIDER is gemini."""
-        provider = _create_embedding_provider()
-        self.assertIsInstance(provider, GeminiEmbeddingProvider)
 
 
 class SecurityVulnerabilityTests(APITestCase):

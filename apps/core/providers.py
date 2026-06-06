@@ -36,67 +36,7 @@ class BaseEmbeddingProvider(ABC):
         return [self.get_embedding(text) for text in texts]
 
 
-from google.api_core import exceptions
-from google import genai
-from google.genai import types
 
-
-class GeminiEmbeddingProvider(BaseEmbeddingProvider):
-    """Google Gemini embedding provider with retry logic."""
-
-    def __init__(self) -> None:
-        self.model_name = getattr(settings, "EMBEDDING_MODEL", "gemini-embedding-001")
-        self.output_dimensionality = getattr(settings, "EMBEDDING_DIMENSIONS", 768)
-        api_key = getattr(settings, "GEMINI_API_KEY", "") or ""
-        if not api_key:
-            raise ValueError("GEMINI_API_KEY is not configured")
-        self._client = genai.Client(api_key=api_key)
-
-    def get_embedding(self, text: str) -> list[float]:
-        """Return embedding vector with exponential backoff."""
-        retries = 3
-        delay = 1.0  # seconds
-        for i in range(retries):
-            try:
-                response = self._client.models.embed_content(
-                    model=self.model_name,
-                    contents=text,
-                    config=types.EmbedContentConfig(
-                        task_type="RETRIEVAL_DOCUMENT",
-                        output_dimensionality=self.output_dimensionality,
-                    ),
-                )
-                return list(response.embeddings[0].values)
-            except exceptions.GoogleAPICallError:
-                if i == retries - 1:
-                    raise  # Re-raise the last exception
-                time.sleep(delay)
-                delay *= 2.0  # Exponential backoff
-        raise ConnectionError("Failed to get embedding from Gemini after multiple retries.")
-
-    def get_embeddings(self, texts: list[str]) -> list[list[float]]:
-        """Return list of embedding vectors in a single batch request with exponential backoff."""
-        if not texts:
-            return []
-        retries = 3
-        delay = 1.0  # seconds
-        for i in range(retries):
-            try:
-                response = self._client.models.embed_content(
-                    model=self.model_name,
-                    contents=texts,
-                    config=types.EmbedContentConfig(
-                        task_type="RETRIEVAL_DOCUMENT",
-                        output_dimensionality=self.output_dimensionality,
-                    ),
-                )
-                return [list(emb.values) for emb in response.embeddings]
-            except exceptions.GoogleAPICallError:
-                if i == retries - 1:
-                    raise  # Re-raise the last exception
-                time.sleep(delay)
-                delay *= 2.0  # Exponential backoff
-        raise ConnectionError("Failed to get embeddings from Gemini after multiple retries.")
 
 
 class LocalEmbeddingProvider(BaseEmbeddingProvider):
@@ -152,15 +92,13 @@ class OpenRouterEmbeddingProvider(BaseEmbeddingProvider):
 
 def _create_embedding_provider(name: str | None = None) -> BaseEmbeddingProvider:
     """Instantiate embedding provider by name or EMBEDDING_PROVIDER setting."""
-    provider_name = (name or getattr(settings, "EMBEDDING_PROVIDER", "gemini")).strip().lower()
-    if provider_name == "gemini":
-        return GeminiEmbeddingProvider()
+    provider_name = (name or getattr(settings, "EMBEDDING_PROVIDER", "openrouter")).strip().lower()
     if provider_name == "openrouter":
         return OpenRouterEmbeddingProvider()
     if provider_name == "local":
         return LocalEmbeddingProvider()
     raise ValueError(
-        f"Unsupported EMBEDDING_PROVIDER: {provider_name!r}. Use 'gemini', 'openrouter', or 'local'."
+        f"Unsupported EMBEDDING_PROVIDER: {provider_name!r}. Use 'openrouter', or 'local'."
     )
 
 
@@ -195,63 +133,7 @@ class BaseChatProvider(ABC):
         """Generate chat completion response."""
 
 
-class GeminiChatProvider(BaseChatProvider):
-    """Google Gemini chat completion provider."""
 
-    MODEL = "gemini-2.5-flash"
-
-    def __init__(self) -> None:
-        from google import genai as _genai  # local import to avoid top-level side effects
-        api_key = getattr(settings, "GEMINI_API_KEY", "") or ""
-        if not api_key:
-            raise ValueError("GEMINI_API_KEY is not configured")
-        self._client = _genai.Client(api_key=api_key)
-
-    def chat_complete(self, messages: list[dict[str, str]], **kwargs: Any) -> str:
-        contents = []
-        system_instruction = None
-        for msg in messages:
-            role = msg["role"]
-            content = msg["content"]
-            if role == "system":
-                system_instruction = content
-            else:
-                gemini_role = "user" if role == "user" else "model"
-                contents.append(types.Content(role=gemini_role, parts=[types.Part.from_text(text=content)]))
-
-        model_name = kwargs.get("model", self.MODEL)
-        response = self._client.models.generate_content(
-            model=model_name,
-            contents=contents,
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction,
-            ) if system_instruction else None,
-        )
-        return response.text
-
-
-class DeepSeekChatProvider(BaseChatProvider):
-    """DeepSeek chat completion provider using REST API."""
-
-    def __init__(self) -> None:
-        self.api_key = getattr(settings, "DEEPSEEK_API_KEY", "")
-        if not self.api_key:
-            raise ValueError("DEEPSEEK_API_KEY is not configured")
-        self.url = "https://api.deepseek.com/v1/chat/completions"
-
-    def chat_complete(self, messages: list[dict[str, str]], **kwargs: Any) -> str:
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "model": kwargs.get("model", "deepseek-chat"),
-            "messages": messages,
-            "stream": False,
-        }
-        response = requests.post(self.url, headers=headers, json=payload, timeout=(5, 60))
-        response.raise_for_status()
-        return response.json()["choices"][0]["message"]["content"]
 
 
 class OpenRouterChatProvider(BaseChatProvider):
@@ -306,17 +188,13 @@ class GroqChatProvider(BaseChatProvider):
 
 def _create_chat_provider(name: str | None = None) -> BaseChatProvider:
     """Instantiate chat provider by name or AI_PROVIDER setting."""
-    provider_name = (name or getattr(settings, "AI_PROVIDER", "gemini")).strip().lower()
-    if provider_name == "gemini":
-        return GeminiChatProvider()
-    if provider_name == "deepseek":
-        return DeepSeekChatProvider()
+    provider_name = (name or getattr(settings, "AI_PROVIDER", "openrouter")).strip().lower()
     if provider_name == "openrouter":
         return OpenRouterChatProvider()
     if provider_name == "groq":
         return GroqChatProvider()
     raise ValueError(
-        f"Unsupported AI_PROVIDER: {provider_name!r}. Use 'gemini', 'deepseek', 'openrouter', or 'groq'."
+        f"Unsupported AI_PROVIDER: {provider_name!r}. Use 'openrouter' or 'groq'."
     )
 
 

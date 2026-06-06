@@ -3,9 +3,8 @@
 All providers return vectors compatible with pgvector storage and similarity queries.
 """
 
-from apps.sources.providers import (
+from apps.core.providers import (
     BaseEmbeddingProvider,
-    GeminiEmbeddingProvider,
     LocalEmbeddingProvider,
     _create_embedding_provider,
     _DefaultEmbeddingProvider,
@@ -14,7 +13,6 @@ from apps.sources.providers import (
 
 __all__ = [
     "BaseEmbeddingProvider",
-    "GeminiEmbeddingProvider",
     "LocalEmbeddingProvider",
     "_create_embedding_provider",
     "_DefaultEmbeddingProvider",
