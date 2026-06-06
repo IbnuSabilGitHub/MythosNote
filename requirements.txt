@@ -12,3 +12,4 @@ gunicorn==21.2.0
 email-validator==2.2.0
 google-genai==1.14.0
 google-api-core==2.24.2
+whitenoise==6.6.0

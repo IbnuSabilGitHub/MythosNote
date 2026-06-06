@@ -42,10 +42,7 @@ class GenerateWorkspaceView(APIView):
         return []
 
     def get(self, request, id):
-        workspace = get_object_or_404(
-            Workspace.objects.filter(user=request.user),
-            id=id,
-        )
+        workspace = get_object_or_404(Workspace.objects.filter(user=request.user), id=id)
         queryset = GenerateJob.objects.filter(user=request.user, workspace=workspace)
         paginator = GenerateJobPagination()
         page = paginator.paginate_queryset(queryset, request)
@@ -60,12 +57,9 @@ class GenerateWorkspaceView(APIView):
         data = serializer.validated_data
         source_ids = [str(sid) for sid in data["source_ids"]]
 
+        # Validasi konteks sumber sebelum cek kuota (hindari kuota terpotong percuma)
         try:
-            get_generate_context(
-                user=request.user,
-                workspace_id=id,
-                source_ids=source_ids,
-            )
+            get_generate_context(user=request.user, workspace_id=id, source_ids=source_ids)
         except GenerateContextError as exc:
             return Response({"detail": exc.message}, status=exc.status_code)
 
@@ -75,10 +69,8 @@ class GenerateWorkspaceView(APIView):
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 
-        workspace = get_object_or_404(
-            Workspace.objects.filter(user=request.user),
-            id=id,
-        )
+        # workspace sudah divalidasi oleh get_generate_context, fetch ulang untuk FK
+        workspace = get_object_or_404(Workspace.objects.filter(user=request.user), id=id)
 
         job = GenerateJob.objects.create(
             user=request.user,
@@ -96,13 +88,9 @@ class GenerateWorkspaceView(APIView):
             job.status = "failed"
             job.error_message = f"Failed to queue generate job: {exc}"
             job.save(update_fields=["status", "error_message", "updated_at"])
-            return Response(
-                {"detail": "Failed to queue generate job."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            return Response({"detail": "Failed to queue generate job."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        out = GenerateJobCreatedSerializer(job)
-        return Response({"generate_job": out.data}, status=status.HTTP_202_ACCEPTED)
+        return Response({"generate_job": GenerateJobCreatedSerializer(job).data}, status=status.HTTP_202_ACCEPTED)
 
 
 class GenerateJobDetailView(APIView):
@@ -111,28 +99,35 @@ class GenerateJobDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, job_id):
-        job = get_object_or_404(
-            GenerateJob.objects.filter(user=request.user),
-            id=job_id,
-        )
+        job = get_object_or_404(GenerateJob.objects.filter(user=request.user), id=job_id)
         return Response(GenerateJobSerializer(job).data, status=status.HTTP_200_OK)
 
     def delete(self, request, job_id):
-        job = get_object_or_404(
-            GenerateJob.objects.filter(user=request.user),
-            id=job_id,
-        )
+        job = get_object_or_404(GenerateJob.objects.filter(user=request.user), id=job_id)
         job.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+# ── Render views (FBV) ────────────────────────────────────────────────────────
+
+_GENERATE_RENDER_MAP = {
+    "quiz": "generate/quiz.html",
+    "mindmap": "generate/mindmap.html",
+}
+
+
+def _workspace_generate_render_view(request, job_id, action):
+    """Shared render helper untuk quiz dan mindmap."""
+    template = _GENERATE_RENDER_MAP[action]
+    job = get_object_or_404(GenerateJob.objects.filter(user=request.user), id=job_id, action=action)
+    return render(request, template, {"job": job, "workspace": job.workspace, "show_navbar": False})
+
+
 @verified_email_required
 def workspace_quiz_view(request, job_id):
-    job = get_object_or_404(GenerateJob.objects.filter(user=request.user), id=job_id, action="quiz")
-    return render(request, "generate/quiz.html", {"job": job, "workspace": job.workspace, "show_navbar": False})
+    return _workspace_generate_render_view(request, job_id, "quiz")
 
 
 @verified_email_required
 def workspace_mindmap_view(request, job_id):
-    job = get_object_or_404(GenerateJob.objects.filter(user=request.user), id=job_id, action="mindmap")
-    return render(request, "generate/mindmap.html", {"job": job, "workspace": job.workspace, "show_navbar": False})
+    return _workspace_generate_render_view(request, job_id, "mindmap")

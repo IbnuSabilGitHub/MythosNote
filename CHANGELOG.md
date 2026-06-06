@@ -5,7 +5,41 @@ Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a 
 
 
 
+## [1.2.67] - 2026-06-06
+### Summary
+Refaktor readability dan perbaikan helpers di 7 modul (`chat`, `sources`, `generate`, `core`, `accounts`).
+
+### Changed
+- `apps/accounts/utils.py`: Konsolidasi logic limit kuota harian ke dalam helper privat `_check_and_increment` serta pemindahan import ke baris atas.
+- `apps/chat/views.py`: Sederhanakan penanganan input `source_ids`, ganti warning bisu dengan logger, dan hapus konstanta threshold similarity RAG yang tidak terpakai.
+- `apps/core/providers.py`: Ekstraksi helper `_openrouter_headers()` dan bersihkan override model default yang redundan.
+- `apps/generate/tasks.py`: Ekstraksi helper `_mark_job_failed()` dan `_classify_error_message()` untuk merapikan penanganan error.
+- `apps/generate/views.py`: Deduplikasi view kuis dan mindmap menggunakan helper `_workspace_generate_render_view()`.
+- `apps/sources/tasks.py`: Ekstraksi helper pembantu format file (`_extract_pdf()`, `_extract_docx()`, `_extract_text_file()`), perbaikan logika overlap token RAG, dan konsolidasi double-write database.
+- `apps/sources/views.py`: Pindahkan import mimetypes dan filename sanitizer ke level modul teratas dan definisikan konstanta batas upload.
+
+## [1.2.66] - 2026-06-06
+### Summary
+Refactor arsitektur app: pisah `ChatSession`/`ChatMessage` ke `apps/chat`, buat `apps/core` untuk shared AI providers, reset semua migrasi.
+
+### Added
+- `apps/core/providers.py`: Shared AI providers (`ChatProvider`, `EmbeddingProvider` + semua implementasi) dipindah dari `apps.sources.providers`. Dipakai oleh `apps.chat` dan `apps.generate`.
+- `apps/chat/`: App baru Django. Berisi `models.py` (`ChatSession`, `ChatMessage`), `views.py` (semua chat views + `ChatRateThrottle`), `urls.py` (route chat API tidak diubah agar frontend aman), dan `migrations/0001_initial.py`.
+
+### Changed
+- `apps/sources/models.py`: Hapus `ChatSession` dan `ChatMessage` — dipindah ke `apps.chat.models`.
+- `apps/sources/views.py`: Hapus semua chat views (`ChatView`, `ChatSessionListView`, `ChatMessageListView`, `ChatMessageDeleteView`, `ChatRateThrottle`) — dipindah ke `apps.chat.views`.
+- `apps/sources/urls.py`: Hapus semua route chat — dipindah ke `apps.chat.urls`.
+- `apps/sources/providers.py`: Dijadikan backward-compat shim yang re-export dari `apps.core.providers`.
+- `apps/generate/tasks.py`: Update import `ChatProvider` dari `apps.core.providers`.
+- `config/settings.py`: Daftarkan `apps.chat.apps.ChatConfig` di `INSTALLED_APPS`.
+- `config/urls.py`: Tambah `include('apps.chat.urls')`.
+
+### Removed (Migrations Reset)
+- Semua file migrasi lama dihapus dan di-generate ulang bersih. Diperlukan `docker compose down -v` untuk reset volume Postgres.
+
 ## [1.2.65] - 2026-06-04
+
 ### Summary
 Menambahkan fitur monitor penggunaan dan limit kuota AI harian agar user dapat memantau sisa kuota chat, generate, dan upload beserta kapan kuota akan direset.
 

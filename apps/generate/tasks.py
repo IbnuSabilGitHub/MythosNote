@@ -1,5 +1,6 @@
 """RQ background tasks for generate jobs."""
 
+import logging
 import traceback
 
 from django.db import transaction
@@ -8,7 +9,36 @@ from apps.generate.models import GenerateJob
 from apps.generate.processors import ProcessOutputError, process_output
 from apps.generate.prompts import build_messages
 from apps.generate.services import GenerateContextError, get_generate_context
-from apps.sources.providers import ChatProvider
+from apps.core.providers import ChatProvider
+
+logger = logging.getLogger(__name__)
+
+
+# Error strings yang menandakan masalah di sisi provider eksternal
+_PROVIDER_OVERLOAD_HINTS = ("503", "experiencing high demand", "429", "quota")
+_PROVIDER_TIMEOUT_HINTS = ("timeout", "deadline")
+_PROVIDER_AUTH_HINTS = ("403", "api key", "500")
+
+
+def _classify_error_message(exc: Exception) -> str:
+    """Terjemahkan exception provider ke pesan user-friendly."""
+    exc_str = str(exc).lower()
+    if any(hint in exc_str for hint in _PROVIDER_OVERLOAD_HINTS):
+        return "Layanan sedang padat. Silakan coba beberapa saat lagi."
+    if any(hint in exc_str for hint in _PROVIDER_TIMEOUT_HINTS):
+        return "Koneksi terputus. Silakan coba lagi."
+    if any(hint in exc_str for hint in _PROVIDER_AUTH_HINTS):
+        return "Terjadi gangguan sistem."
+    return "Terjadi kesalahan saat memproses data."
+
+
+def _mark_job_failed(job_id: str, message: str) -> None:
+    """Set status job menjadi failed dengan pesan error."""
+    with transaction.atomic():
+        job = GenerateJob.objects.select_for_update().get(id=job_id)
+        job.status = "failed"
+        job.error_message = message[:500]
+        job.save(update_fields=["status", "error_message", "updated_at"])
 
 
 def process_generate_job(job_id: str) -> None:
@@ -42,34 +72,13 @@ def process_generate_job(job_id: str) -> None:
             job.save(update_fields=["status", "result", "title", "error_message", "updated_at"])
 
     except GenerateJob.DoesNotExist:
-        print(f"ERROR: GenerateJob {job_id} tidak ditemukan")
+        logger.error("GenerateJob %s tidak ditemukan.", job_id)
 
     except (GenerateContextError, ProcessOutputError) as exc:
         if job is not None:
-            with transaction.atomic():
-                job = GenerateJob.objects.select_for_update().get(id=job.id)
-                job.status = "failed"
-                job.error_message = str(exc)[:500]
-                job.save(update_fields=["status", "error_message", "updated_at"])
+            _mark_job_failed(job.id, str(exc))
 
     except Exception as exc:
-        error_traceback = traceback.format_exc()
-        print(f"ERROR processing generate job {job_id}: {error_traceback}")
-
+        logger.error("ERROR processing generate job %s:\n%s", job_id, traceback.format_exc())
         if job is not None:
-            with transaction.atomic():
-                job = GenerateJob.objects.select_for_update().get(id=job.id)
-                job.status = "failed"
-                
-                exc_str = str(exc)
-                if "503" in exc_str or "experiencing high demand" in exc_str.lower() or "429" in exc_str or "quota" in exc_str.lower():
-                    user_msg = "Layanan sedang padat. Silakan coba beberapa saat lagi."
-                elif "timeout" in exc_str.lower() or "deadline" in exc_str.lower():
-                    user_msg = "Koneksi terputus. Silakan coba lagi."
-                elif "403" in exc_str or "api key" in exc_str.lower() or "500" in exc_str:
-                    user_msg = "Terjadi gangguan sistem."
-                else:
-                    user_msg = "Terjadi kesalahan saat memproses data."
-                
-                job.error_message = user_msg[:500]
-                job.save(update_fields=["status", "error_message", "updated_at"])
+            _mark_job_failed(job.id, _classify_error_message(exc))

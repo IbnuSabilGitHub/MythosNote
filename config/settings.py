@@ -146,6 +146,7 @@ INSTALLED_APPS = [
     'apps.sources.apps.SourcesConfig',
     'apps.generate.apps.GenerateConfig',
     'apps.workspaces.apps.WorkspacesConfig',
+    'apps.chat.apps.ChatConfig',  # chat app (refactor 2026-06-06)
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -158,6 +159,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -271,6 +273,12 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+import sys
+
+if 'test' in sys.argv:
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+else:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -304,19 +312,15 @@ UNVERIFIED_USER_CLEANUP_DAYS = int(os.getenv('UNVERIFIED_USER_CLEANUP_DAYS', '1'
 # Public Google Identity Services client id. When empty, the template keeps
 # the Google button disabled without breaking email/password auth.
 GOOGLE_OAUTH_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID', '')
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip()
-DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY', '').strip()
-DEEPSEEK_BASE_URL = os.getenv('DEEPSEEK_BASE_URL', 'https://api.deepseek.com/v1').strip()
-
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '').strip()
 GROQ_API_KEY = os.getenv('GROQ_API_KEY', '').strip()
 
 # AI Provider options and validation
-AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini').strip().lower()
-if AI_PROVIDER not in ('gemini', 'deepseek', 'openrouter', 'groq'):
-    raise ValueError(f"Unsupported AI_PROVIDER: {AI_PROVIDER!r}. Use 'gemini', 'deepseek', 'openrouter', or 'groq'.")
+AI_PROVIDER = os.getenv('AI_PROVIDER', 'openrouter').strip().lower()
+if AI_PROVIDER not in ('openrouter', 'groq'):
+    raise ValueError(f"Unsupported AI_PROVIDER: {AI_PROVIDER!r}. Use 'openrouter' or 'groq'.")
 
-DEFAULT_EMBEDDING_PROVIDER = 'gemini'
+DEFAULT_EMBEDDING_PROVIDER = 'openrouter'
 EMBEDDING_PROVIDER = os.getenv('EMBEDDING_PROVIDER', DEFAULT_EMBEDDING_PROVIDER).strip().lower()
 EMBEDDING_MODEL = os.getenv('EMBEDDING_MODEL', 'gemini-embedding-001').strip()
 EMBEDDING_DIMENSIONS = int(os.getenv('EMBEDDING_DIMENSIONS', '768'))
