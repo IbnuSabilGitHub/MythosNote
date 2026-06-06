@@ -29,6 +29,7 @@ from .utils import (
     send_password_reset_email,
     send_verification_email,
     verify_google_credential,
+    get_user_quota_status,
 )
 
 
@@ -377,6 +378,7 @@ def user_settings(request: HttpRequest) -> HttpResponse:
     password_form = PasswordChangeForm(user=request.user)
     
     has_password = request.user.has_usable_password()
+    ai_quota = get_user_quota_status(request.user, request)
 
     if request.method == "POST":
         action = request.POST.get("action")
@@ -407,6 +409,7 @@ def user_settings(request: HttpRequest) -> HttpResponse:
             "profile_form": profile_form,
             "password_form": password_form,
             "has_password": has_password,
+            "ai_quota": ai_quota,
             "show_navbar": True,
             "navbar_type": "project",
         },

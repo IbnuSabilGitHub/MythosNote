@@ -27,6 +27,10 @@
                     <iconify-icon icon="tabler:shield-lock" class="text-lg"></iconify-icon>
                     Keamanan
                 </button>
+                <button type="button" data-tab-target="quota" class="tab-btn flex items-center gap-3 px-4 py-3 rounded-xl font-manrope text-sm font-semibold transition text-left w-full border border-transparent text-stone-400 hover:bg-neutral-900/40 hover:text-zinc-200">
+                    <iconify-icon icon="tabler:chart-bar" class="text-lg"></iconify-icon>
+                    Kuota AI
+                </button>
             </div>
 
             <!-- Forms Content Area -->
@@ -124,6 +128,99 @@
                         {% endif %}
                     </div>
                 </div>
+
+                <!-- Section 3: AI Quota -->
+                <div id="tab-quota" class="tab-content hidden flex flex-col gap-6">
+                    <div class="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-6 backdrop-blur-sm">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="font-manrope text-lg font-semibold text-zinc-200 flex items-center gap-2">
+                                <iconify-icon icon="tabler:chart-bar" class="text-primary text-xl"></iconify-icon>
+                                Penggunaan AI Harian
+                            </h2>
+                            {% if ai_quota.prompt.pct >= 90 or ai_quota.generate.pct >= 90 or ai_quota.upload.pct >= 90 %}
+                              <span class="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 border border-red-500/20 px-2.5 py-1 font-manrope text-[11px] font-semibold text-red-400">
+                                <span class="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse"></span>
+                                Hampir Habis
+                              </span>
+                            {% elif ai_quota.prompt.pct >= 70 or ai_quota.generate.pct >= 70 or ai_quota.upload.pct >= 70 %}
+                              <span class="inline-flex items-center gap-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 px-2.5 py-1 font-manrope text-[11px] font-semibold text-yellow-400">
+                                <span class="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse"></span>
+                                Waspada
+                              </span>
+                            {% else %}
+                              <span class="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 border border-green-500/20 px-2.5 py-1 font-manrope text-[11px] font-semibold text-green-400">
+                                <span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
+                                Aman
+                              </span>
+                            {% endif %}
+                        </div>
+
+                        <p id="quota-reset-text" data-reset-at="{{ ai_quota.reset_at }}" class="font-manrope text-sm text-stone-400 mb-6 border-b border-neutral-800 pb-4">Reset setiap tengah malam</p>
+
+                        <div class="grid gap-6">
+                            <!-- Chat Prompt -->
+                            <div class="flex flex-col gap-2">
+                              <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-1.5">
+                                  <iconify-icon icon="tabler:message-circle" class="text-stone-400 text-sm"></iconify-icon>
+                                  <span class="font-manrope text-sm font-medium text-stone-300">Chat</span>
+                                </div>
+                                <span class="font-manrope text-sm font-semibold
+                                  {% if ai_quota.prompt.pct >= 90 %}text-red-400{% elif ai_quota.prompt.pct >= 70 %}text-yellow-400{% else %}text-stone-400{% endif %}">
+                                  {{ ai_quota.prompt.used }}/{{ ai_quota.prompt.limit }}
+                                </span>
+                              </div>
+                              <div class="h-2 w-full rounded-full bg-neutral-800 overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-500
+                                  {% if ai_quota.prompt.pct >= 90 %}bg-red-500{% elif ai_quota.prompt.pct >= 70 %}bg-yellow-400{% else %}bg-primary{% endif %}"
+                                  style="width: {{ ai_quota.prompt.pct }}%"></div>
+                              </div>
+                              <span class="font-manrope text-[11px] text-stone-500">{{ ai_quota.prompt.remaining }} sisa hari ini</span>
+                            </div>
+
+                            <!-- Generate -->
+                            <div class="flex flex-col gap-2">
+                              <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-1.5">
+                                  <iconify-icon icon="tabler:sparkles" class="text-stone-400 text-sm"></iconify-icon>
+                                  <span class="font-manrope text-sm font-medium text-stone-300">Generate</span>
+                                </div>
+                                <span class="font-manrope text-sm font-semibold
+                                  {% if ai_quota.generate.pct >= 90 %}text-red-400{% elif ai_quota.generate.pct >= 70 %}text-yellow-400{% else %}text-stone-400{% endif %}">
+                                  {{ ai_quota.generate.used }}/{{ ai_quota.generate.limit }}
+                                </span>
+                              </div>
+                              <div class="h-2 w-full rounded-full bg-neutral-800 overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-500
+                                  {% if ai_quota.generate.pct >= 90 %}bg-red-500{% elif ai_quota.generate.pct >= 70 %}bg-yellow-400{% else %}bg-primary{% endif %}"
+                                  style="width: {{ ai_quota.generate.pct }}%"></div>
+                              </div>
+                              <span class="font-manrope text-[11px] text-stone-500">{{ ai_quota.generate.remaining }} sisa hari ini</span>
+                            </div>
+
+                            <!-- Upload -->
+                            <div class="flex flex-col gap-2">
+                              <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-1.5">
+                                  <iconify-icon icon="tabler:upload" class="text-stone-400 text-sm"></iconify-icon>
+                                  <span class="font-manrope text-sm font-medium text-stone-300">Upload</span>
+                                </div>
+                                <span class="font-manrope text-sm font-semibold
+                                  {% if ai_quota.upload.pct >= 90 %}text-red-400{% elif ai_quota.upload.pct >= 70 %}text-yellow-400{% else %}text-stone-400{% endif %}">
+                                  {{ ai_quota.upload.used }}/{{ ai_quota.upload.limit }}
+                                </span>
+                              </div>
+                              <div class="h-2 w-full rounded-full bg-neutral-800 overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-500
+                                  {% if ai_quota.upload.pct >= 90 %}bg-red-500{% elif ai_quota.upload.pct >= 70 %}bg-yellow-400{% else %}bg-primary{% endif %}"
+                                  style="width: {{ ai_quota.upload.pct }}%"></div>
+                              </div>
+                              <span class="font-manrope text-[11px] text-stone-500">{{ ai_quota.upload.remaining }} sisa hari ini</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -153,10 +250,25 @@
                 // Hide all contents
                 tabContents.forEach(c => c.classList.add('hidden'));
 
-                // Show target content
-                document.getElementById(`tab-${target}`).classList.remove('hidden');
+                // Show target
+                const targetContent = document.getElementById('tab-' + target);
+                if (targetContent) {
+                    targetContent.classList.remove('hidden');
+                }
             });
         });
+
+        // Format quota reset time dynamically based on user timezone
+        const resetTextEl = document.getElementById('quota-reset-text');
+        if (resetTextEl && resetTextEl.dataset.resetAt) {
+            try {
+                const date = new Date(resetTextEl.dataset.resetAt);
+                const timeString = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+                resetTextEl.textContent = `Reset otomatis pada pukul ${timeString} waktu setempat`;
+            } catch (e) {
+                console.error('Failed to parse reset date:', e);
+            }
+        }
 
         // Dirty form check for profile name
         const firstNameInput = document.getElementById('id_first_name');

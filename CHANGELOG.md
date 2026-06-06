@@ -5,6 +5,16 @@ Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a 
 
 
 
+## [1.2.69] - 2026-06-07
+### Summary
+Pemindahan widget kuota AI dari dashboard proyek ke halaman pengaturan akun (settings).
+
+### Changed
+- `apps/accounts/views.py`: Menambahkan data kuota AI harian (`ai_quota`) ke konteks render view pengaturan akun.
+- `static/js/project.js`: Menghapus inisialisasi / format waktu reset kuota AI dari dashboard proyek.
+- `templates/auth/settings.html`: Menambahkan tab Kuota AI beserta visualisasi progress bar penggunaan chat, generate, dan upload.
+- `templates/project.html`: Menghapus widget kuota AI harian dari dashboard proyek.
+
 ## [1.2.68] - 2026-06-07
 ### Summary
 Fitur multi-upload file di modal tambah sumber (maks 5 file) dan reposisi tombol Salin Markdown ke kanan bawah.

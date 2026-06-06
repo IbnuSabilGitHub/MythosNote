@@ -338,16 +338,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Format quota reset time dynamically based on user timezone
-  const resetTextEl = document.getElementById('quota-reset-text');
-  if (resetTextEl && resetTextEl.dataset.resetAt) {
-    try {
-      const date = new Date(resetTextEl.dataset.resetAt);
-      const timeString = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
-      
-      resetTextEl.textContent = `Reset otomatis pada pukul ${timeString} waktu setempat`;
-    } catch (e) {
-      console.error('Failed to parse reset date:', e);
-    }
-  }
 });
