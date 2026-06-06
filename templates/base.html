@@ -23,19 +23,17 @@
   <link rel="stylesheet" href="{% static 'css/typography.css' %}" />
 
   <!-- Iconify (Icon Library) -->
-  <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
+  <script integrity="sha384-Hj2pe/JEGitdWiVWNPuXWhAdYtdM+ZO+s0KuZHaAk1oAbeAtNas7R6hKlmbInTM4" crossorigin="anonymous" src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
 
   <!-- Marked.js (Markdown rendering) -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script integrity="sha384-H+hy9ULve6xfxRkWIh/YOtvDdpXgV2fmAGQkIDTxIgZwNoaoBal14Di2YTMR6MzR" crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
 
   <!-- Mermaid.js (Diagrams) -->
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script integrity="sha384-R63zfMfSwJF4xCR11wXii+QUsbiBIdiDzDbtxia72oGWfkT7WHJfmD/I/eeHPJyT" crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
   <script>
     mermaid.initialize({ startOnLoad: true, theme: "dark" });
     mermaid.contentLoaded();
   </script>
-
-  <script type="module" src="{% static 'js/components.js' %}"></script>
 
   {% block extra_css %}{% endblock %}
 </head>
@@ -57,9 +55,9 @@
       <!-- Desktop Navigation (hidden on mobile) -->
       {% if navbar_type == 'home' %}
       <div class="hidden items-center gap-6 text-sm text-outline md:flex">
-        <a class="transition hover:text-primary" href="#features">Features</a>
-        <a class="transition hover:text-primary" href="#how">How It Works</a>
-        <a class="transition hover:text-primary" href="#start">Start Free</a>
+        <a class="transition hover:text-primary" href="#features">Fitur</a>
+        <a class="transition hover:text-primary" href="#how">Cara Kerja</a>
+        <a class="transition hover:text-primary" href="#start">Mulai Gratis</a>
       </div>
       {% endif %}
 
@@ -72,7 +70,7 @@
           <button id="userMenuButton" data-dropdown-toggle="userDropdown" data-dropdown-placement="bottom-end"
             class="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-on-primary focus:outline-none"
             type="button" aria-expanded="false">
-            {{ request.user.email|first|upper }}
+            {% if request.user.first_name %}{{ request.user.first_name|first|upper }}{% else %}{{ request.user.email|first|upper }}{% endif %}
           </button>
 
           <div id="userDropdown"
@@ -90,6 +88,17 @@
                 </a>
               </li>
 
+              <li role="none">
+                <a href="{% url 'user_settings' %}"
+                  class="flex items-center gap-3 w-full px-4 py-2.5 transition-all duration-200 hover:pl-5 hover:text-primary focus:pl-5 focus:outline-none group"
+                  role="menuitem">
+
+                  <iconify-icon icon="tabler:settings"
+                    class="text-md text-on-surface group-hover:text-primary"></iconify-icon>
+                  Pengaturan
+                </a>
+              </li>
+
               <!-- Garis pemisah -->
               <li role="separator" class="my-1 h-px bg-outline-variant"></li>
 
@@ -101,7 +110,7 @@
                     role="menuitem">
                     <iconify-icon icon="tabler:logout"
                       class="shrink-0 text-md transition-colors group-hover:text-error"></iconify-icon>
-                    <span>Logout</span>
+                    <span>Keluar</span>
                   </button>
                 </form>
               </li>
@@ -111,20 +120,20 @@
         {% else %}
         <a class="rounded bg-primary-container px-5 py-2 text-sm font-bold text-on-primary-container transition hover:bg-primary"
           href="{% url 'project' %}">
-          Go to Project
+          Buka Project
         </a>
         {% endif %}
         {% else %}
         <!-- Sign In (hidden on mobile) -->
         <a class="hidden px-4 py-2 text-sm text-outline transition hover:text-primary md:block"
           href="{% url 'signin' %}">
-          Sign In
+          Masuk
         </a>
 
         <!-- Get Started (visible on all devices) -->
         <a class="rounded bg-primary-container px-5 py-2 text-sm font-bold text-on-primary-container transition hover:bg-primary"
           href="{% url 'signup' %}">
-          Get Started
+          Mulai Sekarang
         </a>
         {% endif %}
       </div>
@@ -143,8 +152,7 @@
   <!-- Toast Component -->
   {% include "components/toast.html" %}
 
-  <!-- Custom Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/flowbite@4.0.1/dist/flowbite.min.js"></script>
+  <script integrity="sha384-dXMudAuWq5MLjG7Tex8rC+3U/BPQ/OUAF6UyUa7DWzfAMW1JRIf2NuW2hAyGtsvO" crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/flowbite@4.0.1/dist/flowbite.min.js"></script>
 
   <script src="{% static 'js/toast/manager.js' %}"></script>
   <script src="{% static 'js/toast/django-messages.js' %}"></script>

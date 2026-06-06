@@ -12,7 +12,7 @@ from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from django.views.decorators.http import require_POST
 
-from .decorators import guest_required
+from .decorators import guest_required, verified_email_required
 from .forms import ForgotPasswordForm, PasswordResetConfirmForm, SignInForm, SignUpForm
 from .utils import (
     can_send_verification_email,
@@ -29,6 +29,7 @@ from .utils import (
     send_password_reset_email,
     send_verification_email,
     verify_google_credential,
+    get_user_quota_status,
 )
 
 
@@ -160,7 +161,10 @@ def google_sign_in(request: HttpRequest) -> HttpResponse:
 
     try:
         payload = verify_google_credential(credential)
-    except Exception:
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.exception("Google OAuth validation failed")
         messages.error(request, "Login Google gagal divalidasi.")
         return redirect("signin")
 
@@ -183,9 +187,17 @@ def get_or_create_google_user(payload: Mapping[str, Any]) -> Any:
     with transaction.atomic():
         user = User.objects.select_for_update().filter(email__iexact=payload["email"]).first()
         if user is None:
-            user = User(username=None, email=payload["email"])
+            user = User(
+                username=build_unique_username(payload["email"]),
+                email=payload["email"],
+                first_name=payload.get("name", "")[:150]
+            )
             user.set_unusable_password()
             user.save()
+        elif not user.first_name and payload.get("name"):
+            user.first_name = payload["name"][:150]
+            user.save(update_fields=["first_name"])
+
         if payload["email_verified"]:
             user.profile.email_verified = True
             user.profile.save(update_fields=["email_verified", "updated_at"])
@@ -352,3 +364,75 @@ def password_reset_confirm(request: HttpRequest, uidb64: str, token: str) -> Htt
             messages.error(request, errors[0])
 
     return render(request, "auth/password_reset_confirm.html", {"form": form, "hide_nav": True})
+
+
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.forms import PasswordChangeForm
+from .forms import ProfileUpdateForm
+
+@verified_email_required
+def user_settings(request: HttpRequest) -> HttpResponse:
+    """Halaman pengaturan profil dan keamanan user."""
+    profile_form = ProfileUpdateForm(instance=request.user)
+    password_form = PasswordChangeForm(user=request.user)
+    
+    has_password = request.user.has_usable_password()
+    ai_quota = get_user_quota_status(request.user, request)
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "update_profile":
+            profile_form = ProfileUpdateForm(request.POST, instance=request.user)
+            if profile_form.is_valid():
+                profile_form.save()
+                messages.success(request, "Profil berhasil diperbarui.")
+                return redirect("user_settings")
+            else:
+                for errors in profile_form.errors.values():
+                    messages.error(request, errors[0])
+        elif action == "change_password" and has_password:
+            password_form = PasswordChangeForm(user=request.user, data=request.POST)
+            if password_form.is_valid():
+                user = password_form.save()
+                update_session_auth_hash(request, user)  # Keep the session active
+                messages.success(request, "Password berhasil diubah.")
+                return redirect("user_settings")
+            else:
+                for errors in password_form.errors.values():
+                    messages.error(request, errors[0])
+
+    return render(
+        request,
+        "auth/settings.html",
+        {
+            "profile_form": profile_form,
+            "password_form": password_form,
+            "has_password": has_password,
+            "ai_quota": ai_quota,
+            "show_navbar": True,
+            "navbar_type": "project",
+        },
+    )
+
+
+@login_required
+def onboarding(request: HttpRequest) -> HttpResponse:
+    """Halaman onboarding untuk melengkapi profil pertama kali."""
+    if not is_email_verified(request.user):
+        return redirect("email_unverified")
+
+    if request.user.first_name:
+        return redirect("project")
+
+    if request.method == "POST":
+        first_name = request.POST.get("first_name", "").strip()
+        if not first_name:
+            messages.error(request, "Nama lengkap harus diisi.")
+        else:
+            request.user.first_name = first_name[:150]
+            request.user.save(update_fields=["first_name"])
+            messages.success(request, f"Selamat datang, {first_name}!")
+            return redirect("project")
+
+    return render(request, "auth/onboarding.html", {"hide_nav": True})

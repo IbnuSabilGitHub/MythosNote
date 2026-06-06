@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Mindmap - {{ job.title|default:"Generate Mindmap" }}{% endblock %}
+
+{% block content %}
+<div class="w-full h-screen bg-neutral-900 flex flex-col overflow-hidden text-stone-300 font-manrope">
+    <!-- Header -->
+    <div class="flex-none min-h-16 py-2 px-4 sm:px-6 bg-neutral-900 border-b border-stone-700 flex justify-between items-center z-20 shadow-sm relative gap-2 overflow-hidden">
+        <div class="flex-none flex justify-start items-center">
+            <a href="{% url 'workspace' %}?workspace_id={{ workspace.id }}" class="flex justify-center items-center gap-2 hover:text-white transition group" title="Kembali">
+                <iconify-icon icon="tabler:arrow-left" class="text-xl"></iconify-icon>
+                <span class="hidden md:inline text-base font-normal">Kembali ke Workspace</span>
+            </a>
+        </div>
+        <div class="flex-1 min-w-0 flex justify-center items-center">
+            <h1 class="text-zinc-200 text-base sm:text-2xl font-normal font-newsreader line-clamp-2 w-full text-center leading-tight" title="{{ job.title|default:'Mindmap' }}">{{ job.title|default:"Mindmap" }}</h1>
+        </div>
+        <div class="flex-none flex justify-end items-center gap-2 sm:gap-4">
+            <button type="button" id="btn-delete" class="flex justify-center items-center gap-2 px-2 sm:px-3 py-1.5 bg-red-900/30 hover:bg-red-900/50 text-red-400 hover:text-red-300 rounded-md border border-red-900/50 transition" aria-label="Hapus">
+                <iconify-icon icon="tabler:trash" class="text-lg"></iconify-icon>
+                <span class="hidden sm:inline text-sm font-medium">Hapus</span>
+            </button>
+            <button type="button" id="btn-export" class="flex justify-center items-center gap-2 px-2 sm:px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-stone-300 hover:text-white rounded-md border border-stone-700 transition" aria-label="Ekspor Gambar">
+                <iconify-icon icon="tabler:download" class="text-lg"></iconify-icon>
+                <span class="hidden sm:inline text-sm font-medium">Ekspor</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <div class="flex-1 flex w-full relative overflow-hidden">
+        <!-- Diagram Area (Left/Center) -->
+        <div class="flex-1 relative bg-neutral-950 flex justify-center items-center overflow-hidden" id="mindmap-container">
+            <div id="mermaid-render-area" class="w-full h-full flex justify-center items-center cursor-grab active:cursor-grabbing origin-center" style="transform: scale(1) translate(0px, 0px);">
+                <!-- Mermaid SVG injected here -->
+            </div>
+            
+            <!-- Floating Controls -->
+            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-zinc-800/90 rounded-xl border border-stone-700 backdrop-blur-sm shadow-lg flex justify-start items-center gap-1 p-1 z-30">
+                <button type="button" id="btn-zoom-in" class="p-2 rounded-lg hover:bg-white/10 transition text-stone-300 hover:text-white" title="Perbesar">
+                    <iconify-icon icon="tabler:zoom-in" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" id="btn-zoom-out" class="p-2 rounded-lg hover:bg-white/10 transition text-stone-300 hover:text-white" title="Perkecil">
+                    <iconify-icon icon="tabler:zoom-out" class="text-lg"></iconify-icon>
+                </button>
+                <div class="w-px h-5 bg-stone-700 mx-1"></div>
+                <button type="button" id="btn-reset-zoom" class="p-2 rounded-lg hover:bg-white/10 transition text-stone-300 hover:text-white" title="Reset Tampilan">
+                    <iconify-icon icon="tabler:restore" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" id="btn-fullscreen" class="p-2 rounded-lg hover:bg-white/10 transition text-stone-300 hover:text-white" title="Layar Penuh">
+                    <iconify-icon icon="tabler:maximize" class="text-lg"></iconify-icon>
+                </button>
+            </div>
+        </div>
+        </div>
+    </div>
+</div>
+
+<!-- Invisible data store for JS -->
+<script type="application/json" id="mindmap-data">
+    {{ job.result|safe }}
+</script>
+
+<script>
+    const csrfToken = "{{ csrf_token }}";
+    const deleteBtn = document.getElementById("btn-delete");
+    if (deleteBtn) {
+        deleteBtn.addEventListener("click", () => {
+            if (window.ToastManager) {
+                window.ToastManager.delete("Mindmap", async () => {
+                    executeDelete();
+                });
+            } else {
+                if (confirm("Hapus mindmap ini secara permanen?")) executeDelete();
+            }
+        });
+    }
+
+    async function executeDelete() {
+        try {
+            const res = await fetch(`/api/generate/{{ job.id }}/`, {
+                method: "DELETE",
+                headers: { "X-CSRFToken": csrfToken }
+            });
+            if (res.ok || res.status === 404) {
+                window.location.href = "{% url 'workspace' %}?workspace_id={{ workspace.id }}";
+            } else {
+                if (window.ToastManager) window.ToastManager.error("Gagal menghapus.");
+                else alert("Gagal menghapus.");
+            }
+        } catch (err) {
+            console.error(err);
+            if (window.ToastManager) window.ToastManager.error("Terjadi kesalahan jaringan.");
+            else alert("Terjadi kesalahan jaringan.");
+        }
+    }
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
+<script type="module" src="{% static 'js/generate/mindmap.js' %}"></script>
+{% endblock %}

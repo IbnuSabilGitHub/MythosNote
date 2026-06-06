@@ -1,6 +1,7 @@
 """Utilitas auth bersama untuk akun, login, dan alur email."""
 
-from datetime import timedelta
+import ipaddress
+from datetime import datetime, time, timedelta
 from typing import Any
 import logging
 
@@ -57,12 +58,32 @@ def normalize_identifier(identifier: str | None) -> str:
 
 
 def get_client_ip(request: HttpRequest) -> str | None:
-    """Ambil IP klien terbaik dengan memperhatikan proxy."""
+    """Ambil IP klien terbaik dengan memperhatikan proxy.
 
-    forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if forwarded_for:
-        return forwarded_for.split(",", 1)[0].strip()
-    return request.META.get("REMOTE_ADDR")
+    X-Forwarded-For hanya dipercaya jika REMOTE_ADDR berasal dari
+    daftar proxy terpercaya (settings.TRUSTED_PROXY_IPS).  Tanpa
+    konfigurasi tersebut, header XFF diabaikan untuk mencegah spoofing.
+    """
+    remote_addr = request.META.get("REMOTE_ADDR")
+    trusted_proxies = getattr(settings, "TRUSTED_PROXY_IPS", [])
+
+    if trusted_proxies and remote_addr:
+        try:
+            remote_ip = ipaddress.ip_address(remote_addr)
+            is_trusted = any(
+                remote_ip in ipaddress.ip_network(cidr, strict=False)
+                for cidr in trusted_proxies
+            )
+        except ValueError:
+            is_trusted = False
+
+        if is_trusted:
+            forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+            if forwarded_for:
+                # Ambil IP paling kiri (client asli)
+                return forwarded_for.split(",", 1)[0].strip()
+
+    return remote_addr
 
 
 def increment_cache_counter(cache_key: str, timeout: int) -> int:
@@ -341,3 +362,90 @@ def verify_google_credential(credential: str) -> dict[str, str | bool]:
         "name": payload.get("name", ""),
         "email_verified": payload.get("email_verified") in (True, "true", "True"),
     }
+
+
+def get_api_usage(user: Any, request: HttpRequest) -> UserUsage:
+    """Ambil atau buat tracking pemakaian API untuk user/IP hari ini."""
+
+    today = timezone.localdate()
+    ip_address = get_client_ip(request)
+    identifier = user.email if hasattr(user, 'email') else f"anon|{ip_address or 'unknown'}"
+    
+    usage, _ = UserUsage.objects.get_or_create(
+        user=user if user.is_authenticated else None,
+        identifier=identifier,
+        date=today,
+        defaults={"ip_address": ip_address},
+    )
+    return usage
+
+
+def _check_and_increment(user: Any, request: HttpRequest, field: str, limit_setting: str) -> bool:
+    """Periksa kuota harian dan inkremen jika masih tersedia."""
+    with transaction.atomic():
+        usage = get_api_usage(user, request)
+        locked_usage = UserUsage.objects.select_for_update().get(pk=usage.pk)
+
+        limit = getattr(settings, limit_setting)
+        if getattr(locked_usage, field) >= limit:
+            return False
+
+        UserUsage.objects.filter(pk=locked_usage.pk).update(**{field: F(field) + 1})
+        return True
+
+
+def check_and_increment_prompt(user: Any, request: HttpRequest) -> bool:
+    """Periksa kuota chat harian dan inkremen jika masih tersedia."""
+    return _check_and_increment(user, request, "prompt_count", "AI_DAILY_PROMPT_LIMIT")
+
+
+def check_and_increment_generate(user: Any, request: HttpRequest) -> bool:
+    """Periksa kuota generate harian dan inkremen jika masih tersedia."""
+    return _check_and_increment(user, request, "generate_count", "AI_DAILY_GENERATE_LIMIT")
+
+
+def check_and_increment_upload(user: Any, request: HttpRequest) -> bool:
+    """Periksa kuota upload harian dan inkremen jika masih tersedia."""
+    return _check_and_increment(user, request, "upload_count", "AI_DAILY_UPLOAD_LIMIT")
+
+
+def get_user_quota_status(user: Any, request: HttpRequest) -> dict:
+    """Ambil status kuota harian pengguna saat ini."""
+    today = timezone.localdate()
+    identifier = user.email if hasattr(user, 'email') else f"anon|{get_client_ip(request) or 'unknown'}"
+
+    try:
+        usage = UserUsage.objects.get(
+            user=user if user.is_authenticated else None,
+            identifier=identifier,
+            date=today,
+        )
+        prompt_used = usage.prompt_count
+        generate_used = usage.generate_count
+        upload_used = usage.upload_count
+    except UserUsage.DoesNotExist:
+        prompt_used = 0
+        generate_used = 0
+        upload_used = 0
+
+    prompt_limit = settings.AI_DAILY_PROMPT_LIMIT
+    generate_limit = settings.AI_DAILY_GENERATE_LIMIT
+    upload_limit = settings.AI_DAILY_UPLOAD_LIMIT
+
+    # Reset terjadi saat pergantian hari (midnight lokal)
+    tomorrow = today + timedelta(days=1)
+    reset_at = timezone.make_aware(datetime.combine(tomorrow, time.min))
+
+    def _quota(used, limit):
+        remaining = max(limit - used, 0)
+        pct = round((used / limit) * 100) if limit > 0 else 0
+        return {"used": used, "limit": limit, "remaining": remaining, "pct": pct}
+
+    return {
+        "date": today.isoformat(),
+        "reset_at": reset_at.isoformat(),
+        "prompt": _quota(prompt_used, prompt_limit),
+        "generate": _quota(generate_used, generate_limit),
+        "upload": _quota(upload_used, upload_limit),
+    }
+

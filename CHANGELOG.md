@@ -2,7 +2,716 @@
 
 Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan versioning [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.12] - 2026-05-27
+
+
+
+## [1.2.69] - 2026-06-07
+### Summary
+Pemindahan widget kuota AI dari dashboard proyek ke halaman pengaturan akun (settings).
+
+### Changed
+- `apps/accounts/views.py`: Menambahkan data kuota AI harian (`ai_quota`) ke konteks render view pengaturan akun.
+- `static/js/project.js`: Menghapus inisialisasi / format waktu reset kuota AI dari dashboard proyek.
+- `templates/auth/settings.html`: Menambahkan tab Kuota AI beserta visualisasi progress bar penggunaan chat, generate, dan upload.
+- `templates/project.html`: Menghapus widget kuota AI harian dari dashboard proyek.
+
+## [1.2.68] - 2026-06-07
+### Summary
+Fitur multi-upload file di modal tambah sumber (maks 5 file) dan reposisi tombol Salin Markdown ke kanan bawah.
+
+### Added
+- `templates/workspace.html`: Template item preview (`upload-file-item-template`) untuk multi-upload file.
+
+### Changed
+- `config/settings.py`: Gunakan `StaticFilesStorage` jika `DEBUG` aktif untuk mempermudah development statik tanpa collectstatic.
+- `static/js/workspace/chat.js`: Reposisi tombol copy markdown/pesan chatbot ke kanan bawah (`bottom-3 right-3`).
+- `static/js/workspace/upload-modal.js`: Ubah upload single file menjadi upload multiple (maks 5 file) dengan list preview dinamis dan XHR progress.
+- `templates/workspace.html`: Dukungan atribut `multiple` pada input file serta layout list preview upload.
+
+## [1.2.67] - 2026-06-06
+### Summary
+Refaktor readability dan perbaikan helpers di 7 modul (`chat`, `sources`, `generate`, `core`, `accounts`).
+
+### Changed
+- `apps/accounts/utils.py`: Konsolidasi logic limit kuota harian ke dalam helper privat `_check_and_increment` serta pemindahan import ke baris atas.
+- `apps/chat/views.py`: Sederhanakan penanganan input `source_ids`, ganti warning bisu dengan logger, dan hapus konstanta threshold similarity RAG yang tidak terpakai.
+- `apps/core/providers.py`: Ekstraksi helper `_openrouter_headers()` dan bersihkan override model default yang redundan.
+- `apps/generate/tasks.py`: Ekstraksi helper `_mark_job_failed()` dan `_classify_error_message()` untuk merapikan penanganan error.
+- `apps/generate/views.py`: Deduplikasi view kuis dan mindmap menggunakan helper `_workspace_generate_render_view()`.
+- `apps/sources/tasks.py`: Ekstraksi helper pembantu format file (`_extract_pdf()`, `_extract_docx()`, `_extract_text_file()`), perbaikan logika overlap token RAG, dan konsolidasi double-write database.
+- `apps/sources/views.py`: Pindahkan import mimetypes dan filename sanitizer ke level modul teratas dan definisikan konstanta batas upload.
+
+## [1.2.66] - 2026-06-06
+### Summary
+Refactor arsitektur app: pisah `ChatSession`/`ChatMessage` ke `apps/chat`, buat `apps/core` untuk shared AI providers, reset semua migrasi.
+
+### Added
+- `apps/core/providers.py`: Shared AI providers (`ChatProvider`, `EmbeddingProvider` + semua implementasi) dipindah dari `apps.sources.providers`. Dipakai oleh `apps.chat` dan `apps.generate`.
+- `apps/chat/`: App baru Django. Berisi `models.py` (`ChatSession`, `ChatMessage`), `views.py` (semua chat views + `ChatRateThrottle`), `urls.py` (route chat API tidak diubah agar frontend aman), dan `migrations/0001_initial.py`.
+
+### Changed
+- `apps/sources/models.py`: Hapus `ChatSession` dan `ChatMessage` — dipindah ke `apps.chat.models`.
+- `apps/sources/views.py`: Hapus semua chat views (`ChatView`, `ChatSessionListView`, `ChatMessageListView`, `ChatMessageDeleteView`, `ChatRateThrottle`) — dipindah ke `apps.chat.views`.
+- `apps/sources/urls.py`: Hapus semua route chat — dipindah ke `apps.chat.urls`.
+- `apps/sources/providers.py`: Dijadikan backward-compat shim yang re-export dari `apps.core.providers`.
+- `apps/generate/tasks.py`: Update import `ChatProvider` dari `apps.core.providers`.
+- `config/settings.py`: Daftarkan `apps.chat.apps.ChatConfig` di `INSTALLED_APPS`.
+- `config/urls.py`: Tambah `include('apps.chat.urls')`.
+
+### Removed (Migrations Reset)
+- Semua file migrasi lama dihapus dan di-generate ulang bersih. Diperlukan `docker compose down -v` untuk reset volume Postgres.
+
+## [1.2.65] - 2026-06-04
+
+### Summary
+Menambahkan fitur monitor penggunaan dan limit kuota AI harian agar user dapat memantau sisa kuota chat, generate, dan upload beserta kapan kuota akan direset.
+
+### Added
+- `apps/accounts/api.py`: Endpoint baru `GET /api/quota/` (`QuotaStatusView`) yang mengembalikan status kuota harian user dalam format JSON (used, limit, remaining, pct untuk tiap tipe + reset_at).
+- `static/js/workspace/quota.js`: Modul JS baru untuk fetch kuota, render badge kompak di header workspace, dan popover detail dengan tiga mini-progress bar (chat, generate, upload). Badge warna dinamis: hijau/kuning/merah sesuai tingkat penggunaan.
+
+### Changed
+- `apps/accounts/utils.py`: Tambah fungsi `get_user_quota_status()` yang mengambil data `UserUsage` hari ini dan menghitung persentase pemakaian untuk tiap kuota.
+- `apps/accounts/urls.py`: Tambah route `api/quota/` ke `QuotaStatusView`.
+- `config/views.py`: Inject `ai_quota` dari `get_user_quota_status()` ke context `_render_project()`.
+- `templates/project.html`: Tambah widget kartu kuota AI harian dengan tiga progress bar berwarna dinamis dan badge status (Aman/Waspada/Hampir Habis).
+- `templates/workspace.html`: Tambah quota badge kompak (ikon bolt + sisa chat) di header kanan workspace, klik membuka popover detail tiga kuota.
+- `static/js/workspace/chat.js`: Dispatch `CustomEvent('quotaUsed')` setelah pesan chat berhasil terkirim untuk refresh badge secara real-time.
+- `static/js/workspace/generate/index.js`: Dispatch `CustomEvent('quotaUsed')` setelah generate job berhasil dibuat.
+- `static/js/entries/workspace.js`: Tambah import `quota.js`.
+
+## [1.2.64] - 2026-06-04
+### Summary
+Menambahkan fitur salin (copy) pada pesan chat (user/bot) dan hasil generate (ringkasan dan tabel) dalam bentuk raw markdown.
+
+### Added
+- `templates/workspace.html`: Tombol salin (`btn-copy-generate-result`) pada footer modal hasil generate.
+
+### Changed
+- `static/js/workspace/chat.js`:
+  - Penambahan tombol salin pada gelembung chat user dan bot.
+  - Implementasi handler salin clipboard dengan perubahan ikon dinamis saat disalin.
+- `static/js/workspace/generate/index.js`:
+  - Integrasi tombol salin pada modal hasil generate.
+  - Menampilkan tombol salin hanya untuk hasil berupa ringkasan (summary) dan tabel (table).
+
+## [1.2.63] - 2026-06-04
+### Summary
+Menambahkan fitur hapus chat pada workspace dengan konfirmasi modal dan reset riwayat chat.
+
+### Added
+- `templates/workspace.html`: Modal konfirmasi hapus chat (`delete-chat-modal`) dan tombol tempat sampah (`btn-delete-chat`) pada header chat panel.
+
+### Changed
+- `static/js/workspace/chat.js`:
+  - Logika UI untuk menampilkan modal konfirmasi hapus chat.
+  - Integrasi API `DELETE` ke `/api/workspace/<id>/chat/messages/` untuk menghapus seluruh riwayat chat.
+  - Fungsi `updateDeleteButtonState` untuk menonaktifkan tombol hapus jika tidak ada sesi aktif.
+
+## [1.2.62] - 2026-05-04
+### Summary
+Perbaikan bug reset pilihan source saat re-fetch (selections hilang setiap poll).
+
+### Fixed
+- Saat `fetchSources()` refresh list, unchecked sources kembali ter-check karena DOM diwipe dan default all-checked.
+
+### Changed
+- `static/js/workspace/sources/list.js`:
+  - Snapshot checked IDs sebelum wipe DOM
+  - `renderSourceList()` sekarang terima `selectionSnapshot` untuk restore pilihan user
+- `static/js/workspace/sources/index.js`: Proxied parameter `selectionSnapshot`
+
+### Notes
+- First render tetap all-checked (default)
+- Re-render akan restore pilihan user yang sudah di-set
+- Sync dengan `WorkspaceSelection.reinit()` dan counter
+
+## [1.2.61] - 2026-06-03
+### Summary
+Menambahkan halaman kuis interaktif dengan fitur navigasi soal, progress bar, dan skor akhir.
+
+### Added
+- `templates/generate/quiz.html`: Template baru untuk kuis pilihan ganda dengan UI card, efek transisi, evaluasi jawaban instan, dan ringkasan skor/penjelasan.
+
+## [1.2.60] - 2026-06-03
+### Summary
+Menambahkan halaman mindmap kustom dengan fitur zoom, pan, fullscreen, dan copy code.
+
+### Added
+- `templates/generate/mindmap.html`: Template baru dengan fitur interaktif untuk render dan manipulasi Mermaid SVG (zoom in/out, reset, fullscreen, dan tombol copy).
+
+## [1.2.59] - 2026-06-03
+### Summary
+Menambahkan routing Django untuk halaman mindmap dan kuis.
+
+### Added
+- `apps/generate/urls.py`: path baru untuk `/workspace/quiz/<job_id>/` dan `/workspace/mindmap/<job_id>/`.
+- `apps/generate/views.py`: view `workspace_quiz_view` dan `workspace_mindmap_view` untuk me-render template kuis dan mindmap.
+
+## [1.2.58] - 2026-06-03
+### Summary
+Batasi kedalaman mindmap Mermaid di system/user prompt menjadi maksimal 3 tingkat tanpa panah.
+
+### Changed
+- `apps/generate/prompts.py`: Tambah instruksi tegas batasan kedalaman dan format Mermaid mindmap (tanpa panah, spasi/indentasi wajib).
+
+## [1.2.57] - 2026-06-03
+### Summary
+Migrasi frontend ke Native JS (ES Modules) untuk menghilangkan ketergantungan pada bundler Vite.
+
+### Changed
+- `templates/project.html` & `templates/workspace.html`: Muat script Native JS (`js/project.js` & `js/entries/workspace.js`) secara langsung alih-alih bundle dari `dist`.
+- `package.json`: Hapus task `dev:js` dan `build:js` serta hilangkan kompilasi JavaScript dari task `build`.
+
+## [1.2.56] - 2026-06-03
+### Summary
+Implementasi Fase 4 (Kualitas & DX): Setup Linter, Vitest, perbaikan A11y, debounce polling, dan konsolidasi CSS font.
+
+### Added
+- `eslint.config.js`: Konfigurasi ESLint flat config dengan aturan untuk mencegah risiko XSS via `innerHTML` (menggunakan plugin `eslint-plugin-no-unsanitized`).
+- `vitest.config.js` & `test/core.test.js`: Setup Vitest dengan environment `jsdom` untuk _smoke tests_ utilitas di `core/api.js` dan `core/dom.js`.
+- `aria-live="polite"` pada container pesan chat (`_chat_panel.html`).
+- Implementasi _focus trap_ (menggunakan tombol Tab dan Shift+Tab) pada modal upload (`upload-modal.js`).
+- Fungsi `debouncedFetchSources` di `sources/index.js` untuk mengurangi frekuensi _request_ saat banyak proses selesai.
+
+### Changed
+- `package.json`: Penambahan _devDependencies_ untuk eslint, vitest, jsdom, dan perlengkapannya.
+- Template HTML: Konsolidasi _utility class_ font Tailwind dari `font-['Manrope']` menjadi `font-manrope`.
+- Penambahan komentar ignore ESLint pada area `innerHTML` yang dinyatakan aman (Phase 4 scope).
+
+
+## [1.2.55] - 2026-06-03
+### Summary
+Aktifkan panel Generate di workspace: tombol ringkasan/mindmap/quiz/tabel memanggil API async, polling status job, daftar riwayat, dan modal pratinjau hasil.
+
+### Added
+- `static/js/workspace/generate/`: modul generate (API, render, polling)
+- `templates/workspace.html`: modal hasil generate + container daftar job dinamis
+
+### Changed
+- `static/js/entries/workspace.js`: import modul generate ke bundle workspace
+- `static/js/core/api.js`: dukung respons HTTP 204 (DELETE job)
+- `templates/workspace.html`: hapus placeholder mock; tombol generate aktif
+
+## [1.2.54] - 2026-06-02
+### Summary
+Setup Vite untuk bundling frontend halaman `workspace` dan `project`, lalu pindahkan template agar memuat output bundle `static/dist`.
+
+### Changed
+- `package.json` + `package-lock.json`: tambah script `build:js` / `dev:js`, dan `build` jadi CSS+JS
+- `vite.config.js`: konfigurasi multi-entry (`workspace`, `project`) dengan output ke `static/dist`
+- `static/js/entries/workspace.js`, `static/js/entries/project.js`: entrypoint bundle per halaman
+- `templates/workspace.html`, `templates/project.html`: ganti banyak script tag jadi 1 script module dari `dist`
+- `static/js/workspace/chat.js`: import `marked` dari package npm
+- `Dockerfile`: jalankan `npm run build` (bukan hanya `build:css`)
+
+## [1.2.53] - 2026-06-02
+### Summary
+Refaktor struktur frontend workspace secara bertahap: pecah `WorkspaceSources` jadi modul-modul kecil dan pisahkan upload modal dari `index.js`.
+
+### Changed
+- `static/js/workspace/sources.js`: jadi shim ES module (side effects)
+- `static/js/workspace/sources/*`: pecah logika sources (list/item/poll/delete)
+- `static/js/workspace/index.js`: jadi orchestrator init
+- `static/js/workspace/upload-modal.js`: pindahkan implementasi upload modal
+- `templates/workspace.html`: update script tags (module + urutan)
+
+## [1.2.52] - 2026-06-02
+### Summary
+Refaktor frontend secara bertahap: tambahkan shared core utilities untuk CSRF & escape HTML, dan sinkronkan UI kapasitas workspace dengan `WORKSPACE_MAX_SOURCES`.
+
+### Changed
+- `templates/workspace.html` + `config/views.py`: expose `workspace_max_sources` untuk UI
+- `static/js/workspace/sources.js`, `static/js/workspace/chat.js`, `static/js/workspace/index.js`: pakai utilitas CSRF/escape dari `static/js/core/`
+- `static/js/core/`: tambah `csrf.js`, `api.js`, `dom.js`
+
+## [1.2.51] - 2026-06-02
+### Summary
+Modularisasi dan refaktorisasi fitur "generate" (summary, mindmap, kuis, tabel) dengan memindahkannya dari `apps/sources` ke Django app terpisah `apps/generate`.
+
+### Added
+- `apps/generate/`: Standalone Django app baru untuk fitur AI generate.
+- `config/settings.py`: Registrasi `apps.generate.apps.GenerateConfig` ke `INSTALLED_APPS`.
+- `config/urls.py`: Routing `/` ke `apps.generate.urls`.
+
+### Changed
+- `apps/sources/models.py`: Penghapusan model `GenerateJob` (dipindah ke `apps/generate/models.py`).
+- `apps/sources/tasks.py`: Penghapusan task `process_generate_job` (dipindah ke `apps/generate/tasks.py`).
+- `apps/sources/urls.py`: Penghapusan routing `workspace-generate` (dipindah ke `apps/generate/urls.py`).
+- `apps/sources/views.py`: Penghapusan `GenerateView` dan throttling terkait (dipindah ke `apps/generate/views.py`).
+
+### Removed
+- Model `GenerateJob`, task `process_generate_job`, dan `GenerateView` dari modul `sources`.
+
+## [1.2.50] - 2026-05-29
+### Summary
+Implementasi AI Daily Quota + Security Mitigation untuk mencegah abuse (cost & storage exhaustion).
+
+### Added
+- `settings.py`:
+  - `AI_DAILY_PROMPT_LIMIT` (default: 50)
+  - `AI_DAILY_GENERATE_LIMIT` (default: 20)
+  - `AI_DAILY_UPLOAD_LIMIT` (default: 10)
+  - `WORKSPACE_MAX_SOURCES` (default: 15)
+
+- `apps/accounts/models.py`: Tambah `upload_count` di model `UserUsage`
+- `apps/accounts/utils.py`: Tambah `check_and_increment_upload()`
+
+### Changed
+- `apps/sources/views.py`:
+  - `SourceUploadView.post`: Cek max sources (400) & daily upload quota (429)
+  - `ChatView.post`: Cek daily prompt quota (429)
+  - `GenerateView.post`: Cek daily generate quota (429)
+
+### Notes
+- Menggunakan atomic transaction (`select_for_update`) untuk cegah race condition
+- Perlindungan ganda terhadap storage & cost exhaustion
+
+
+## [1.2.49] - 2026-06-02
+### Summary
+Implementasi AI Daily Quota untuk membatasi penggunaan fitur generatif (chat & generate summary) per hari dan mencegah abuse/cost exhaustion.
+
+### Added
+- `settings.py`:
+  - `AI_DAILY_PROMPT_LIMIT` (default: 50)
+  - `AI_DAILY_GENERATE_LIMIT` (default: 20)
+
+- `apps/accounts/utils.py`:
+  - `get_api_usage()`
+  - `check_and_increment_prompt()`
+  - `check_and_increment_generate()`
+
+### Changed
+- `apps/sources/views.py`:
+  - `ChatView.post()`: Cek kuota prompt → return 429 jika melebihi limit
+  - `GenerateView.post()`: Cek kuota generate → return 429 jika melebihi limit
+
+### Notes
+- Menggunakan `select_for_update()` untuk mencegah race condition (atomic)
+- Tetap mengaktifkan DRF throttling per-menit
+- Keamanan tinggi terhadap concurrent requests
+
+
+## [1.2.48] - 2026-06-02
+### Summary
+Pencegahan chat di luar topik dan validasi pilihan dokumen.
+
+### Added
+- **Auto-check Ready Sources**: Di `sources.js`, dokumen dengan status `ready` dicentang otomatis saat pertama kali dimuat.
+
+### Changed
+- `apps/sources/views.py`:
+  - `ChatView.post` memvalidasi keberadaan `source_ids`. Menolak chat jika tidak ada dokumen yang terpilih.
+  - Perbarui system prompt LLM agar hanya menjawab berdasarkan dokumen terpilih dan menolak pertanyaan luar topik.
+- `static/js/workspace/selection.js`:
+  - `getSelectedSourceIds` selalu mengembalikan daftar ID yang dipilih secara akurat (tidak lagi fallback ke kosong).
+  - Mengirim event `sourceSelectionChanged` saat status pemilihan berubah.
+  - Memperbaiki visual `#chat-source-counter` agar menampilkan `0/total` ketika tidak ada dokumen terpilih.
+- `static/js/workspace/chat.js`:
+  - Input teks chat dinonaktifkan jika tidak ada dokumen terpilih, dengan placeholder instruktif.
+
+## [1.2.47] - 2026-06-02
+### Summary
+Implementasi Chat 3 (Quick Actions) pada panel sumber workspace.
+
+### Added
+- **Source Download**: Tombol download berkas cepat ditambahkan di sebelah tombol hapus pada item daftar sumber panel workspace.
+- **SourceDownloadView**: Endpoint `GET /api/sources/<uuid:id>/download/` baru untuk mengunduh berkas dengan aman menggunakan `FileResponse` Django.
+
+### Changed
+- `apps/sources/urls.py`: Daftarkan routing baru untuk `source-download`.
+- `static/js/workspace/sources.js`: Integrasikan tautan unduh dinamis dengan atribut download HTML5 dan penataan a11y focus.
+
+## [1.2.46] - 2026-06-02
+### Summary
+Implementasi Chat 2 (Info Per File) dan Chat 4 (Safety + Polish) pada panel sumber workspace.
+
+### Added
+- **Selected info & Reset pilihan**: Ditambahkan panel informasi pilihan sumber (`1 sumber dipakai untuk chat`) dan tombol `Reset pilihan` di bawah "Semua File".
+
+### Changed
+- `apps/sources/serializers.py`: Menambahkan field `file_size`, `progress`, dan `error_message` ke `SourceListSerializer`.
+- `apps/sources/views.py`: `SourceListView.get_queryset` memuat data `file_size`, `progress`, dan `error_message` secara efisien via `.only()`.
+- `static/js/workspace/sources.js`:
+  - Format tipe berkas (misal: `PDF`, `TXT`) di meta item berkas.
+  - Penyesuaian string waktu dari `min lalu` ke `menit lalu`.
+  - Penambahan progress bar mini di item sumber saat status `pending`/`processing`.
+  - Penambahan visual pesan error berwarna merah di item sumber saat status `failed`.
+  - Dialog konfirmasi browser interaktif saat klik tombol hapus berkas.
+  - Penambahan focus style a11y pada check/button.
+- `static/js/workspace/selection.js`: update status counter visual dan integrasi Reset button event listener.
+- `templates/workspace.html`: penambahan markup `#selection-info-container`, penambahan styling keyboard focus ring, dan peningkatan accessibility (a11y) `aria-label`.
+
+## [1.2.45] - 2026-06-01
+### Summary
+Polish dan perbaikan UI/UX pada workspace (3-panel layout & berbagai improvement).
+
+
+
+### Polished
+- 3-panel layout
+- Token color primary
+- Chat empty state
+- Source cards yang lebih baik
+- Chat input focus
+- Mobile safe-area navigation
+- Disabled state pada generate buttons
+- Drag & upload state
+
+## [1.2.44] - 2026-06-01
+### Summary
+Polish render markdown di chat agar lebih rapi dan nyaman dibaca.
+
+### Changed
+- `static/js/workspace/chat.js`: aktifkan opsi markdown `breaks` dan gunakan wrapper `chat-markdown`.
+- `static/css/typography.css`: tambahkan styling markdown untuk heading, list, code block, quote, dan table.
+
+## [1.2.43] - 2026-05-31
+### Summary
+Token efficiency Tahap 6: Dynamic Top-K RAG — jumlah chunks yang dikirim ke LLM disesuaikan dengan similarity score tertinggi.
+
+### Changed
+- `apps/sources/views.py`: `ChatView` — ganti `TOP_K = 5` (statis) dengan Dynamic Top-K:
+  - `TOP_K_MAX = 8` — kandidat yang di-fetch dari pgvector
+  - `TOP_K_MIN = 2` — chunk minimum jika sangat relevan
+  - `SIM_HIGH = 0.85` → potong ke 2 chunk (query sangat spesifik)
+  - `SIM_MED = 0.70` → potong ke 4 chunk (query relevan)
+  - `< SIM_MED` → ambil semua 8 (query kurang spesifik)
+  - Konversi `CosineDistance → similarity`: `similarity = 1.0 - distance`
+
+### Notes
+- Pertanyaan spesifik (similarity ≥ 0.85): kirim 2 chunk vs sebelumnya 5 — hemat 60% context token.
+- Pertanyaan umum: kirim hingga 8 chunk untuk recall lebih baik vs sebelumnya 5.
+- Threshold SIM_HIGH/SIM_MED bisa di-tune via class constants tanpa ubah logika.
+
+## [1.2.42] - 2026-05-31
+
+### Summary
+Token efficiency Tahap 5 (terakhir): format context RAG dipersingkat, char limit dinaikkan.
+
+### Changed
+- `apps/sources/views.py`: `ChatView.post` — format label chunk diubah dari `"[Dokumen: filename]\n{content}"` menjadi `"[filename]: {content}"`. Hemat ~15 token per chunk × TOP_K chunks per request. `max_context_chars` dinaikkan `6000 → 8000` karena format lebih efisien.
+
+## [1.2.41] - 2026-05-31
+
+### Summary
+Token efficiency Tahap 4: ringkas system prompt ChatView dari 5 baris menjadi 2 baris padat.
+
+### Changed
+- `apps/sources/views.py`: `ChatView.post` — system prompt dipersingkat; instruksi "jawab dari konteks" dan "no-hallucination" digabung menjadi 1 kalimat tanpa kehilangan semantik. Hemat ~50 token per request.
+
+## [1.2.40] - 2026-05-31
+
+### Summary
+Token efficiency Tahap 3: naikkan chunk size 500 → 800 token untuk mengurangi jumlah chunks per dokumen.
+
+### Changed
+- `apps/sources/tasks.py`: `process_source` — ubah `chunk_text(..., max_tokens=500)` menjadi `max_tokens=800`. Menghasilkan lebih sedikit chunks per dokumen, mengurangi embedding API calls saat processing dan jumlah entri pgvector.
+
+### Notes
+- **Berlaku untuk dokumen baru saja.** Dokumen yang sudah diproses tidak di-reprocess otomatis; re-upload diperlukan untuk konsistensi.
+- `overlap=50` tetap tidak berubah.
+
+## [1.2.39] - 2026-06-01
+### Summary
+Security Vulnerability Hardening and remediation fixes.
+
+### Security
+- **Production Server**: Configured Docker and Docker Compose to run via Gunicorn instead of Django development server.
+- **Rate Limiting**: Added DRF UserRateThrottle and AnonRateThrottle to protect Chat, Generate, and Source Upload endpoints.
+- **Upload Validation**: Added magic-bytes signature verification (for PDF and DOCX) to block extension-spoofing bypasses.
+- **Resource Cleanup**: Created Django `post_delete` signal for `Source` models to automatically purge physical files from disk/storage on deletion.
+- **Internal Leakage**: Truncated generate job background task errors to 500 characters to prevent internal trace/path disclosure.
+- **Security Headers**: Enabled `SECURE_REFERRER_POLICY` ('strict-origin-when-cross-origin') and `SECURE_CONTENT_TYPE_NOSNIFF` headers.
+- **Supply Chain**: Pinned AI dependency versions (`google-genai==1.14.0`, `google-api-core==2.24.2`) in requirements.txt.
+- **Input Validation**: Added 128-character limit for passwords and 254-character limit for emails across Django forms, HTML templates, and JS validation to prevent long-password DoS.
+- **Upload Validation**: Added 150-character limit for uploaded filenames to prevent database insertion overflows and filesystem issues.
+
+### Added
+- **User Interface**: Designed and implemented a custom 404 error template with responsive UI and Iconify support.
+
+### Fixed
+- **Unit Tests**: Updated workspace name length validation tests to assert the configured 40-character limit.
+- **Security Pentest**: Resolved split-index bug in CDN SRI test assertion.
+
+### Removed
+- **Dead Code**: Deleted `apps/chat` directory containing unused duplicate providers.
+
+## [1.2.38] - 2026-06-01
+### Summary
+Security hardening and vulnerability fixes based on static code review.
+
+### Security
+- **Rate Limiting (XFF Spoofing)**: Limit trusted proxies configuration via `TRUSTED_PROXY_IPS` CIDR list to prevent spoofed XFF headers.
+- **Upload Hardening**: Sanitize filenames with `get_valid_filename` and UUID prefixes to prevent path traversal and overwrite collisions.
+- **Resource Limits (Parser/AI)**: Added file processing page caps (500 pages), text length limits (2M chars), RAG context limits (15k chars), and DeepSeek HTTP timeouts to prevent CPU and billing DoS.
+- **Supply Chain**: Pinned CDN script versions and added SRI integrity hashes (`integrity=""` and `crossorigin=""`) in base and home templates.
+- **Internal Leakage**: Removed exception string leaks from API responses and restricted the `django-rq` dashboard strictly to staff members via django URLs.
+
+## [1.2.37] - 2026-05-31
+
+### Summary
+Remove OpenAI SDK and implementations; migrate fully to Gemini/DeepSeek.
+
+### Changed
+- `apps/sources/providers.py`: Remove `OpenAIEmbeddingProvider` and `OpenAIChatProvider`; default to `Gemini` for embeddings and keep `Gemini`/`DeepSeek` as supported chat providers.
+- `requirements.txt`: Remove `openai` dependency.
+- `apps/sources/tests.py`: Remove/adjust tests referencing OpenAI provider.
+
+### Notes
+- This change removes OpenAI-specific code paths and dependencies. Use `AI_PROVIDER=gemini` or `AI_PROVIDER=deepseek` with respective API keys.
+
+## [1.2.36] - 2026-05-30
+### Summary
+Implementasi Tahap 6: Source Selection — filter RAG berdasarkan source yang dipilih.
+
+### Added
+- `static/js/workspace/selection.js`: Rewrite untuk support dynamic re-bind items, expose `getSelectedSourceIds()`, update counter badge `#chat-source-counter`.
+
+### Changed
+- `apps/sources/views.py`: `ChatView.post` terima parameter `source_ids` (list UUID), filter chunk RAG berdasarkan source terpilih; fallback ke semua ready source jika kosong.
+- `static/js/workspace/chat.js`: Kirim `source_ids` dari `WorkspaceSelection` ke API chat.
+- `templates/workspace.html`: Tambah `id="chat-source-counter"` di header chat untuk menampilkan jumlah/pilihan sumber.
+
+## [1.2.35] - 2026-05-30
+### Summary
+Implementasi Tahap 5: Frontend Chat yang dinamis dan terhubung dengan backend RAG.
+
+### Added
+- `static/js/workspace/chat.js`: Skrip frontend baru untuk mengelola state chat, merender pesan dinamis (user & AI), loading indicator, dan integrasi API.
+
+### Changed
+- `templates/workspace.html`: Ubah UI statis panel chat menjadi kontainer dinamis, tambah form interaktif.
+
+## [1.2.34] - 2026-05-30
+### Summary
+Implementasi Tahap 4: RAG Normal dengan context limit, Indonesian system prompt, dan filter/sources response metadata.
+
+### Added
+- `apps/sources/views.py`: Tambah `ChatMessageDeleteView` untuk hapus seluruh riwayat chat di workspace
+
+### Changed
+- `apps/sources/views.py`: Update RAG pipeline di `ChatView` (top 5 CosineDistance, max context limit 6000 karakter, Indonesian system prompt, dan list sources di response)
+- `apps/sources/urls.py`: Daftarkan endpoint DELETE messages
+
+## [1.2.33] - 2026-05-30
+## [1.2.32] - 2026-05-30
+### Summary
+Persistensi chat AI per workspace sudah ditambahkan.
+
+### Added
+- `apps/sources/models.py`: Tambah model `ChatSession` untuk simpan percakapan per workspace
+- `apps/sources/models.py`: Tambah model `ChatMessage` untuk simpan pesan user dan assistant
+- `apps/sources/migrations/0003_chatsession_chatmessage.py`: Migrasi skema baru untuk chat persistence
+
+### Notes
+- Chat sekarang punya struktur data yang jelas untuk sesi dan pesan
+- Siap dipakai untuk history, sinkronisasi, dan pengembangan fitur chat berikutnya
+
+## [1.2.31] - 2026-05-29
+### Summary
+Perbaikan Gemini Embedding Provider: ganti SDK dan model embedding yang benar.
+
+### Fixed
+- Ganti SDK dari `google.generativeai` ke `google-genai`
+- Ubah model dari `text-embedding-004` ke `gemini-embedding-001` (dimensi 768)
+- Perbaikan endpoint embedContent yang tidak support model lama
+
+### Changed
+- `providers.py`: Update `GeminiEmbeddingProvider`
+- `settings.py`, `.env`, `.env.example`: Update konfigurasi model
+- `README.md` & `tests`: Penyesuaian dokumentasi dan test
+
+### Notes
+- Model yang benar sekarang `gemini-embedding-001`
+- Dimensi embedding = 768
+
+## [1.2.30] - 2026-05-29
+### Summary
+Penghapusan OpenAI Embedding Provider dan migrasi default ke Gemini.
+
+### Changed
+- `embeddings.py`: Hapus `OpenAIEmbeddingProvider` beserta importnya
+- `.env.example`: Hapus `OPENAI_API_KEY`
+- `settings.py`:
+  - Hapus load `OPENAI_API_KEY`
+  - Tambah `DEFAULT_EMBEDDING_PROVIDER = 'gemini'`
+  - Ubah mekanisme pengambilan `EMBEDDING_PROVIDER`
+  - Tambah `EMBEDDING_MODEL = 'models/embedding-001'`
+- `PROJECT_CONTEXT.md`: Tambah section **Migration to Gemini/DeepSeek**
+- `README.md`: Update prerequisite jadi **Gemini API Key** (free tier supported)
+
+### Notes
+- Default embedding provider sekarang Gemini
+- OpenAI dependency berhasil dihapus
+
+## [1.2.29] - 2026-05-29
+### Summary
+Implementasi RAG flow di `ChatView.post` menggunakan cosine similarity via pgvector.
+
+### Changed
+- `views.py`:
+  - Import `CosineDistance` dan `EmbeddingProvider`
+  - Tambah RAG retrieval: embedding query → filter & order `SourceChunk` (top 5)
+  - Fallback message jika tidak ada chunk relevan
+  - Gabungkan context ke `ChatProvider.chat_complete()`
+
+### Notes
+- Response format tetap sama (`{"response": "..."}`)
+- Sudah kompatibel dengan semua embedding provider
+
+## [1.2.28] - 2026-05-29
+### Summary
+Implementasi `GeminiEmbeddingProvider` dengan retry logic (exponential backoff) untuk meningkatkan kestabilan koneksi ke Google Gemini Embedding API.
+
+### Changed
+- `providers.py`: Penambahan implementasi lengkap `GeminiEmbeddingProvider` yang mewarisi `BaseEmbeddingProvider`
+
+
+## [1.4.27] - 2026-05-29
+### Summary
+Refactoring modul embeddings untuk menambahkan `LocalEmbeddingProvider` sebagai placeholder dan meningkatkan kompatibilitas dengan pgvector, sambil menjaga backward compatibility penuh.
+
+### Added
+- Class `LocalEmbeddingProvider` di `embeddings.py` (placeholder dengan `NotImplementedError`)
+- Export `LocalEmbeddingProvider` beserta 6 provider existing di `embeddings.py`
+- Support opsi `"local"` pada fungsi `_create_embedding_provider()`
+
+### Changed
+- `embeddings.py`:
+  - Menambahkan docstring utama: "All providers return vectors compatible with pgvector storage"
+- `providers.py`:
+  - `BaseEmbeddingProvider`: Menambahkan docstring tentang dimensi vector yang compatible dengan pgvector
+  - `_create_embedding_provider()`: Menambahkan penanganan provider "local"
+
+### Notes
+- Method signature `get_embedding(text: str) -> list[float]` tetap unchanged
+- Worker call pattern dan kompatibilitas existing tetap terjaga
+- Tidak ada referensi OpenAI di abstract base class (persiapan penghapusan OpenAI dependency di masa depan)
+
+## [1.4.26] - 2026-05-29
+
+### Summary
+Migrasi kembali penyimpanan file ke Django FileSystemStorage (default_storage) dengan volume bersama (shared volume) Docker Compose.
+
+### Fixed
+- **Docker Compose** (`docker-compose.yml`):
+  - Menambahkan volume bersama `media_data` ke service `web` dan `worker` untuk sinkronisasi berkas media.
+- **Django Storage** (`apps/sources/views.py`, `apps/sources/tasks.py`):
+  - Mengembalikan alur penyimpanan file dari Supabase Storage ke `default_storage` Django (FileSystemStorage) yang menyimpan berkas di bawah `MEDIA_ROOT`.
+  - Memperbarui views upload/delete dan task RQ untuk membaca berkas dari media bersama.
+
+## [1.4.25] - 2026-05-29
+
+### Summary
+DOCX support dan polish UX fitur upload sumber.
+
+### Added
+- **DOCX support** (`requirements.txt`, `views.py`, `tasks.py`):
+  - `python-docx==1.1.2` ditambahkan ke dependencies
+  - `.docx` ditambahkan ke `ALLOWED_EXTENSIONS` di `views.py`
+  - Handler DOCX di `extract_text_from_file()` menggunakan `python-docx`
+  - `tabler:file-type-docx` icon di `sources.js`
+
+### Changed
+- `apps/sources/views.py`:
+  - Error messages diubah ke Bahasa Indonesia yang user-friendly:
+    - `"Format tidak didukung. Gunakan PDF, TXT, MD, atau DOCX."`
+    - `"File terlalu besar. Maksimal 20 MB."`
+    - `"File dengan nama ini sudah ada di workspace."`
+- `apps/sources/tasks.py`:
+  - `error_message` yang tersimpan di DB dibatasi 500 karakter (bukan full traceback)
+  - Traceback lengkap tetap dicetak ke log
+- `static/js/workspace/index.js`:
+  - Upload via XHR (menggantikan `fetch`) untuk mendukung progress event
+  - Progress bar terintegrasi di modal (`upload-progress-wrap`, `upload-progress-bar`)
+  - Drag-and-drop file ke drop zone
+  - DOCX ditambahkan ke `ALLOWED_EXT`
+  - Error response dari API di-map ke pesan user-friendly
+- `static/js/workspace/sources.js`:
+  - `fileIconMap` mendukung `docx` → `tabler:file-type-docx`
+  - Status badge `pending`/`processing` menampilkan `animate-pulse`
+  - Label status diubah ke Bahasa Indonesia: Menunggu / Memproses / Siap / Gagal
+  - Badge `failed` menampilkan `title` dengan pesan error pendek (hover)
+  - `queued` status ditangani sebagai alias `pending`
+- `templates/workspace.html`:
+  - File input `accept` diperbarui ke `.pdf,.txt,.md,.docx`
+  - Teks hint drop zone diperbarui
+  - Progress bar HTML ditambahkan ke modal
+
+## [1.4.24] - 2026-05-29
+
+
+### Summary
+Menghubungkan Sources Panel di `workspace.html` ke backend API upload, list, delete, dan status polling.
+
+### Added
+- Upload modal di `workspace.html`: overlay backdrop, drop zone file, preview nama/ukuran file, validasi ekstensi dan ukuran, tombol cancel/upload
+- `id="workspace-data"` bridge div yang membawa `{{ active_workspace.id }}` ke JavaScript
+- `id="source-list-container"` pada div daftar sumber agar `WorkspaceSources` bisa me-render dinamis
+- `id="btn-add-source"` pada tombol "Tambah Sumber" untuk event binding
+
+### Changed
+- `workspace.html`:
+  - Hardcoded source items dihapus; JS yang me-render daftar
+  - "Tambah Sumber" `<div>` diubah menjadi `<button>` dengan `id="btn-add-source"`
+  - Upload modal HTML ditambahkan sebelum `{% endblock %}`
+- `static/js/workspace/index.js` — Ditulis ulang sepenuhnya:
+  - Inisialisasi `WorkspaceSources` dari `data-workspace-id`
+  - Logic open/close/reset modal
+  - Validasi file (ekstensi `.pdf/.txt/.md`, maks 20 MB)
+  - Preview file (icon berdasarkan ekstensi, nama, ukuran)
+  - Submit form → `workspaceSources.uploadSource(formData)` → tutup modal + toast
+- `static/js/workspace/sources.js`:
+  - Tambah `getCSRFToken()` helper (baca dari cookie `csrftoken`)
+  - `X-CSRFToken` header ditambahkan ke `uploadSource()` dan `deleteSource()`
+  - `createSourceItemHTML()` diperbarui agar cocok dengan desain `workspace.html`:
+    - Checkbox (warna berbeda saat ready vs pending)
+    - Icon file berdasarkan ekstensi (`tabler:pdf`, `tabler:txt`, `tabler:markdown`)
+    - Nama file dengan font Manrope
+    - Metadata: waktu relatif + ukuran file
+    - Status badge minimalis (10px)
+    - Tombol hapus lebih kecil di sisi kanan
+
+### Notes
+- `config/views.py` sudah melewatkan `active_workspace` ke template — tidak ada perubahan
+- `WorkspaceSources.fetchSources()` dipanggil otomatis saat halaman dimuat
+- `WorkspaceSources.pollSourceStatus()` dimulai otomatis setelah upload berhasil
+
+## [1.4.23] - 2026-05-27
+
+
+### Summary
+Penambahan field `extracted_text` pada model Source dan konfigurasi media file handling.
+
+### Added
+- Field `extracted_text` di model `Source` untuk menyimpan hasil ekstraksi teks dari dokumen
+- Konfigurasi `MEDIA_ROOT` dan `MEDIA_URL` di settings
+- Serving media files saat `DEBUG=True`
+
+### Changed
+- `config/settings.py`:
+  - Menambahkan `MEDIA_ROOT` dan `MEDIA_URL`
+  - Menambahkan `SessionAuthentication` di `REST_FRAMEWORK`
+  - Menghapus entry `'sources'` yang sudah tidak digunakan
+
+- `apps/sources/models.py`:
+  - Tambah `extracted_text = TextField(blank=True, default='')` pada model `Source`
+
+- `apps/sources/tasks.py`:
+  - Update `extracted_text` setelah proses ekstraksi teks selesai
+
+- `config/urls.py`:
+  - Menambahkan static media serving untuk mode development (`DEBUG=True`)
+
+- Migration `0002_source_extracted_text.py` telah digenerate
+
+### Notes
+- `.gitignore` sudah benar memiliki `/media/` (tidak perlu perubahan)
+- Persiapan untuk fitur RAG dan preview dokumen di masa depan
+
+## [1.4.22] - 2026-05-27
 
 ### Summary
 Migrasi storage dari Google Cloud Storage (GCS) ke **Supabase Storage**.
@@ -28,7 +737,7 @@ Migrasi storage dari Google Cloud Storage (GCS) ke **Supabase Storage**.
   - `Architecture.md`: Semua referensi GCS diganti ke Supabase Storage
   - `PROJECT_CONTEXT.md`: Update deskripsi library, environment, dan arsitektur storage
 
-## [1.4.11] - 2026-05-26
+## [1.4.21] - 2026-05-26
 
 ### Summary
 Perbaikan konfigurasi Docker dan database untuk mendukung pgvector dengan lebih stabil.
@@ -45,7 +754,7 @@ Perbaikan konfigurasi Docker dan database untuk mendukung pgvector dengan lebih 
 - Proses build frontend lebih stabil dan reproducible
 - Migration vector extension berjalan sesuai best practice
 
-## [1.4.10] - 2026-05-25
+## [1.4.20] - 2026-05-25
 
 ### Summary
 Penambahan limit panjang nama workspace menjadi maksimal 40 karakter pada fitur Create dan Rename.

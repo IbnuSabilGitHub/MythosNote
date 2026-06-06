@@ -17,7 +17,7 @@ class SignInForm(forms.Form):
     """Masuk pakai email dan password."""
 
     email = forms.EmailField()
-    password = forms.CharField(strip=False, widget=forms.PasswordInput)
+    password = forms.CharField(strip=False, widget=forms.PasswordInput, max_length=128)
 
     def __init__(self, request: Any = None, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -50,8 +50,8 @@ class SignInForm(forms.Form):
 class SignUpForm(forms.ModelForm):
     """Buat akun email/password untuk verifikasi."""
 
-    password = forms.CharField(strip=False, widget=forms.PasswordInput)
-    password_confirm = forms.CharField(strip=False, widget=forms.PasswordInput)
+    password = forms.CharField(strip=False, widget=forms.PasswordInput, max_length=128)
+    password_confirm = forms.CharField(strip=False, widget=forms.PasswordInput, max_length=128)
 
     class Meta:
         model = User
@@ -79,7 +79,15 @@ class SignUpForm(forms.ModelForm):
         """Simpan user baru dengan password yang benar."""
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]
-        user.username = None
+        
+        seed = user.email.split("@", 1)[0].replace(".", "_")[:140] or "user"
+        username = seed
+        suffix = 1
+        while User.objects.filter(username__iexact=username).exists():
+            suffix += 1
+            username = f"{seed}_{suffix}"
+        user.username = username
+        
         user.set_password(self.cleaned_data["password"])
         if commit:
             user.save()
@@ -101,3 +109,20 @@ class PasswordResetConfirmForm(SetPasswordForm):
         if password and self.user.check_password(password):
             raise forms.ValidationError("Password baru tidak boleh sama dengan password lama.")
         return password
+
+
+class ProfileUpdateForm(forms.ModelForm):
+    """Form untuk memperbarui profil user."""
+
+    first_name = forms.CharField(
+        max_length=150,
+        required=True,
+        widget=forms.TextInput(attrs={
+            "class": "block w-full rounded-lg border border-neutral-800 bg-neutral-950 px-4 py-2.5 font-manrope text-sm text-zinc-100 placeholder-stone-600 focus:border-primary focus:outline-none",
+            "placeholder": "Nama Lengkap Anda"
+        })
+    )
+
+    class Meta:
+        model = User
+        fields = ["first_name"]

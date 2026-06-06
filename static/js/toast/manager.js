@@ -11,31 +11,31 @@ class ToastManager {
             iconClass: 'text-success',
             iconName: 'tabler:check',
             borderClass: 'border-green-500/30',
-            bgClass: 'bg-green-500/10',
+            bgClass: 'toast-success-bg',
         },
         error: {
             iconClass: 'text-error',
             iconName: 'tabler:alert-triangle',
             borderClass: 'border-red-500/30',
-            bgClass: 'bg-red-500/10',
+            bgClass: 'toast-error-bg',
         },
         warning: {
             iconClass: 'text-warning',
             iconName: 'tabler:alert-circle',
             borderClass: 'border-yellow-500/30',
-            bgClass: 'bg-yellow-500/10',
+            bgClass: 'toast-warning-bg',
         },
         info: {
             iconClass: 'text-info',
             iconName: 'tabler:info-circle',
             borderClass: 'border-blue-500/30',
-            bgClass: 'bg-blue-500/10',
+            bgClass: 'toast-info-bg',
         },
         delete: {
             iconClass: 'text-error',
             iconName: 'tabler:trash',
             borderClass: 'border-red-500/30',
-            bgClass: 'bg-red-500/10',
+            bgClass: 'toast-error-bg',
         },
     };
 

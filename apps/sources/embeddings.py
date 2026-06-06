@@ -1,9 +1,11 @@
-"""Embedding providers for source chunk vectorization (Backward compatibility layer)."""
+"""Embedding providers for source chunk vectorization (Backward compatibility layer).
 
-from apps.sources.providers import (
+All providers return vectors compatible with pgvector storage and similarity queries.
+"""
+
+from apps.core.providers import (
     BaseEmbeddingProvider,
-    OpenAIEmbeddingProvider,
-    GeminiEmbeddingProvider,
+    LocalEmbeddingProvider,
     _create_embedding_provider,
     _DefaultEmbeddingProvider,
     EmbeddingProvider,
@@ -11,8 +13,7 @@ from apps.sources.providers import (
 
 __all__ = [
     "BaseEmbeddingProvider",
-    "OpenAIEmbeddingProvider",
-    "GeminiEmbeddingProvider",
+    "LocalEmbeddingProvider",
     "_create_embedding_provider",
     "_DefaultEmbeddingProvider",
     "EmbeddingProvider",

@@ -12,7 +12,7 @@ class SourceListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Source
-        fields = ["id", "file_name", "status", "created_at"]
+        fields = ["id", "file_name", "status", "created_at", "file_size", "progress", "error_message"]
         read_only_fields = fields
 
 
@@ -23,8 +23,7 @@ class SourceDetailSerializer(SourceListSerializer):
 
     class Meta(SourceListSerializer.Meta):
         fields = SourceListSerializer.Meta.fields + [
-            "progress",
-            "error_message",
             "chunk_count",
         ]
         read_only_fields = fields
+

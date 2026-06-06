@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}MythosNote - Change your document into structured clarity{% endblock %}
+{% block title %}MythosNote - Ubah dokumen Anda menjadi pemahaman terstruktur{% endblock %}
 
 {% block extra_css %}
 <!-- AOS CSS -->
-<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" integrity="sha384-/rJKQnzOkEo+daG0jMjU1IwwY9unxt1NBw3Ef2fmOJ3PW/TfAg2KXVoWwMZQZtw9" crossorigin="anonymous" />
 {% endblock %}
 
 {% block content %}
@@ -29,7 +29,7 @@
             <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-container">
               <iconify-icon icon="tabler:sparkles" class="text-on-primary-container"></iconify-icon>
             </div>
-            <span class="font-grotesk text-xs font-bold uppercase tracking-wide text-outline">AI Summary</span>
+            <span class="font-grotesk text-xs font-bold uppercase tracking-wide text-outline">Ringkasan AI</span>
           </div>
           <div class="h-2 w-full rounded bg-outline-variant"></div>
           <div class="mt-2 h-2 w-49 rounded bg-outline-variant/50"></div>
@@ -42,7 +42,7 @@
         <div class="rounded-xl border border-primary/30 bg-surface-container-highest/80 px-6 py-3 backdrop-blur-md">
           <div class="flex items-center gap-4">
             <iconify-icon icon="tabler:affiliate" class="text-primary text-xl"></iconify-icon>
-            <span class="font-newsreader text-lg font-bold italic text-on-surface">Modern Education System</span>
+            <span class="font-newsreader text-lg font-bold italic text-on-surface">Sistem Pendidikan Modern</span>
           </div>
         </div>
       </div>
@@ -56,9 +56,9 @@
             <iconify-icon icon="tabler:folder" class="text-primary text-2xl"></iconify-icon>
           </div>
           <div class="space-y-2">
-            <p class="text-xs font-bold text-primary ">Source: documents/chapter-3.pdf</p>
+            <p class="text-xs font-bold text-primary ">Sumber: documents/chapter-3.pdf</p>
             <p class="text-xs font-bold text-on-surface  leading-snug">
-              "Deep understanding doesn't come from rereading, but from actively synthesizing information."
+              "Pemahaman mendalam tidak datang dari membaca ulang, melainkan dari sintesis informasi secara aktif."
             </p>
           </div>
         </div>
@@ -90,24 +90,20 @@
         class="inline-flex items-center gap-2 rounded-xl border border-outline-variant/50 bg-surface-container-low px-3 sm:px-4 py-1 sm:py-1.5">
         <img class="h-3 w-4" src="{% static 'svg/deepseek-logo.svg' %}" alt="DeepSeek AI Logo" />
         <span
-          class="font-grotesk text-[0.6875rem] sm:text-xs font-bold uppercase tracking-[0.0375rem] text-primary">Powered
-          by DeepSeek
-          AI</span>
+          class="font-grotesk text-[0.6875rem] sm:text-xs font-bold uppercase tracking-[0.0375rem] text-primary">Ditenagai oleh DeepSeek AI</span>
       </div>
 
       <!-- Main Heading -->
       <h1 data-aos="fade-up" data-aos-duration="1000" data-aos-delay="100"
         class="font-newsreader text-3xl font-bold text-on-surface sm:text-4xl lg:text-5xl xl:text-[4.5rem] lg:leading-18">
-        Change your document into
-        <span class="block font-newsreader text-primary italic">structured clarity.</span>
+        Ubah dokumen Anda menjadi
+        <span class="block font-newsreader text-primary italic">pemahaman terstruktur.</span>
       </h1>
 
       <!-- Description -->
       <p data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200"
         class="max-w-180 text-sm font-bold text-on-surface-variant sm:text-base lg:text-lg leading-relaxed">
-        Upload your text, markdown, or PDF files. NotebookLLM reads them, understands them, and generates
-        summaries, mind maps, quizzes, and concept tables in seconds. All data is isolated and accessible
-        only to you.
+        Unggah file teks, markdown, atau PDF Anda. MythosNote akan membaca, memahami, dan melakukan generate ringkasan, peta pikiran, kuis, serta tabel konsep dalam hitungan detik. Seluruh data Anda terisolasi dan aman.
       </p>
 
       <!-- CTA Buttons -->
@@ -116,19 +112,19 @@
         {% if request.user.is_authenticated %}
         <a href="{% url 'project' %}"
           class="inline-flex items-center gap-2 rounded-lg bg-primary px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-on-primary transition hover:bg-primary-container">
-          Go to Project
+          Buka Project
           <iconify-icon icon="tabler:arrow-right" class="text-on-primary text-md"></iconify-icon>
         </a>
         {% else %}
         <a href="{% url 'signup' %}"
           class="inline-flex items-center gap-2 rounded-lg bg-primary px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-on-primary transition hover:bg-primary-container">
-          Start your first project
+          Mulai Project Pertama
           <iconify-icon icon="tabler:arrow-right" class="text-on-primary text-md"></iconify-icon>
         </a>
         {% endif %}
         <a class="rounded-lg border border-outline-variant bg-surface-container/50 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-on-surface hover:border-primary transition"
           href="#how">
-          See how it works
+          Lihat cara kerjanya
         </a>
       </div>
     </div>
@@ -142,11 +138,10 @@
         class="col-span-1 flex flex-col justify-between rounded-2xl border border-outline-variant bg-surface-container-low p-10 lg:col-span-8">
         <div class="space-y-4">
           <h3 class="font-newsreader text-xl font-bold text-on-surface sm:text-2xl lg:text-[1.875rem]">
-            Full Context, Not Just Keywords
+            Konteks Penuh, Bukan Sekadar Kata Kunci
           </h3>
           <p class="max-w-lg text-sm font-bold text-on-surface-variant sm:text-base leading-relaxed">
-            AI reads your documents holistically, not just looking for keywords. With intelligent chunking,
-            each piece of text is understood in its own context before being synthesized into a coherent output.
+            AI memahami makna dokumen Anda secara mendalam, bukan sekadar mencari kata kunci. Dengan teknik pemisahan cerdas (<i>chunking</i>), setiap potongan teks dipahami konteksnya sebelum dirangkai menjadi hasil yang solid.
           </p>
         </div>
         <div class="mt-12 flex justify-end">
@@ -160,10 +155,9 @@
         <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-surface-container-highest">
           <iconify-icon icon="tabler:shield-check" class="text-primary text-2xl"></iconify-icon>
         </div>
-        <h4 class="font-newsreader text-lg font-bold text-on-surface sm:text-xl">Your Data, Only Yours</h4>
+        <h4 class="font-newsreader text-lg font-bold text-on-surface sm:text-xl">Data Anda, Hanya Milik Anda</h4>
         <p class="mt-3 text-xs font-bold text-on-surface-variant sm:text-sm leading-relaxed">
-          Each account has its own isolated storage space. User A's documents cannot be accessed by user B even
-          at the database and file system levels.
+          Setiap akun memiliki ruang penyimpanan terisolasi. Dokumen Pengguna A tidak bisa diakses oleh Pengguna B, baik di tingkat <i>database</i> maupun sistem <i>file</i>.
         </p>
       </div>
 
@@ -173,29 +167,27 @@
         <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-surface-container-highest">
           <iconify-icon icon="tabler:binary-tree-2" class="text-primary text-2xl"></iconify-icon>
         </div>
-        <h4 class="font-newsreader text-lg font-bold text-on-surface sm:text-xl">Four Outputs, One Click</h4>
+        <h4 class="font-newsreader text-lg font-bold text-on-surface sm:text-xl">Empat Output, Satu Klik</h4>
         <p class="mt-3 text-xs font-bold text-on-surface-variant sm:text-sm leading-relaxed">
-          From a single document, generate narrative summaries, interactive mind maps, multiple-choice quizzes,
-          or concept tables to suit your learning needs.
+          Dari satu dokumen, buat ringkasan naratif, peta pikiran interaktif, kuis pilihan ganda, atau tabel konsep yang sesuai dengan kebutuhan belajar Anda.
         </p>
       </div>
 
       <!-- Feature Card 4 - Large -->
       <div data-aos="fade-up" data-aos-duration="1000" data-aos-delay="400"
         class="relative col-span-1 overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-low lg:col-span-8">
-        <img class="absolute inset-0 h-full w-full object-cover opacity-10" src="{% static 'img/feature_card_4.png' %}"
-          alt="" />
+        <img class="absolute inset-0 h-full w-full object-cover opacity-10" src="{% static 'img/feature_card_4.webp' %}"
+          loading="lazy" alt="" />
         <div class="relative p-10">
           <h3 class="font-newsreader text-xl font-bold text-on-surface sm:text-2xl lg:text-[1.875rem]">
-            From Hundreds of Pages to One Page
+            Dari Ratusan Halaman Menjadi Satu Halaman
           </h3>
           <p class="mt-4 text-sm font-bold text-on-surface-variant sm:text-base leading-relaxed">
-            Upload multiple documents at once, select the relevant ones, and let AI combine the context. The
-            result isn't a raw summary, but a structured, ready-to-use synthesis.
+            Unggah puluhan dokumen sekaligus, pilih yang relevan, dan biarkan AI menggabungkan konteksnya. Hasilnya bukanlah ringkasan mentah, melainkan sintesis terstruktur yang siap dipakai.
           </p>
           <a class="mt-6 inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-primary-container transition sm:text-base"
             href="#start">
-            Try it now
+            Coba sekarang
             <iconify-icon icon="tabler:arrow-right" class="text-primary text-md"></iconify-icon>
           </a>
         </div>
@@ -209,10 +201,10 @@
         <!-- Section Header -->
         <div>
           <p class="font-grotesk text-[0.625rem] font-bold uppercase tracking-[0.15rem] text-primary/60 sm:text-xs">
-            Vertical Timeline
+            Alur Kerja
           </p>
           <h2 class="mt-4 font-newsreader text-2xl font-bold text-on-surface sm:text-3xl lg:text-5xl">
-            How it Works
+            Cara Kerjanya
           </h2>
         </div>
 
@@ -232,11 +224,10 @@
               </div>
               <div>
                 <h4 class="font-newsreader text-lg font-bold text-on-surface sm:text-2xl">
-                  Upload your documents
+                  Unggah dokumen Anda
                 </h4>
                 <p class="mt-3 max-w-md text-sm font-bold text-on-surface-variant sm:text-base leading-relaxed">
-                  Supports .txt, .md, and .pdf files up to 5MB. Upload one or multiple files at once. Each file
-                  is parsed and automatically cut into chunks ready for AI processing.
+                  Mendukung format .txt, .md, dan .pdf (maksimal 5MB). Unggah satu atau beberapa file sekaligus. Setiap file akan diproses dan dipecah secara otomatis (<i>chunking</i>) agar siap dibaca oleh AI.
                 </p>
               </div>
             </div>
@@ -249,11 +240,10 @@
               </div>
               <div>
                 <h4 class="font-newsreader text-lg font-bold text-on-surface sm:text-2xl">
-                  Select and Set Context
+                  Pilih dan Atur Konteks
                 </h4>
                 <p class="mt-3 max-w-md text-sm font-bold text-on-surface-variant sm:text-base leading-relaxed">
-                  Check which documents you want to include in the analysis. Documents that are not checked will
-                  not be included in the AI context. You have full control.
+                  Centang dokumen mana saja yang ingin disertakan dalam analisis. Dokumen yang tidak dicentang tak akan dibaca oleh AI. Anda pegang kendali penuh atas informasi yang diolah.
                 </p>
               </div>
             </div>
@@ -266,11 +256,10 @@
               </div>
               <div>
                 <h4 class="font-newsreader text-lg font-bold text-on-surface sm:text-2xl">
-                  Generate and Use the Results
+                  Generate & Gunakan Hasilnya
                 </h4>
                 <p class="mt-3 max-w-md text-sm font-bold text-on-surface-variant sm:text-base leading-relaxed">
-                  Select the output type: summary, mind map, quiz, or concept table. The AI processes the results,
-                  and the results are saved in your history. You can open, copy, or work on them at any time.
+                  Pilih tipe keluaran: ringkasan, peta pikiran, kuis, atau tabel konsep. AI akan merakit hasilnya dan menyimpannya di riwayat Anda. Anda bisa membukanya atau menyalinnya kapan pun.
                 </p>
               </div>
             </div>
@@ -279,8 +268,8 @@
           <!-- Image Section -->
           <div data-aos="fade-left" data-aos-duration="1000" data-aos-delay="200"
             class="relative flex-1 overflow-hidden rounded-3xl border border-outline-variant bg-surface-container">
-            <img class="size-full object-cover" src="{% static 'img/vertical_timeline_image.png' %}"
-              alt="How it works illustration" />
+            <img class="size-full object-cover" src="{% static 'img/vertical_timeline_image.webp' %}"
+              loading="lazy" alt="Ilustrasi cara kerja" />
 
             <!-- Gradient Overlay -->
             <div class="absolute inset-0 bg-linear-to-t from-background/80 via-background/10 to-transparent"></div>
@@ -292,11 +281,11 @@
                 <iconify-icon icon="tabler:eye" class="text-primary text-md"></iconify-icon>
                 <span
                   class="font-grotesk text-[0.5625rem] sm:text-[0.625rem] font-bold uppercase tracking-[0.0625rem] text-outline">
-                  Active Context
+                  Konteks Aktif
                 </span>
               </div>
               <p class="mt-3 text-xs font-bold text-on-surface sm:text-sm">
-                3 documents selected · 14 active chunks · ready to generate
+                3 dokumen dipilih · 14 chunk aktif · siap di-generate
               </p>
             </div>
           </div>
@@ -312,12 +301,12 @@
         class="relative mx-auto flex max-w-4xl flex-col items-center gap-8 text-center">
         <h2
           class="font-newsreader text-2xl font-bold text-on-surface sm:text-4xl lg:text-5xl xl:text-6xl leading-tight">
-          Ready to change the way you
-          <span class="block font-newsreader italic text-primary">understand documents?</span>
+          Siap mengubah cara Anda
+          <span class="block font-newsreader italic text-primary">memahami dokumen?</span>
         </h2>
         <a href="{% if request.user.is_authenticated %}{% if AUTH_EMAIL_VERIFIED %}#start{% else %}{% url 'email_unverified' %}{% endif %}{% else %}{% url 'signup' %}{% endif %}"
           class="inline-flex items-center gap-2 rounded-xl bg-primary px-8 sm:px-12 py-3 sm:py-5 text-base sm:text-xl font-bold text-on-primary transition hover:bg-primary-container">
-          Start Your Notebook Free
+          Mulai Project Anda Sekarang
         </a>
       </div>
     </section>
@@ -366,8 +355,7 @@
           </a>
         </div>
       </div>
-      <span class="font-grotesk text-xs text-outline-variant">&copy; {% now "Y" %} Mythos Team. All rights
-        reserved.</span>
+      <span class="font-grotesk text-xs text-outline-variant">&copy; {% now "Y" %} Mythos Team. Hak cipta dilindungi.</span>
     </div>
   </footer>
 </div>
@@ -375,7 +363,7 @@
 
 {% block extra_js %}
 <!-- AOS JS -->
-<script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js" integrity="sha384-n1AULnKdMJlK1oQCLNDL9qZsDgXtH6jRYFCpBtWFc+a9Yve0KSoMn575rk755NJZ" crossorigin="anonymous"></script>
 <script>
   // Initialize AOS
   AOS.init({

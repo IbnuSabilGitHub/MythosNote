@@ -33,6 +33,8 @@ def verified_email_required(view_func: Callable[..., HttpResponse]) -> Callable[
         if not is_email_verified(request.user):
             messages.warning(request, "Verifikasi email diperlukan sebelum mengakses fitur ini.")
             return redirect("email_unverified")
+        if not request.user.first_name:
+            return redirect("onboarding")
         return view_func(request, *args, **kwargs)
 
     return wrapper

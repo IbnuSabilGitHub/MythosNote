@@ -5,6 +5,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-mythosnote}
       POSTGRES_USER: ${POSTGRES_USER:-mythosnote_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mythosnote_password}
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -15,23 +17,33 @@ services:
 
   redis:
     image: redis:7-alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD:-mythosnote_redis_pass}
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-mythosnote_redis_pass}", "ping"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   web:
     build: .
+    # Development:
     command: sh -c "python3 manage.py migrate && python3 manage.py runserver 0.0.0.0:8000"
+    # Production:
+    # command: sh -c "python3 manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
     env_file:
       - .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-mythosnote_user}:${POSTGRES_PASSWORD:-mythosnote_password}@db:5432/${POSTGRES_DB:-mythosnote}
-      REDIS_URL: redis://redis:6379/0
+      REDIS_URL: redis://:${REDIS_PASSWORD:-mythosnote_redis_pass}@redis:6379/0
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
     ports:
       - "8000:8000"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    volumes:
+      - .:/app  # WARNING: Remove in production — exposes source code and .env
+      - media_data:/app/media
     depends_on:
       db:
         condition: service_healthy
@@ -45,8 +57,14 @@ services:
       - .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-mythosnote_user}:${POSTGRES_PASSWORD:-mythosnote_password}@db:5432/${POSTGRES_DB:-mythosnote}
-      REDIS_URL: redis://redis:6379/0
+      REDIS_URL: redis://:${REDIS_PASSWORD:-mythosnote_redis_pass}@redis:6379/0
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    volumes:
+      - .:/app  # WARNING: Remove in production
+      - media_data:/app/media
     depends_on:
       db:
         condition: service_healthy
@@ -55,3 +73,4 @@ services:
 
 volumes:
   postgres_data:
+  media_data:

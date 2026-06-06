@@ -144,7 +144,9 @@ AUTHENTICATION_BACKENDS = [
 INSTALLED_APPS = [
     'apps.accounts.apps.AccountsConfig',
     'apps.sources.apps.SourcesConfig',
+    'apps.generate.apps.GenerateConfig',
     'apps.workspaces.apps.WorkspacesConfig',
+    'apps.chat.apps.ChatConfig',  # chat app (refactor 2026-06-06)
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -153,11 +155,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'django_rq',
-    'sources',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -214,6 +216,23 @@ else:
         },
     }
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.AnonRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '120/minute',
+        'anon': '30/minute',
+        'upload': '20/minute',
+        'chat': '30/minute',
+        'generate': '10/minute',
+    },
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -237,9 +256,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'id'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Makassar'
 
 USE_I18N = True
 
@@ -254,6 +273,16 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+import sys
+
+if 'test' in sys.argv or DEBUG:
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+else:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    WHITENOISE_MANIFEST_STRICT = False
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -269,31 +298,50 @@ LOGOUT_REDIRECT_URL = 'home'
 # EMAIL_MODE keeps switching simple:
 # console/development prints email locally, smtp uses generic SMTP, brevo uses Brevo SMTP relay.
 EMAIL_MODE = _get_email_mode()
-globals().update(_get_email_config())
+_email_config = _get_email_config()
+EMAIL_BACKEND = _email_config.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = _email_config.get('EMAIL_HOST', '')
+EMAIL_PORT = _email_config.get('EMAIL_PORT', 587)
+EMAIL_USE_TLS = _email_config.get('EMAIL_USE_TLS', True)
+EMAIL_USE_SSL = _email_config.get('EMAIL_USE_SSL', False)
+EMAIL_HOST_USER = _email_config.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = _email_config.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = _email_config.get('DEFAULT_FROM_EMAIL', 'no-reply@mythosnote.local')
 EMAIL_ASYNC = _env_bool('EMAIL_ASYNC')
 UNVERIFIED_USER_CLEANUP_DAYS = int(os.getenv('UNVERIFIED_USER_CLEANUP_DAYS', '1'))
 
 # Public Google Identity Services client id. When empty, the template keeps
 # the Google button disabled without breaking email/password auth.
 GOOGLE_OAUTH_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID', '')
-
-SUPABASE_URL = os.getenv('SUPABASE_URL', '').strip()
-SUPABASE_KEY = os.getenv('SUPABASE_KEY', '').strip()
-SUPABASE_BUCKET = os.getenv('SUPABASE_BUCKET', '').strip()
-
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '').strip()
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip()
-DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY', '').strip()
-DEEPSEEK_BASE_URL = os.getenv('DEEPSEEK_BASE_URL', 'https://api.deepseek.com/v1').strip()
+OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '').strip()
+GROQ_API_KEY = os.getenv('GROQ_API_KEY', '').strip()
 
 # AI Provider options and validation
-AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini').strip().lower()
-if AI_PROVIDER not in ('gemini', 'openai', 'deepseek'):
-    raise ValueError(f"Unsupported AI_PROVIDER: {AI_PROVIDER!r}. Use 'gemini', 'openai', or 'deepseek'.")
+AI_PROVIDER = os.getenv('AI_PROVIDER', 'openrouter').strip().lower()
+if AI_PROVIDER not in ('openrouter', 'groq'):
+    raise ValueError(f"Unsupported AI_PROVIDER: {AI_PROVIDER!r}. Use 'openrouter' or 'groq'.")
 
-EMBEDDING_PROVIDER = os.getenv('EMBEDDING_PROVIDER', 'openai').strip().lower()
+DEFAULT_EMBEDDING_PROVIDER = 'openrouter'
+EMBEDDING_PROVIDER = os.getenv('EMBEDDING_PROVIDER', DEFAULT_EMBEDDING_PROVIDER).strip().lower()
+EMBEDDING_MODEL = os.getenv('EMBEDDING_MODEL', 'gemini-embedding-001').strip()
+EMBEDDING_DIMENSIONS = int(os.getenv('EMBEDDING_DIMENSIONS', '768'))
+
+# AI Quota Limits
+AI_DAILY_PROMPT_LIMIT = int(os.getenv('AI_DAILY_PROMPT_LIMIT', '50'))
+AI_DAILY_GENERATE_LIMIT = int(os.getenv('AI_DAILY_GENERATE_LIMIT', '20'))
+AI_DAILY_UPLOAD_LIMIT = int(os.getenv('AI_DAILY_UPLOAD_LIMIT', '10'))
+WORKSPACE_MAX_SOURCES = int(os.getenv('WORKSPACE_MAX_SOURCES', '15'))
+
+# Trusted proxy IPs/CIDRs for X-Forwarded-For header parsing.
+# Empty = ignore XFF (safest default). Add reverse proxy CIDRs in production.
+# Example for Cloudflare: ['173.245.48.0/20', '103.21.244.0/22', ...]
+_raw_trusted_proxies = os.getenv('TRUSTED_PROXY_IPS', '').strip()
+TRUSTED_PROXY_IPS = [p.strip() for p in _raw_trusted_proxies.split(',') if p.strip()] if _raw_trusted_proxies else []
+
 # Security settings for modern browsers to mitigate certain types of attacks. Adjust as needed.
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
+SECURE_REFERRER_POLICY = os.getenv('SECURE_REFERRER_POLICY', 'strict-origin-when-cross-origin')
+SECURE_CONTENT_TYPE_NOSNIFF = True
 
 # Production cookie/transport defaults stay strict, while DEBUG keeps local
 # HTTP development usable unless explicitly overridden.

@@ -37,6 +37,7 @@ class Source(models.Model):
         default='pending'
     )
     error_message = models.TextField(blank=True, default='')
+    extracted_text = models.TextField(blank=True, default='')
     progress = models.IntegerField(
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(100)]
@@ -82,47 +83,4 @@ class SourceChunk(models.Model):
         return f"Chunk {self.chunk_index} from {self.source.original_filename}"
 
 
-class GenerateJob(models.Model):
-    """Async generation job for workspace sources."""
-
-    STATUS_CHOICES = [
-        ("queued", "Queued"),
-        ("processing", "Processing"),
-        ("success", "Success"),
-        ("failed", "Failed"),
-    ]
-
-    ACTION_CHOICES = [
-        ("summary", "Summary"),
-        ("mindmap", "Mindmap"),
-        ("quiz", "Quiz"),
-        ("table", "Table"),
-    ]
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="generate_jobs",
-    )
-    workspace = models.ForeignKey(
-        "workspaces.Workspace",
-        on_delete=models.CASCADE,
-        related_name="generate_jobs",
-    )
-    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="queued")
-    result = models.TextField(blank=True, default="")
-    error_message = models.TextField(blank=True, default="")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["-created_at"]
-        indexes = [
-            models.Index(fields=["workspace", "status"]),
-            models.Index(fields=["user", "created_at"]),
-        ]
-
-    def __str__(self):
-        return f"GenerateJob {self.id} ({self.action}, {self.status})"
+# ChatSession dan ChatMessage dipindah ke apps.chat.models (refactor 2026-06-06).

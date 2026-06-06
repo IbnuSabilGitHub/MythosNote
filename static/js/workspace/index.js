@@ -1,8 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Get workspace ID from data attribute or URL
-  const workspaceContainer = document.querySelector("[data-workspace-id]");
+  const wsData = document.getElementById("workspace-data");
   const workspaceId =
-    workspaceContainer?.dataset.workspaceId ||
+    wsData?.dataset.workspaceId ||
     new URLSearchParams(window.location.search).get("workspace_id");
 
   if (workspaceId && window.WorkspaceSources) {
@@ -17,4 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (window.WorkspaceSelection) {
     window.WorkspaceSelection.init();
   }
+
+  window.WorkspaceUploadModal?.init?.(workspaceId);
 });
+

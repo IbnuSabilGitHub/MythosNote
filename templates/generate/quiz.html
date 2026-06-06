@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Quiz - {{ job.title|default:"Generate Quiz" }}{% endblock %}
+
+{% block content %}
+<div class="w-full h-screen bg-neutral-950 flex flex-col items-center overflow-y-auto text-stone-300 font-manrope">
+    <!-- Header -->
+    <div class="w-full min-h-16 py-2 px-4 sm:px-6 bg-neutral-950 border-b border-stone-800 flex justify-between items-center shrink-0 gap-2 overflow-hidden">
+        <div class="flex-none flex justify-start">
+            <a href="{% url 'workspace' %}?workspace_id={{ workspace.id }}" class="flex items-center gap-2 hover:text-white transition group" title="Kembali">
+                <iconify-icon icon="tabler:arrow-left" class="text-xl"></iconify-icon>
+                <span class="hidden md:inline text-sm">Kembali ke Workspace</span>
+            </a>
+        </div>
+        <div class="flex-1 min-w-0 flex justify-center">
+            <h1 class="text-primary text-base sm:text-xl font-medium font-newsreader line-clamp-2 w-full text-center leading-tight" title="{{ job.title|default:'Quiz' }}">{{ job.title|default:"Quiz" }}</h1>
+        </div>
+        <div class="flex-none flex justify-end items-center gap-2 sm:gap-4">
+            <button type="button" id="btn-delete" class="flex justify-center items-center gap-2 px-2 sm:px-3 py-1.5 bg-red-900/30 hover:bg-red-900/50 text-red-400 hover:text-red-300 rounded-md border border-red-900/50 transition" aria-label="Hapus">
+                <iconify-icon icon="tabler:trash" class="text-lg"></iconify-icon>
+                <span class="hidden sm:inline text-sm font-medium">Hapus</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Quiz Content Container -->
+    <div class="w-full max-w-3xl flex-1 flex flex-col justify-start items-center pt-12 pb-24 px-4 relative">
+        
+        <!-- Progress Bar Area -->
+        <div class="w-full mb-8">
+            <div class="flex justify-between items-end mb-2 text-xs font-semibold tracking-wide text-stone-400">
+                <span id="quiz-progress-text">Pertanyaan 1 dari X</span>
+                <span id="quiz-progress-percent">0%</span>
+            </div>
+            <div class="w-full h-1 bg-stone-800 rounded-full overflow-hidden">
+                <div id="quiz-progress-bar" class="h-full bg-primary transition-all duration-300 w-0"></div>
+            </div>
+        </div>
+
+        <!-- Question Card -->
+        <div id="quiz-card" class="w-full bg-surface-container-low border border-stone-800 rounded-xl p-8 shadow-sm">
+            <h2 id="quiz-question-text" class="text-3xl font-newsreader text-zinc-100 mb-10 leading-snug">
+                Memuat pertanyaan...
+            </h2>
+
+            <div id="quiz-options-container" class="flex flex-col gap-4">
+                <!-- Options injected by JS -->
+            </div>
+            
+            <!-- Explanation Block (hidden by default) -->
+            <div id="quiz-explanation-block" class="hidden mt-8 p-4 rounded bg-stone-800/50 border border-stone-700">
+                <p class="text-sm text-stone-300 leading-relaxed" id="quiz-explanation-text"></p>
+            </div>
+        </div>
+
+        <!-- End Screen (hidden by default) -->
+        <div id="quiz-end-screen" class="w-full bg-surface-container-low border border-stone-800 rounded-xl p-10 text-center hidden flex-col items-center">
+            <iconify-icon icon="tabler:rosette-discount-check" class="text-6xl text-primary mb-4"></iconify-icon>
+            <h2 class="text-3xl font-newsreader text-zinc-100 mb-2">Kuis Selesai!</h2>
+            <p class="text-stone-400 mb-8" id="quiz-score-text">Skor Anda X dari Y.</p>
+            <a href="{% url 'workspace' %}?workspace_id={{ workspace.id }}" class="px-6 py-3 bg-primary text-stone-900 font-semibold rounded-lg hover:bg-primary/90 transition">
+                Kembali ke Workspace
+            </a>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div id="quiz-controls" class="w-full max-w-3xl fixed bottom-8 px-4 flex justify-between items-center">
+            <button type="button" id="btn-prev" class="px-5 py-2.5 bg-neutral-900 border border-stone-700 text-stone-300 rounded hover:bg-neutral-800 hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed">
+                Sebelumnya
+            </button>
+            <button type="button" id="btn-next" class="px-6 py-2.5 bg-primary text-stone-900 font-semibold rounded hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                Cek Jawaban
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- Invisible data store for JS -->
+<script type="application/json" id="quiz-data">
+    {{ job.result|safe }}
+</script>
+
+<script>
+    const csrfToken = "{{ csrf_token }}";
+    const deleteBtn = document.getElementById("btn-delete");
+    if (deleteBtn) {
+        deleteBtn.addEventListener("click", () => {
+            if (window.ToastManager) {
+                window.ToastManager.delete("Kuis", async () => {
+                    executeDelete();
+                });
+            } else {
+                if (confirm("Hapus kuis ini secara permanen?")) executeDelete();
+            }
+        });
+    }
+
+    async function executeDelete() {
+        try {
+            const res = await fetch(`/api/generate/{{ job.id }}/`, {
+                method: "DELETE",
+                headers: { "X-CSRFToken": csrfToken }
+            });
+            if (res.ok || res.status === 404) {
+                window.location.href = "{% url 'workspace' %}?workspace_id={{ workspace.id }}";
+            } else {
+                if (window.ToastManager) window.ToastManager.error("Gagal menghapus.");
+                else alert("Gagal menghapus.");
+            }
+        } catch (err) {
+            console.error(err);
+            if (window.ToastManager) window.ToastManager.error("Terjadi kesalahan jaringan.");
+            else alert("Terjadi kesalahan jaringan.");
+        }
+    }
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script type="module" src="{% static 'js/generate/quiz.js' %}"></script>
+{% endblock %}

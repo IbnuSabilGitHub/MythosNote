@@ -337,4 +337,5 @@ document.addEventListener('DOMContentLoaded', () => {
       deleteFields.confirm.textContent = 'Hapus';
     }
   });
+
 });

@@ -55,7 +55,7 @@ def get_workspace_quota(user):
 def create_workspace_for_user(user, name: str) -> Workspace:
     """Create a workspace after locking the owning user row."""
 
-    cleaned_name = clean_workspace_name(name, default_if_blank="Untitled Note")
+    cleaned_name = clean_workspace_name(name, default_if_blank="Note Tanpa Judul")
 
     with transaction.atomic():
         locked_user = get_user_model().objects.select_for_update().get(pk=user.pk)

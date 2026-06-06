@@ -16,3 +16,5 @@ staticfiles/
 .mypy_cache/
 .coverage
 coverage.xml
+media/
+test/

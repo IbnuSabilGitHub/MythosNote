@@ -1,12 +1,14 @@
 """Tampilan level proyek untuk landing page publik dan halaman proyek."""
 
 from django.http import HttpRequest, HttpResponse
+from django.conf import settings
 from django.contrib import messages
 from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from apps.accounts.decorators import verified_email_required
+from apps.accounts.utils import get_user_quota_status
 from apps.workspaces.models import Workspace
 from apps.workspaces.utils import (
     WORKSPACE_LIMIT,
@@ -36,7 +38,7 @@ def project(request: HttpRequest) -> HttpResponse:
             return _render_project(request, status_code=429)
 
         try:
-            workspace_name = clean_workspace_name(request.POST.get("name"), default_if_blank="Untitled Note")
+            workspace_name = clean_workspace_name(request.POST.get("name"), default_if_blank="Note Tanpa Judul")
         except WorkspaceNameValidationError as exc:
             messages.error(request, exc.messages[0])
             return _render_project(request, status_code=400)
@@ -58,6 +60,7 @@ def project(request: HttpRequest) -> HttpResponse:
 
 def _render_project(request: HttpRequest, *, status_code: int = 200) -> HttpResponse:
     workspace_quota = get_workspace_quota(request.user)
+    ai_quota = get_user_quota_status(request.user, request)
 
     workspaces = (
         Workspace.objects.filter(user=request.user)
@@ -71,6 +74,7 @@ def _render_project(request: HttpRequest, *, status_code: int = 200) -> HttpResp
         {
             "workspaces": workspaces,
             "workspace_quota": workspace_quota,
+            "ai_quota": ai_quota,
             "workspace_name_max_length": WORKSPACE_NAME_MAX_LENGTH,
         },
         status=status_code,
@@ -93,5 +97,12 @@ def workspace(request: HttpRequest) -> HttpResponse:
         {
             "show_navbar": False,
             "active_workspace": active_workspace,
+            "workspace_max_sources": settings.WORKSPACE_MAX_SOURCES,
+            "ai_provider": settings.AI_PROVIDER,
         },
     )
+
+
+def custom_404_view(request: HttpRequest, exception=None) -> HttpResponse:
+    """Render a premium 404 error page."""
+    return render(request, "404.html", {"show_navbar": False}, status=404)

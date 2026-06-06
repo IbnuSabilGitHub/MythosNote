@@ -2,7 +2,7 @@
 <div class="flex flex-col items-start justify-start gap-3 self-stretch">
     <div class="flex items-center gap-3 self-stretch">
         <div class="h-px flex-1 bg-stone-700"></div>
-        <span class="font-['Manrope'] text-xs uppercase tracking-wider text-stone-400">atau</span>
+        <span class="font-manrope text-xs uppercase tracking-wider text-stone-400">atau</span>
         <div class="h-px flex-1 bg-stone-700"></div>
     </div>
     <form id="google-oauth-form" method="post" action="{% url 'google_signin' %}">
@@ -24,7 +24,7 @@
 </script>
 {% else %}
 <div class="self-stretch rounded-sm border border-stone-700 bg-neutral-900 px-4 py-3 text-center">
-    <span class="font-['Manrope'] text-sm text-stone-400">
+    <span class="font-manrope text-sm text-stone-400">
         Google OAuth belum dikonfigurasi.
     </span>
 </div>

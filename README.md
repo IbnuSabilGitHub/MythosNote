@@ -2,7 +2,7 @@
 
 Sistem AI-powered note-taking yang memungkinkan pengguna mengelola workspace, mengunggah dokumen, dan berinteraksi dengan AI berdasarkan konteks dokumen.
 
-**Stack:** Python (Django) | PostgreSQL | Redis | Google Cloud Storage | Gemini/OpenAI API
+**Stack:** Python (Django) | PostgreSQL | Redis | Supabase Storage | Gemini/DeepSeek API
 
 ---
 
@@ -22,15 +22,33 @@ Sistem AI-powered note-taking yang memungkinkan pengguna mengelola workspace, me
 
 ---
 
+## 🎉 Terbaru (v1.4.12+)
+
+**Perubahan signifikan:**
+- ✨ Migrasi storage dari Google Cloud Storage ke **Supabase Storage**
+- ✨ Workspace quota system dengan limit 10 workspace per user
+- ✨ Race condition fixes untuk atomic workspace creation
+- ✨ Chat API dengan RAG (Retrieval-Augmented Generation)
+- ✨ Generate API untuk async content generation (ringkasan, kuis, tabel, mindmap)
+-- ✨ Backend support untuk multiple AI providers (Gemini, DeepSeek)
+- ✨ Embedding providers dengan 768-dimensional vectors
+- ✨ UI improvements dengan modal-based workspace management & toast notifications
+
+Lihat [CHANGELOG.md](CHANGELOG.md) untuk detail lengkap semua perubahan.
+
+---
+
 ## ✨ Fitur Utama
 
-- ✅ Manajemen Workspace: Kelola multiple workspace dalam satu akun
-- ✅ Upload Dokumen: Support berbagai format file (PDF, DOCX, TXT, etc)
-- ✅ AI Chat: Interaksi dengan AI berdasarkan konteks dokumen
-- ✅ Semantic Search: Pencarian dokumen menggunakan embedding
-- ✅ Rate Limiting: Proteksi API dengan pembatasan request harian
-- ✅ Cloud Storage: Penyimpanan dokumen di Google Cloud Storage
-- ✅ Multi-AI Provider: Support Gemini dan OpenAI
+- ✅ **Manajemen Workspace**: Kelola multiple workspace (max 10 per user), create/rename/delete
+- ✅ **Upload Dokumen**: Support PDF/DOCX/TXT dengan ekstraksi teks otomatis
+- ✅ **AI Chat RAG**: Interaksi dengan AI berdasarkan konteks dokumen (Retrieval-Augmented Generation)
+- ✅ **Generate Content**: Auto-generate ringkasan, tabel, kuis, mindmap via background jobs
+- ✅ **Semantic Search**: Pencarian menggunakan embedding vectors (768-dimensional)
+- ✅ **Cloud Storage**: Penyimpanan dokumen di Supabase Storage
+-- ✅ **Multi-AI Provider**: Support Gemini, DeepSeek
+- ✅ **Rate Limiting**: Proteksi API dengan quota harian per user
+- ✅ **Background Processing**: RQ worker untuk ekstraksi & embedding async
 
 ---
 
@@ -45,107 +63,232 @@ Sistem AI-powered note-taking yang memungkinkan pengguna mengelola workspace, me
 - **pip** (Python package manager - included dengan Python)
 
 ### Akun & API Keys
-- Akun **Google Cloud Platform** (untuk GCS & Gemini API)
-- API Key **Gemini** atau **OpenAI** (pilih satu atau keduanya)
+- Akun **Supabase** (untuk file storage)
+- API Key **Gemini** required (free tier works)
 
 ---
 
-## 🪟 Setup untuk Windows
+## 🪟 Setup untuk Windows (Pemula-Friendly)
 
-### Step 1: Install Python & Git
-1. Download Python dari [python.org](https://www.python.org/downloads/)
-   - ✅ Centang "Add Python to PATH" saat install
-2. Download & install Git dari [git-scm.com](https://git-scm.com/)
+### Step 1: Install Python & Git (Download Langsung)
+
+#### 1.1 Install Python
+1. Kunjungi [python.org/downloads](https://www.python.org/downloads/)
+2. Download **Python 3.11 atau lebih baru** (Windows installer)
+3. Buka file `.exe` yang didownload
+4. **⚠️ PENTING**: Centang **"Add Python to PATH"** di bagian bawah (jangan lupa!)
+5. Klik "Install Now" dan tunggu sampai selesai
+6. Klik "Close" saat selesai
+
+#### 1.2 Verifikasi Python
+Buka **Command Prompt** (tekan `Win + R`, ketik `cmd`, tekan Enter):
+```bash
+python --version
+# Harus menampilkan Python 3.11+ (bukan error)
+```
+Jika error, ulangi step 1.1 dan pastikan "Add Python to PATH" terchecklist.
+
+#### 1.3 Install Git
+1. Kunjungi [git-scm.com](https://git-scm.com/download/win)
+2. Download **Git for Windows** (arsitektur 64-bit)
+3. Buka file `.exe` dan ikuti installer (semua default settings OK)
+4. Setelah selesai, buka **Command Prompt baru** dan verifikasi:
+```bash
+git --version
+```
 
 ### Step 2: Install PostgreSQL & Redis
 
-#### Opsi A: Menggunakan Chocolatey (Recommended)
-```bash
-# Install Chocolatey terlebih dahulu (run as Administrator)
-# https://chocolatey.org/install
+#### Opsi A: Installer Windows (Recommended untuk Pemula)
 
+**PostgreSQL:**
+1. Download dari [postgresql.org/download/windows](https://www.postgresql.org/download/windows/)
+2. Pilih versi **15 atau lebih baru**
+3. Buka installer dan lakukan setup:
+   - Default location: OK
+   - **Password untuk user "postgres"**: Simpan dengan aman! Contoh: `admin123`
+   - Port: 5432 (default) - OK
+   - Locale: Indonesia - OK
+4. Finish & jangan run Stack Builder
+
+**Redis:**
+1. Download dari [github.com/microsoftarchive/redis/releases](https://github.com/microsoftarchive/redis/releases)
+2. Pilih **Redis-x64-xxx.msi**
+3. Buka installer dan pilih "Install Redis as a Windows Service" (important!)
+4. Finish
+
+#### Opsi B: Menggunakan Chocolatey (Untuk Advanced Users)
+```bash
+# Buka Command Prompt sebagai Administrator (klik kanan → Run as Administrator)
 choco install postgresql redis-64
 ```
 
-#### Opsi B: Download Manual
-- PostgreSQL: [postgresql.org/download/windows](https://www.postgresql.org/download/windows/)
-- Redis: [microsoftarchive.github.io/redis](https://microsoftarchive.github.io/redis/releases)
-
 ### Step 3: Verifikasi Instalasi
+
+Buka **Command Prompt** dan jalankan:
 ```bash
-python --version
-git --version
-psql --version
-redis-cli --version
+python --version        # Harus menampilkan 3.11+
+git --version          # Harus menampilkan git version
+psql --version         # Harus menampilkan psql version
+redis-cli --version    # Harus menampilkan redis_version
 ```
 
-### Step 4: Clone & Setup Project
+Jika ada yang error, ulangi step 1-2 untuk tool tersebut.
+
+### Step 4: Clone Project & Setup Python Environment
+
+1. Buka **Command Prompt** dan navigate ke folder yang diinginkan:
 ```bash
-# Clone repository
+# Contoh: Desktop
+cd %USERPROFILE%\Desktop
+
+# atau Dokumen
+cd %USERPROFILE%\Documents
+```
+
+2. Clone repository:
+```bash
 git clone https://github.com/IbnuSabilGitHub/MythosNote.git
 cd MythosNote
+```
 
-# Buat virtual environment
+3. Buat virtual environment:
+```bash
 python -m venv venv
+```
 
-# Aktifkan virtual environment
+4. **Aktivasi virtual environment**:
+```bash
 # Untuk Command Prompt:
 venv\Scripts\activate
-# Atau untuk PowerShell:
-venv\Scripts\Activate.ps1
 
-# Install dependencies
+# Untuk PowerShell:
+venv\Scripts\Activate.ps1
+```
+
+> 💡 Setelah aktivasi, prompt akan berubah jadi `(venv) C:\...>`
+
+5. Install dependencies:
+```bash
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### Step 5: Setup Database
+### Step 5: Setup Database PostgreSQL
+
+1. Buka **pgAdmin** (aplikasi yang sudah ter-install bersama PostgreSQL)
+   - Atau buka CMD dan ketik: `psql -U postgres`
+
+2. Jika menggunakan **psql** (Command Prompt):
 ```bash
-# Buka Command Prompt sebagai Administrator
-# Buat database user
-psql -U postgres -c "CREATE USER mythosnote_user WITH PASSWORD 'your_secure_password';"
-
-# Buat database
-psql -U postgres -c "CREATE DATABASE mythosnote OWNER mythosnote_user;"
-
-# Verifikasi
-psql -U postgres -l
+# Masukkan password postgres yang Anda set di Step 2
+psql -U postgres
 ```
 
-### Step 6: Setup Environment Variables
-```bash
-# Copy .env.example ke .env
-copy .env.example .env
-
-# Edit .env dengan text editor (Notepad++ recommended)
-# Isi dengan konfigurasi Anda
+3. Jalankan command SQL berikut (dalam psql prompt):
+```sql
+CREATE USER mythosnote_user WITH PASSWORD 'your_secure_password';
+CREATE DATABASE mythosnote OWNER mythosnote_user;
+\q
 ```
 
-### Step 7: Run Database Migrations
+4. Verifikasi:
+```bash
+psql -U mythosnote_user -d mythosnote -h localhost
+# Jika bisa login, ketik \q untuk exit
+```
+
+### Step 6: Setup Environment Variables (.env)
+
+1. Buka **Notepad** atau **VS Code**
+2. Buka file `.env.example` dari project MythosNote
+3. Copy semua isi dan save sebagai `.env` di folder MythosNote
+4. Edit `.env` dan isi dengan konfigurasi Anda:
+
+```bash
+# DJANGO
+SECRET_KEY=your-secret-key-here
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+# DATABASE (ganti password sesuai Step 5)
+DATABASE_URL=postgresql://mythosnote_user:your_secure_password@localhost:5432/mythosnote
+
+# REDIS
+REDIS_URL=redis://localhost:6379/0
+
+# EMAIL (development mode)
+EMAIL_MODE=console
+DEFAULT_FROM_EMAIL=no-reply@mythosnote.local
+
+# SUPABASE STORAGE
+SUPABASE_URL=your-supabase-url
+SUPABASE_KEY=your-supabase-key
+SUPABASE_BUCKET=your-bucket-name
+
+# AI PROVIDER (pilih salah satu: gemini, deepseek)
+AI_PROVIDER=gemini
+GEMINI_API_KEY=your-gemini-api-key
+
+# RATE LIMITING
+MAX_PROMPTS_PER_DAY=50
+MAX_GENERATES_PER_DAY=20
+```
+
+> ⚠️ **Jangan commit `.env` ke Git!** Sudah ada di `.gitignore`
+
+### Step 7: Migrate Database
+
+Pastikan virtual environment masih aktif, lalu:
 ```bash
 python manage.py migrate
 ```
 
-### Step 8: Create Superuser
+Anda akan melihat banyak output "Running migrations..." sampai selesai.
+
+### Step 8: Buat Admin Account
+
 ```bash
 python manage.py createsuperuser
-# Ikuti prompt untuk membuat admin account
+# Ikuti prompt: username, email, password (ketik password, tidak akan terlihat)
 ```
 
-### Step 9: Jalankan Development Server
+Contoh:
+```
+Username: admin
+Email: admin@example.com
+Password: 
+(Tidak akan terlihat saat mengetik)
+Password (again): 
+Superuser created successfully.
+```
+
+### Step 9: Jalankan Aplikasi
+
+Buka **3 terminal Command Prompt** terpisah, semua di folder MythosNote:
+
+**Terminal 1 - Django Server:**
 ```bash
-# Terminal 1: Django Development Server
+venv\Scripts\activate
 python manage.py runserver
+# Output: Starting development server at http://127.0.0.1:8000/
+```
 
-# Terminal 2: Redis Server (jika menggunakan Windows native Redis)
+**Terminal 2 - Redis Server:**
+```bash
 redis-server
+# Jika sudah diinstall sebagai Windows Service, bisa skip ini
+```
 
-# Terminal 3: RQ Worker (untuk async tasks)
+**Terminal 3 - RQ Worker (untuk background jobs):**
+```bash
+venv\Scripts\activate
 python manage.py rqworker default
 ```
 
-✅ Akses aplikasi di: `http://localhost:8000`
-✅ Admin panel: `http://localhost:8000/admin`
+✅ **Aplikasi sudah siap!** Akses di: `http://localhost:8000`
+
+✅ **Admin panel:** `http://localhost:8000/admin` (login dengan akun dari Step 8)
 
 ---
 
@@ -439,21 +582,22 @@ EMAIL_ASYNC=false
 # EMAIL_HOST_USER=your-smtp-user
 # EMAIL_HOST_PASSWORD=your-smtp-password
 
-# GOOGLE CLOUD
-GCS_BUCKET_NAME=your-bucket-name
-GCS_PROJECT_ID=your-gcp-project-id
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
-# Download dari GCP Console
+# SUPABASE STORAGE (untuk file upload)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your-supabase-anon-key
+SUPABASE_BUCKET=mythosnote-bucket
 
 # AI PROVIDER
-AI_PROVIDER=gemini  # atau 'openai', 'deepseek'
+# Supported: gemini, deepseek
+AI_PROVIDER=gemini
 GEMINI_API_KEY=your-gemini-api-key
-OPENAI_API_KEY=your-openai-api-key
 DEEPSEEK_API_KEY=your-deepseek-api-key
 DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
 
-# EMBEDDING
-EMBEDDING_MODEL=text-embedding-3-small
+# EMBEDDING PROVIDER
+EMBEDDING_PROVIDER=gemini
+EMBEDDING_MODEL=gemini-embedding-001
+EMBEDDING_DIMENSIONS=768
 
 # RATE LIMITING
 MAX_PROMPTS_PER_DAY=50
@@ -513,18 +657,14 @@ from django.core.mail import send_mail
 send_mail("SMTP test", "Email MythosNote aktif.", None, ["you@example.com"])
 ```
 
-### Mendapatkan API Keys
+### Mendapatkan API Keys & Setup Storage
 
-#### Google Cloud (GCS & Gemini)
-1. Buat project di [Google Cloud Console](https://console.cloud.google.com/)
-2. Enable: Cloud Storage API, Gemini API
-3. Buat Service Account & download JSON key
-4. Set `GOOGLE_APPLICATION_CREDENTIALS` ke path file JSON
-
-#### OpenAI API
-1. Daftar di [openai.com](https://platform.openai.com)
-2. Buat API key di Settings → API Keys
-3. Set `OPENAI_API_KEY`
+#### Supabase Storage (untuk file upload)
+1. Daftar di [supabase.com](https://supabase.com)
+2. Buat project baru
+3. Di menu "Storage", buat bucket baru (nama: `mythosnote-bucket`)
+4. Copy `Project URL` → `SUPABASE_URL`
+5. Copy `anon key` dari Settings → API → Anon → `SUPABASE_KEY`
 
 #### Gemini API
 1. Dapatkan di [Google AI Studio](https://makersuite.google.com/app/apikey)
@@ -600,27 +740,26 @@ MythosNote/
 │   └── rqworker.py          # RQ worker compatibility command
 │
 ├── apps/
-│   ├── workspace/           # Workspace management
+│   ├── accounts/             # Authentication & user management
 │   │   ├── models.py
 │   │   ├── views.py
-│   │   ├── serializers.py
+│   │   ├── forms.py
+│   │   ├── signals.py       # User signal handlers
 │   │   └── urls.py
 │   │
-│   ├── document/            # Document handling
+│   ├── workspaces/          # Workspace management
 │   │   ├── models.py
 │   │   ├── views.py
-│   │   ├── tasks.py         # RQ jobs
+│   │   ├── utils.py         # Workspace quota logic
 │   │   └── urls.py
 │   │
-│   ├── ai/                  # AI integration
-│   │   ├── models.py
-│   │   ├── providers/       # Gemini, OpenAI
-│   │   ├── views.py
-│   │   └── urls.py
-│   │
-│   └── auth/                # Authentication
-│       ├── models.py
-│       ├── views.py
+│   └── sources/             # Document/source handling
+│       ├── models.py        # Source, SourceChunk models
+│       ├── views.py         # Upload, list, delete endpoints
+│       ├── tasks.py         # RQ background jobs (extraction, embedding)
+│       ├── embeddings.py    # Embedding providers (Gemini)
+│       ├── providers.py     # Chat providers (Gemini, DeepSeek)
+│       ├── serializers.py
 │       └── urls.py
 │
 ├── static/                  # Static files (CSS, JS)
@@ -642,30 +781,37 @@ MythosNote/
 
 ## 🔌 API Endpoints
 
-### Workspace
-- `GET /api/workspace/` - List workspaces
-- `POST /api/workspace/` - Create workspace
-- `GET /api/workspace/{id}/` - Workspace detail
-- `PUT /api/workspace/{id}/` - Update workspace
-- `DELETE /api/workspace/{id}/` - Delete workspace
+### Workspace Management
+- `GET /api/workspaces/` - List all workspaces (per user)
+- `POST /api/workspaces/` - Create new workspace (max 10 per user)
+- `GET /api/workspaces/{id}/` - Workspace detail
+- `PUT /api/workspaces/{id}/rename/` - Rename workspace (max 40 chars)
+- `DELETE /api/workspaces/{id}/` - Delete workspace
 
-### Document
-- `GET /api/document/` - List documents
-- `POST /api/document/` - Upload document
-- `GET /api/document/{id}/` - Document detail
-- `DELETE /api/document/{id}/` - Delete document
-- `POST /api/document/{id}/extract/` - Extract text
+### Sources (Dokumen)
+- `GET /api/sources/` - List sources (dokumen) per workspace
+- `POST /api/sources/upload/` - Upload file source (PDF/DOCX/TXT, max 20MB)
+- `GET /api/sources/{id}/` - Source detail
+- `GET /api/sources/{id}/status/` - Check processing status
+- `DELETE /api/sources/{id}/` - Delete source & file
 
-### AI Chat
-- `POST /api/ai/chat/` - Send message to AI
-- `GET /api/ai/chat/history/` - Chat history
-- `POST /api/ai/generate/` - Generate content
+### AI Chat (RAG-based)
+- `POST /api/workspaces/{id}/chat/` - Chat dengan konteks dokumen
+  - Input: `{"message": "pertanyaan", "workspace_id": "xxx"}`
+  - Output: AI response berdasarkan source chunks
 
-### Auth
+### Generate Content (Async Jobs)
+- `POST /api/workspaces/{id}/generate/` - Trigger generate job
+  - Input: `{"action": "summarize|quiz|mindmap|table"}`
+  - Output: `{"id": "job_id", "status": "queued"}`
+- `GET /api/jobs/{job_id}/status/` - Check job status
+
+### Authentication
 - `POST /api/auth/login/` - User login
 - `POST /api/auth/register/` - User registration
 - `POST /api/auth/logout/` - User logout
 - `POST /api/auth/refresh/` - Refresh token
+- `POST /api/auth/email-verify/` - Verify email address
 
 ---
 
@@ -749,9 +895,16 @@ pip install -r requirements.txt
 - [Django REST Framework](https://www.django-rest-framework.org/)
 - [django-rq Documentation](https://django-rq.readthedocs.io/)
 - [PostgreSQL Tutorial](https://www.postgresql.org/docs/current/tutorial.html)
-- [Google Cloud Storage](https://cloud.google.com/storage/docs)
+- [Supabase Documentation](https://supabase.com/docs)
 - [Gemini API](https://ai.google.dev/tutorials/get_started_web)
-- [OpenAI API](https://platform.openai.com/docs)
+
+- [DeepSeek API](https://platform.deepseek.com/)
+
+---
+
+## 📝 Changelog
+
+Lihat [CHANGELOG.md](CHANGELOG.md) untuk daftar lengkap perubahan, fitur baru, dan perbaikan di setiap versi.
 
 ---
 

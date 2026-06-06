@@ -66,6 +66,7 @@ static/css/output.css
 .pytest_cache/
 htmlcov/
 .tox/
+/tests/
 .hypothesis/
 .mypy_cache/
 .dmypy.json

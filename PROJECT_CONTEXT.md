@@ -2,11 +2,11 @@
 
 ## 1. Project Overview
 
-MythosNote is an AI-powered note-taking platform (NotebookLM-style): users manage workspaces, upload documents, and chat with AI over document context. **Current codebase state (v1.4.6):** production-ready **session-based authentication** and marketing/project UI; core workspace, upload, RAG, and REST APIs are **planned or stubbed** (models exist for sources; workspaces app missing).
+MythosNote is an AI-powered note-taking platform (NotebookLM-style): users manage workspaces, upload documents, and chat with AI over document context. **Current codebase state (v1.2.50):** production-ready **session-based authentication**, full **workspace management** (CRUD with rate limiting and quota enforcement), **source upload, polling & processing APIs** (supporting PDF, TXT, MD, DOCX with signature verification and secure file download), **dynamic workspace dashboard UI**, fully optimized **RAG retrieval pipeline** (pgvector cosine similarity with Dynamic Top-K, 800-token chunks, and token-efficient contexts), dynamic **frontend chat UI** (with source selection filtering, reset options, and safety/topic constraints), **chat persistence** (session/message logging), and comprehensive **AI Daily Quota limits & Security Hardening** (abuse prevention, rate throttling, secure post_delete signals, input validations, and pinned dependencies).
 
 - **Django:** 5.0.1 | **Python:** 3.12+ (venv uses 3.12.3)
-- **Database:** PostgreSQL recommended (with **pgvector** for planned embeddings); SQLite fallback when `DATABASE_URL` unset
-- **Key libraries** (`requirements.txt`): Django, djangorestframework (not wired), django-cors-headers (not wired), django-rq, psycopg2-binary, pgvector, PyMuPDF, supabase, python-dotenv, requests, gunicorn, email-validator
+- **Database:** PostgreSQL recommended (with **pgvector** for embeddings); SQLite fallback when `DATABASE_URL` unset
+- **Key libraries** (`requirements.txt`): Django, djangorestframework ✅ **wired**, django-rq, psycopg2-binary, pgvector, PyMuPDF, python-docx, supabase (unused), python-dotenv, requests, gunicorn, email-validator, google-genai
 
 ---
 
@@ -17,8 +17,9 @@ MythosNote/
 ├── config/                 # Django project (settings, urls, wsgi, root views)
 ├── apps/
 │   ├── accounts/           # CUSTOM — auth, profiles, usage, email, RQ email jobs
-│   └── sources/            # CUSTOM — models only (NOT in INSTALLED_APPS yet)
-├── templates/              # Django templates (base, auth, home, project)
+│   ├── workspaces/         # CUSTOM — workspace CRUD, quota, models ✅ ACTIVE
+│   └── sources/            # CUSTOM — upload, delete, chat, generate, embeddings ✅ ACTIVE
+├── templates/              # Django templates (base, auth, home, project, workspace)
 ├── static/                 # CSS (Tailwind build), JS, SVG, images
 ├── doc/                    # AUTH.md, DESIGN.md (reference docs)
 ├── manage.py
@@ -30,13 +31,15 @@ MythosNote/
 
 | Path | Type | Purpose |
 |------|------|---------|
-| `config/` | Custom | Settings, URL routing, `home` / `project` views |
+| `config/` | Custom | Settings, URL routing, `home` / `project` / `workspace` views; REST config |
 | `apps/accounts/` | Custom | Auth flows, `UserProfile`, `UserUsage`, signals, management commands |
-| `apps/sources/` | Custom (inactive) | `Source`, `SourceChunk` models; no app config/migrations/views |
+| `apps/workspaces/` | Custom ✅ **active** | `Workspace` model, CRUD views, quota logic, rate limiting |
+| `apps/sources/` | Custom ✅ **active** | `Source`, `SourceChunk`, `GenerateJob`, `ChatSession`, `ChatMessage` models; upload, delete, status, chat, generate views |
 | `django.contrib.*` | Third-party | Admin, auth User, sessions, messages, staticfiles |
+| `rest_framework` | Third-party | REST API framework ✅ **in INSTALLED_APPS** |
 | `django_rq` | Third-party | Queue dashboard + worker integration |
 
-**Not present in repo:** `apps/workspaces/`, API views, source processing workers, Supabase upload handlers (described in `README.md` / `Architecture.md` as roadmap).
+**Active features:** Standard Local FileStorage (FileSystemStorage) with media_data shared Docker volumes, Gemini Embedding Provider (`gemini-embedding-001` via `google-genai` SDK), pgvector RAG flow, dynamic AI chat & generate with DeepSeek and Gemini.
 
 ---
 
@@ -70,31 +73,58 @@ MythosNote/
   identifier: CharField(255)  # e.g. "email|ip" bucket for anonymous/login tracking
   ip_address: GenericIPAddressField(null=True)
   date: DateField
-  prompt_count, generate_count: PositiveIntegerField(default=0)  # reserved for AI limits
+  prompt_count, generate_count, upload_count: PositiveIntegerField(default=0)  # AI limits and uploads
   failed_login_count: PositiveIntegerField(default=0)
   failed_login_window_started_at, last_failed_login_at: DateTimeField(null=True)
   ```
 - **Constraints:** `UniqueConstraint(user, identifier, date)` — `unique_user_usage_per_identifier_day`
 - **Indexes:** `(date, identifier)`, `(date, user)`
 
-### `sources.Source` [NOT ACTIVE — not migrated / not in INSTALLED_APPS]
+### `workspaces.Workspace` ✅ **ACTIVE**
+
+- **Purpose:** User workspace container for sources and chat sessions.
+- **Fields:** UUID PK; `user` FK; `name` (max 40 chars); `created_at`, `updated_at` (auto timestamps).
+- **FK:** `user -> User`
+- **Meta:** ordering `-created_at`; index on `(user, created_at)`.
+- **Quota:** max 10 workspaces per user; enforced in views.
+
+### `sources.Source` ✅ **ACTIVE**
 
 - **Purpose:** Uploaded source files per workspace (RAG pipeline).
-- **Fields:** UUID PK; `user`, `workspace` FK; `original_filename`, `mime_type`, `file_size`, `storage_path`; `status` (pending|queued|processing|ready|failed); `error_message`, `progress` 0–100; timestamps.
-- **FK:** `user -> User`; `workspace -> workspaces.Workspace` **[NOT FOUND — app missing]**
+- **Fields:** UUID PK; `user`, `workspace` FK; `original_filename`, `mime_type`, `file_size`, `storage_path`; `status` (pending|queued|processing|ready|failed); `extracted_text` (TEXT); `error_message`, `progress` 0–100; timestamps.
+- **FK:** `user -> User`; `workspace -> workspaces.Workspace` ✅
 - **Meta:** `unique_together (workspace, original_filename)`; indexes on `(workspace, status)`, `(user, created_at)`; ordering `-created_at`.
 
-### `sources.SourceChunk` [NOT ACTIVE]
+### `sources.SourceChunk` ✅ **ACTIVE**
 
 - **Purpose:** Text chunks + vector embeddings for semantic search.
 - **Fields:** UUID PK; `source` FK; `chunk_index`, `text_content`, `token_count`; `embedding: VectorField(null=True)` (pgvector); `metadata: JSONField`.
-- **Meta:** `unique_together (source, chunk_index)`; index `(source, chunk_index)`.
+- **Meta:** `unique_together (source, chunk_index)`; index `(source, chunk_index)`; ordering `chunk_index`.
+
+### `sources.GenerateJob` ✅ **ACTIVE**
+
+- **Purpose:** Async generation jobs (summary, mindmap, quiz, table) from workspace sources.
+- **Fields:** UUID PK; `user`, `workspace` FK; `action` (summary|mindmap|quiz|table); `status` (queued|processing|success|failed); `result` (TEXT); `error_message`; `created_at`, `updated_at`.
+- **FK:** `user -> User`; `workspace -> workspaces.Workspace`
+- **Meta:** ordering `-created_at`; indexes on `(workspace, status)`, `(user, created_at)`.
+
+### `sources.ChatSession` ✅ **ACTIVE**
+
+- **Purpose:** AI chat session container inside a workspace.
+- **Fields:** UUID PK; `user` and `workspace` FKs; `title` (max 120 chars); `created_at`, `updated_at`.
+- **Meta:** ordering `-updated_at`; indexes on `(workspace, updated_at)` and `(user, created_at)`.
+
+### `sources.ChatMessage` ✅ **ACTIVE**
+
+- **Purpose:** Individual message inside a ChatSession (user query or assistant reply).
+- **Fields:** UUID PK; `session` FK; `role` (user|assistant); `content` (TEXT); `metadata` (JSONField); `created_at`, `updated_at`.
+- **Meta:** ordering `created_at`; indexes on `(session, created_at)` and `(session, role)`.
 
 ---
 
 ## 4. Endpoints
 
-**No JSON REST API** is implemented (`djangorestframework` not in `INSTALLED_APPS`). All routes return HTML unless noted.
+**REST API implemented** (`djangorestframework` ✅ in `INSTALLED_APPS`). HTML-based views coexist with JSON API endpoints.
 
 ### Public / project
 
@@ -106,8 +136,13 @@ Files: config.views.home
 
 GET  /project/
 Auth: required + verified email (@verified_email_required)
-Output: HTML project hub (UI only; notebook actions not wired)
+Output: HTML workspace dashboard (Workspace CRUD UI)
 Files: config.views.project
+
+GET  /workspace/?workspace_id=<uuid>
+Auth: required + verified email (@verified_email_required)
+Output: HTML workspace detail (sources, chat, generate)
+Files: config.views.workspace
 ```
 
 ### Authentication (`apps.accounts.urls`)
@@ -167,23 +202,100 @@ Output: redirect home
 Files: apps.accounts.views.sign_out
 ```
 
+### Workspace API ✅ **ACTIVE**
+
+```
+POST   /api/workspaces/<uuid:id>/rename/
+Auth: required (IsAuthenticated)
+Input: {"name": "New Name"}
+Output: {"id": "<uuid>", "name": "New Name"}  [200 OK]
+RateLimit: 60 per 60s per user, 5 min per-request cooldown
+Files: apps.workspaces.views.WorkspaceRenameView
+
+DELETE /api/workspaces/<uuid:id>/
+Auth: required
+Output: [204 No Content]
+RateLimit: same as rename
+Files: apps.workspaces.views.WorkspaceDeleteView
+```
+
+### Sources API ✅ **ACTIVE**
+
+```
+GET    /api/sources/?workspace_id=<uuid>
+Auth: required
+Output: [{"id", "workspace_id", "original_filename", "status", ...}, ...]
+Files: apps.sources.views.SourceListView
+
+POST   /api/sources/upload/
+Auth: required
+Input: multipart/form-data {file, workspace_id}
+Output: {"id", "status", "progress", ...}  [201 Created]
+Files: apps.sources.views.SourceUploadView
+
+DELETE /api/sources/<uuid:id>/
+Auth: required
+Output: [204 No Content]
+Files: apps.sources.views.SourceDeleteView
+
+GET    /api/sources/<uuid:id>/status/
+Auth: required
+Output: {"id", "status", "progress", "chunks": [...]}
+Files: apps.sources.views.SourceStatusView
+
+GET    /api/sources/<uuid:id>/download/
+Auth: required
+Output: FileResponse (secure download)
+Files: apps.sources.views.SourceDownloadView
+```
+
+### Chat & Generate API ✅ **ACTIVE**
+
+```
+POST   /api/workspace/<uuid:id>/chat/
+Auth: required
+Input: {"message": "...", "session_id": "<uuid>", "source_ids": [...]}
+Output: {"message": "...", "response": "...", "sources": [{"id", "original_filename"}, ...], "created_at": "...", "session_id": "..."}
+Files: apps.sources.views.ChatView
+
+GET    /api/workspace/<uuid:id>/chat/sessions/
+Auth: required
+Output: [{"id", "title", "created_at", "updated_at"}, ...]
+Files: apps.sources.views.ChatSessionListView
+
+GET    /api/workspace/<uuid:session_id>/chat/messages/
+Auth: required
+Output: [{"id", "role", "content", "created_at"}, ...]
+Files: apps.sources.views.ChatMessageListView
+
+DELETE /api/workspace/<uuid:id>/chat/messages/
+Auth: required
+Output: [204 No Content]
+Files: apps.sources.views.ChatMessageDeleteView
+
+POST   /api/workspace/<uuid:id>/generate/
+Auth: required
+Input: {"action": "summary|mindmap|quiz|table"}
+Output: {"generate_job": {"id": "<uuid>", "status": "queued"}}
+Files: apps.sources.views.GenerateView
+```
+
 ### Admin / ops
 
 ```
-GET  /admin/          # Django admin (UserProfile, UserUsage)
+GET  /admin/          # Django admin (UserProfile, UserUsage, Workspace, Source, SourceChunk, GenerateJob)
 GET  /django-rq/      # django-rq dashboard (staff access per Django admin)
 ```
-
-**Planned (README, not implemented):** `/api/workspace/`, source upload, chat — [NOT FOUND in code].
 
 ---
 
 ## 5. Background Tasks (RQ / Redis)
 
-| Task | Location | Trigger | Input | Side effects | Errors |
+| Task | Location | Trigger | Input | Side effects | Status |
 |------|----------|---------|-------|--------------|--------|
-| `_send_mail_job` | `apps/accounts/utils.py` | `_dispatch_email()` when `EMAIL_ASYNC=true` | subject, message, recipients, from_email, html_message | Sends email via Django mail backend | Enqueue failure → **sync fallback** + warning log |
-| Source processing | [NOT FOUND] | Planned on upload | — | Chunk + embed + Supabase Storage | — |
+| `_send_mail_job` | `apps/accounts/utils.py` | `_dispatch_email()` when `EMAIL_ASYNC=true` | subject, message, recipients, from_email, html_message | Sends email via Django mail backend | ✅ Active |
+| `process_source` | `apps/sources/tasks.py` | Source upload API | source_id | Extract text, chunk, embed, store chunks in DB | ✅ Implemented |
+| `process_generate_job` | `apps/sources/tasks.py` | GenerateJob creation | job_id, prompt | Generate summary/mindmap/quiz/table (provider-specific) | ✅ Implemented |
 
 - **Queue:** `default` (`RQ_QUEUES` in settings; `REDIS_URL` or localhost:6379).
 - **Worker:** `python manage.py rqworker default` or Docker `worker` service; custom `apps.accounts.management.commands.rqworker` mirrors django-rq for rq API compatibility.
@@ -198,7 +310,7 @@ GET  /django-rq/      # django-rq dashboard (staff access per Django admin)
 - **Login:** `apps.accounts.backends.EmailBackend` — email + password; timing-safe dummy hash on unknown email; only `is_active=True` users authenticate via backend (inactive caught in `SignInForm`).
 - **Google:** Google Identity Services → POST credential → `verify_google_credential()` (tokeninfo API) → `get_or_create_google_user()`.
 - **Email verification:** `UserProfile.email_verified` + `User.is_active`; custom `EmailVerificationTokenGenerator`; verification link in email.
-- **Multi-tenant:** **[NOT IMPLEMENTED]** Planned: workspace-scoped data (`Source.workspace`). Decorator `verified_email_required` gates future workspace/core features.
+- **Multi-tenant:** ✅ **Implemented** — workspace-scoped data via `Source.workspace` and `ChatSession.workspace` FK. Decorator `@verified_email_required` gates workspace/core features. Workspaces enforce user ownership in queries.
 - **Decorators:**
   - `@guest_required` — redirect authenticated users to `home`
   - `@verified_email_required` — login + verified email for protected pages (e.g. `/project/`)
@@ -225,8 +337,14 @@ EMAIL_MODE          # console | smtp | brevo
 EMAIL_ASYNC         # enqueue mail via RQ
 UNVERIFIED_USER_CLEANUP_DAYS
 GOOGLE_OAUTH_CLIENT_ID
+AI_DAILY_PROMPT_LIMIT
+AI_DAILY_GENERATE_LIMIT
+AI_DAILY_UPLOAD_LIMIT
+WORKSPACE_MAX_SOURCES
+REST_FRAMEWORK      # SessionAuthentication, IsAuthenticated permission class
 SESSION/CSRF cookie security (strict when not DEBUG)
 SECURE_SSL_REDIRECT, HSTS, etc.
+MEDIA_URL, MEDIA_ROOT  # local file storage (dev/prod shared volume)
 ```
 
 **Environment variables** (from `.env.example`; values not stored in repo):
@@ -242,42 +360,42 @@ DEFAULT_FROM_EMAIL
 EMAIL_ASYNC
 BREVO_SMTP_* (if brevo)
 EMAIL_HOST, EMAIL_PORT, EMAIL_* (if smtp)
-SUPABASE_URL
-SUPABASE_KEY
-SUPABASE_BUCKET
 GOOGLE_OAUTH_CLIENT_ID
 AI_PROVIDER
 GEMINI_API_KEY
-OPENAI_API_KEY
+DEEPSEEK_API_KEY
+DEEPSEEK_BASE_URL
 EMBEDDING_MODEL
-MAX_PROMPTS_PER_DAY
-MAX_GENERATES_PER_DAY
+AI_DAILY_PROMPT_LIMIT
+AI_DAILY_GENERATE_LIMIT
+AI_DAILY_UPLOAD_LIMIT
+WORKSPACE_MAX_SOURCES
 FRONTEND_URL
 SESSION_COOKIE_SECURE, CSRF_COOKIE_SECURE, etc. (optional overrides)
 ```
 
-**In requirements but unused in settings:** `EMBEDDING_PROVIDER`, DRF, CORS — [ASSUMPTION: wired when API layer lands].
+**In requirements but partially used in settings:** `django-cors-headers` (not in MIDDLEWARE yet; reserved for future cross-origin API); `EMBEDDING_PROVIDER` env var reserved for embedding provider selection.
 
 ---
 
 ## 8. Frontend Conventions
 
 - **Templates:** Django templates under `templates/`; `DIRS` includes project `templates/`, `APP_DIRS=True`.
-- **Inheritance:** `base.html` → page templates (`home.html`, `project.html`, `signin.html`, …); auth emails under `templates/auth/emails/`.
+- **Inheritance:** `base.html` → page templates (`home.html`, `project.html` [Workspace Dashboard], `workspace.html` [Workspace detail with sources], `signin.html`, …); auth emails under `templates/auth/emails/`; modals in `templates/components/`.
 - **CSS:** Tailwind CSS v4 — source `static/css/input.css` → built `static/css/output.css` via `npm run build:css`; theme in `theme.css`, `typography.css`.
-- **JavaScript:** Vanilla JS modules (`static/js/components.js`, `toast.js`, `messages.js`, `auth-validation.js`); **Flowbite** 4.x for dropdowns; **Iconify** CDN; **marked** + **mermaid** (CDN) for future markdown/diagrams; **AOS** in package.json (optional).
+- **JavaScript:** Vanilla JS modules (`static/js/project.js`, `auth/validation.js`, `toast/manager.js`, `ui/loading-button.js`, `workspace/index.js`, `workspace/layout.js`, `workspace/selection.js`, `workspace/sources.js`, `workspace/chat.js`); **Flowbite** 4.x for dropdowns; **Iconify** CDN; **marked** + **mermaid** (CDN) for markdown/diagrams; **AOS** in package.json (optional).
 - **HTMX / Alpine:** [NOT FOUND]
 - **Google OAuth:** partial `templates/auth/_google_oauth.html`; disabled UI if `GOOGLE_OAUTH_CLIENT_ID` empty.
-- **Context processors:** `auth_settings` (OAuth client id, verification flag), `navbar_config` (`show_navbar`, `navbar_type`: home | project | default).
+- **Context processors:** `auth_settings` (OAuth client id, verification flag), `navbar_config` (`show_navbar`, `navbar_type`: home | project | default); additional view-level context: `workspace_quota` (count, limit, remaining, can_create), `workspace_name_max_length`, `active_workspace` (workspace detail views).
 - **Language:** UI copy largely Indonesian (`id` on `<html>`).
 
 ---
 
 ## 9. File Storage
 
-- **Current settings:** Local static only (`STATIC_URL`, `STATIC_ROOT`, `STATICFILES_DIRS`). **MEDIA_URL / MEDIA_ROOT:** [NOT FOUND in settings].
-- **Planned (`.env.example`, `Source.storage_path`, README):** Google Cloud Storage; path pattern like `workspaces/{id}/sources/{filename}` [ASSUMPTION: matches Architecture.md].
-- **Static:** `/static/` → `static/` dev, `staticfiles/` collectstatic; SVG logos, images under `static/img/`.
+- **Current settings:** Local file storage (dev/prod): `STATIC_URL=/static/`, `STATIC_ROOT=static/`, `MEDIA_URL=/media/`, `MEDIA_ROOT=media/`; source uploads stored locally with path `workspaces/{workspace_id}/sources/{filename}` using standard Django `default_storage` (FileSystemStorage).
+- **Shared Volume:** Shared Docker volume (`media_data` mounted under `MEDIA_ROOT` in both `web` and `worker` services) ensures uploaded files are accessible by asynchronous worker jobs for text extraction.
+- **Supabase Storage:** Unused/Migrated back to local FileSystemStorage.
 
 ---
 
@@ -292,12 +410,12 @@ SESSION_COOKIE_SECURE, CSRF_COOKIE_SECURE, etc. (optional overrides)
 
 ## 11. Deployment Notes
 
-- **Docker Compose:** `db` (Postgres 16), `redis` (7), `web` (migrate + runserver :8000), `worker` (`rqworker default`); `DATABASE_URL` and `REDIS_URL` injected.
+- **Docker Compose:** `db` (Postgres 16), `redis` (7), `web` (migrate + runserver :8000), `worker` (`rqworker default`); `DATABASE_URL` and `REDIS_URL` injected. Shared volume `media_data` handles media file sync.
 - **Dockerfile:** Node 20 + Python 3 (Debian); `pip install -r requirements.txt`, `npm install`, `npm run build:css`; default CMD migrate + runserver (use gunicorn in production [ASSUMPTION]).
-- **Migrations:** `python manage.py migrate` on deploy; accounts migrations 0001–0004; **sources:** no migrations yet.
+- **Migrations:** `python manage.py migrate` on deploy; accounts migrations 0001–0004; workspaces 0001_initial; sources 0001–0003 (Source, SourceChunk, GenerateJob, ChatSession, ChatMessage models).
 - **pgvector:** Enable extension on Postgres before activating `sources` app [ASSUMPTION per README].
 - **RQ:** Separate worker process/container required when `EMAIL_ASYNC=true` or future document jobs.
-- **Production checklist:** Set `DEBUG=false`, `SECRET_KEY`, Postgres `DATABASE_URL`, Redis, email (Brevo/SMTP), `GOOGLE_OAUTH_CLIENT_ID`, Supabase credentials when upload ships; run `cleanup_unverified_users` via cron if desired.
+- **Production checklist:** Set `DEBUG=false`, `SECRET_KEY`, Postgres `DATABASE_URL`, Redis, email (Brevo/SMTP), `GOOGLE_OAUTH_CLIENT_ID`; when deploying embeddings/chat: set AI provider API keys (Gemini/DeepSeek); run `cleanup_unverified_users` via cron if desired.
 
 ---
 
@@ -305,12 +423,20 @@ SESSION_COOKIE_SECURE, CSRF_COOKIE_SECURE, etc. (optional overrides)
 
 | Topic | Status |
 |-------|--------|
-| Auth / sessions | **Done** |
-| `/project/` UI | **Done** (no backend CRUD) |
-| Workspaces app | **Missing** |
-| Sources app (DB) | **Models only** |
-| REST `/api/*` | **Missing** |
-| RAG / embeddings / Supabase Storage | **Missing** (deps present) |
-| AI chat | **Missing** |
+| Auth / sessions | **✅ Done** |
+| Workspace Dashboard (`/project/`) | **✅ Done** (Create, Rename, Delete) |
+| Workspaces app | **✅ Active** (model, views, quota, rate limit) |
+| Sources app (DB) | **✅ Active** (models, views, upload/delete/status/download endpoints) |
+| REST `/api/*` | **✅ Done** (workspace/source/chat/generate CRUD & async) |
+| RAG / embeddings / Storage | **✅ Done** (Gemini embeddings, FileSystemStorage, pgvector, Dynamic Top-K, 800-token chunks) |
+| AI chat / generate | **✅ Done** (dynamic frontend chat, source selection/filtering, Indonesian system prompt, topic security) |
+| Security Hardening & Quota | **✅ Done** (AI daily limits, password/email/filename length validation, post_delete resource cleanup, Gunicorn) |
 
-When extending the project: register new apps under `apps/`, add to `INSTALLED_APPS`, include URLs in `config/urls.py`, reuse `@verified_email_required` for user-facing features, and scope data by `workspace_id` once `workspaces` exists.
+When extending the project: register new apps under `apps/`, add to `INSTALLED_APPS`, include URLs in `config/urls.py`, reuse `@verified_email_required` for user-facing features, scope data by `workspace_id`, follow workspace quota and AI daily limit patterns, and adhere to strict security validation standards.
+
+## Migration to Gemini/DeepSeek
+
+Fully migrated embedding and chat capabilities to Gemini and DeepSeek. 
+- **OpenAI Fully Removed**: The OpenAI Python SDK dependency and all OpenAI providers (embedding/chat) have been deleted.
+- **Gemini Embeddings**: Powered by the `google-genai` SDK and model `gemini-embedding-001` (768 dimensions), utilizing exponential backoff retry logic. `LocalEmbeddingProvider` acts as a local fallback placeholder.
+- **AI Providers**: Configurable via `AI_PROVIDER` as either `gemini` or `deepseek` with respective environment variables (`GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`).

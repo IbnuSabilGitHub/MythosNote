@@ -68,10 +68,11 @@
       mobileTabButtons.forEach((button) => {
         const isActive = button.dataset.mobileTab === tabName;
         button.setAttribute("aria-selected", String(isActive));
-        button.classList.toggle("text-[#FFC880]", isActive);
+        button.classList.toggle("text-primary", isActive);
         button.classList.toggle("text-stone-400", !isActive);
-        button.classList.toggle("border-[#FFC880]", isActive);
+        button.classList.toggle("border-primary", isActive);
         button.classList.toggle("border-transparent", !isActive);
+        button.classList.toggle("font-semibold", isActive);
       });
     };
 
@@ -90,6 +91,7 @@
 
       sourcesToggles.forEach((button) => {
         button.setAttribute("aria-expanded", String(!collapsed));
+        button.setAttribute("title", collapsed ? "Buka Panel" : "Tutup Panel");
       });
       sourcesChevrons.forEach((icon) => {
         icon.classList.toggle("rotate-180", !collapsed);
@@ -115,6 +117,7 @@
 
       generateToggles.forEach((button) => {
         button.setAttribute("aria-expanded", String(!collapsed));
+        button.setAttribute("title", collapsed ? "Buka Panel" : "Tutup Panel");
       });
       generateChevrons.forEach((icon) => {
         icon.classList.toggle("rotate-180", !collapsed);
