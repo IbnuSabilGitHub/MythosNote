@@ -8,7 +8,7 @@ from apps.generate.models import GenerateJob
 from apps.generate.processors import ProcessOutputError, process_output
 from apps.generate.prompts import build_messages
 from apps.generate.services import GenerateContextError, get_generate_context
-from apps.sources.providers import ChatProvider
+from apps.core.providers import ChatProvider  # moved to core (refactor 2026-06-06)
 
 
 def process_generate_job(job_id: str) -> None:

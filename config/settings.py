@@ -146,6 +146,7 @@ INSTALLED_APPS = [
     'apps.sources.apps.SourcesConfig',
     'apps.generate.apps.GenerateConfig',
     'apps.workspaces.apps.WorkspacesConfig',
+    'apps.chat.apps.ChatConfig',  # chat app (refactor 2026-06-06)
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

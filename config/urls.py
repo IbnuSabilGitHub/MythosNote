@@ -39,6 +39,7 @@ urlpatterns = [
     path('', include('apps.workspaces.urls')),
     path('', include('apps.accounts.urls')),
     path('', include('apps.sources.urls')),
+    path('', include('apps.chat.urls')),   # chat URLs (refactor 2026-06-06)
     path('', include('apps.generate.urls')),
     path('admin/', admin.site.urls),
     path('django-rq/', include((_staff_required_urls(
