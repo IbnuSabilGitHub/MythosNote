@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentSessionId = null;
     let isWaitingForResponse = false;
+    let loadingIntervalId = null;
 
     function renderEmptyState() {
         if (!messagesContainer || messagesContainer.children.length > 0) return;
@@ -185,24 +186,58 @@ document.addEventListener('DOMContentLoaded', () => {
         const msgDiv = document.createElement('div');
         msgDiv.id = 'chat-loading';
         clearEmptyState();
-        msgDiv.className = 'w-full max-w-3xl flex justify-start items-start gap-3 sm:gap-4';
+        msgDiv.className = 'w-full max-w-3xl flex justify-start items-start gap-3 sm:gap-4 animate-slide-up';
  
         msgDiv.innerHTML = `
             <div class="w-8 h-9 pt-1 inline-flex flex-col justify-start items-start shrink-0">
-                <div class="w-8 h-8 bg-neutral-900 rounded-xl outline -outline-offset-1 outline-neutral-800 inline-flex justify-center items-center">
+                <div class="w-8 h-8 bg-neutral-900 rounded-xl outline -outline-offset-1 outline-primary/30 inline-flex justify-center items-center relative overflow-hidden shadow-[0_0_15px_rgba(255,200,128,0.15)]">
+                    <div class="absolute inset-0 bg-primary/10 animate-pulse"></div>
                     ${getAiAvatarHtml()}
                 </div>
             </div>
-            <div class="w-72 max-w-[85%] px-4 pt-3.5 pb-4 bg-neutral-900/70 rounded-2xl border border-neutral-800 inline-flex flex-col justify-start items-start gap-3 animate-pulse">
-                <div class="h-3.5 bg-neutral-800 rounded w-1/4"></div>
-                <div class="h-3.5 bg-neutral-800/80 rounded w-2/3"></div>
+            <div class="px-5 py-4 bg-neutral-900/80 rounded-2xl border border-primary/20 inline-flex items-center gap-3 relative overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.2)]">
+                <div class="absolute top-0 left-0 h-[1px] w-full bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
+                <span id="chat-loading-text" class="text-sm font-['Manrope'] font-medium text-primary/80 transition-all duration-300 animate-pulse">Menganalisis sumber...</span>
+                <div class="flex items-center gap-1.5 px-1">
+                    <div class="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce" style="animation-delay: 0ms"></div>
+                    <div class="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce" style="animation-delay: 150ms"></div>
+                    <div class="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce" style="animation-delay: 300ms"></div>
+                </div>
             </div>
         `;
         messagesContainer.appendChild(msgDiv);
         scrollToBottom();
+
+        const loadingTexts = [
+            "Menganalisis sumber...",
+            "Mencari konteks relevan...",
+            "Memahami instruksi...",
+            "Menyusun jawaban..."
+        ];
+        let textIndex = 0;
+        
+        if (loadingIntervalId) clearInterval(loadingIntervalId);
+        
+        loadingIntervalId = setInterval(() => {
+            const textElement = document.getElementById('chat-loading-text');
+            if (textElement) {
+                textIndex++;
+                if (textIndex < loadingTexts.length) {
+                    textElement.textContent = loadingTexts[textIndex];
+                } else {
+                    clearInterval(loadingIntervalId);
+                }
+            } else {
+                clearInterval(loadingIntervalId);
+            }
+        }, 2500);
     }
 
     function removeLoading() {
+        if (loadingIntervalId) {
+            clearInterval(loadingIntervalId);
+            loadingIntervalId = null;
+        }
         const loading = document.getElementById('chat-loading');
         if (loading) loading.remove();
     }
