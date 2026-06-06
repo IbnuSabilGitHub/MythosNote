@@ -7,22 +7,21 @@
     const backdrop = document.getElementById("upload-modal-backdrop");
     const form = document.getElementById("upload-source-form");
     const fileInput = document.getElementById("source-file-input");
-    const preview = document.getElementById("upload-file-preview");
-    const fileIconEl = document.getElementById("upload-file-icon");
-    const fileNameEl = document.getElementById("upload-file-name");
-    const fileSizeEl = document.getElementById("upload-file-size");
+    const previewContainer = document.getElementById("upload-file-preview-container");
+    const template = document.getElementById("upload-file-item-template");
     const errorEl = document.getElementById("upload-error");
     const submitBtn = document.getElementById("btn-submit-upload");
     const openBtn = document.getElementById("btn-add-source");
     const openBtnRail = document.getElementById("btn-add-source-rail");
     const closeBtn = document.getElementById("btn-close-upload-modal");
     const cancelBtn = document.getElementById("btn-cancel-upload");
-    const clearBtn = document.getElementById("btn-clear-file");
     const progressWrap = document.getElementById("upload-progress-wrap");
     const progressBar = document.getElementById("upload-progress-bar");
     const progressPct = document.getElementById("upload-progress-pct");
 
     if (!modal || !form || !fileInput) return;
+
+    let selectedFiles = [];
 
     const MAX_BYTES = 20 * 1024 * 1024; // 20 MB
     const ALLOWED_EXT = [".pdf", ".txt", ".md", ".docx"];
@@ -52,8 +51,8 @@
 
     function resetForm() {
       form.reset();
-      preview.classList.add("hidden");
-      preview.classList.remove("flex");
+      selectedFiles = [];
+      renderPreview();
       errorEl.classList.add("hidden");
       errorEl.textContent = "";
       submitBtn.disabled = true;
@@ -103,26 +102,76 @@
       return kb < 1024 ? `${kb.toFixed(0)} KB` : `${(kb / 1024).toFixed(1)} MB`;
     }
 
-    function handleFile(file) {
-      if (!file) return;
+    function renderPreview() {
+      if (!previewContainer || !template) return;
+      previewContainer.innerHTML = "";
+      
+      if (selectedFiles.length === 0) {
+        previewContainer.classList.add("hidden");
+        previewContainer.classList.remove("flex");
+        submitBtn.disabled = true;
+        fileInput.value = "";
+        return;
+      }
+
+      previewContainer.classList.remove("hidden");
+      previewContainer.classList.add("flex");
+      submitBtn.disabled = false;
+
+      selectedFiles.forEach((file, index) => {
+        const ext = "." + file.name.split(".").pop().toLowerCase();
+        const clone = template.content.cloneNode(true);
+        
+        clone.querySelector(".file-icon").setAttribute("icon", getFileIcon(ext.slice(1)));
+        clone.querySelector(".file-name").textContent = file.name;
+        clone.querySelector(".file-size").textContent = formatBytes(file.size);
+        
+        clone.querySelector(".btn-remove-file").addEventListener("click", () => {
+          selectedFiles.splice(index, 1);
+          renderPreview();
+        });
+        
+        previewContainer.appendChild(clone);
+      });
+      
+      // Update fileInput to match selectedFiles for consistency
+      const dt = new DataTransfer();
+      selectedFiles.forEach(f => dt.items.add(f));
+      fileInput.files = dt.files;
+    }
+
+    function handleFiles(files) {
+      if (!files || files.length === 0) return;
       clearError();
 
-      const ext = "." + file.name.split(".").pop().toLowerCase();
-      if (!ALLOWED_EXT.includes(ext)) {
-        showError("Format tidak didukung. Gunakan PDF, TXT, MD, atau DOCX.");
-        return;
-      }
-      if (file.size > MAX_BYTES) {
-        showError("File terlalu besar. Maksimal 20 MB.");
+      const newFiles = Array.from(files);
+      if (selectedFiles.length + newFiles.length > 5) {
+        showError("Maksimal 5 file dapat diupload sekaligus.");
         return;
       }
 
-      fileIconEl?.setAttribute("icon", getFileIcon(ext.slice(1)));
-      if (fileNameEl) fileNameEl.textContent = file.name;
-      if (fileSizeEl) fileSizeEl.textContent = formatBytes(file.size);
-      preview.classList.remove("hidden");
-      preview.classList.add("flex");
-      submitBtn.disabled = false;
+      for (let i = 0; i < newFiles.length; i++) {
+        const file = newFiles[i];
+        const ext = "." + file.name.split(".").pop().toLowerCase();
+        if (!ALLOWED_EXT.includes(ext)) {
+          showError(`Format file ${file.name} tidak didukung.`);
+          return;
+        }
+        if (file.size > MAX_BYTES) {
+          showError(`File ${file.name} terlalu besar. Maksimal 20 MB per file.`);
+          return;
+        }
+      }
+
+      // Avoid duplicates
+      newFiles.forEach(nf => {
+        const exists = selectedFiles.some(sf => sf.name === nf.name && sf.size === nf.size);
+        if (!exists) {
+          selectedFiles.push(nf);
+        }
+      });
+      
+      renderPreview();
     }
 
     // ── Map API error keys to user-friendly messages ───────────────────
@@ -139,7 +188,7 @@
     }
 
     // ── XHR upload with progress ─────────────────────────────────────────
-    function xhrUpload(formData) {
+    function xhrUpload(formData, index = 0, totalFiles = 1) {
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("POST", "/api/sources/upload/");
@@ -147,7 +196,9 @@
 
         xhr.upload.addEventListener("progress", (e) => {
           if (e.lengthComputable) {
-            showProgress((e.loaded / e.total) * 100);
+            const filePct = e.loaded / e.total;
+            const overallPct = ((index + filePct) / totalFiles) * 100;
+            showProgress(overallPct);
           }
         });
 
@@ -209,15 +260,7 @@
       }
     });
 
-    fileInput?.addEventListener("change", () => handleFile(fileInput.files[0]));
-
-    clearBtn?.addEventListener("click", () => {
-      fileInput.value = "";
-      preview.classList.add("hidden");
-      preview.classList.remove("flex");
-      submitBtn.disabled = true;
-      clearError();
-    });
+    fileInput?.addEventListener("change", () => handleFiles(fileInput.files));
 
     // Drag-and-drop on the label
     const dropLabel = form?.querySelector("label[for='source-file-input']");
@@ -233,13 +276,9 @@
         e.preventDefault();
         dropLabel.classList.remove("is-dragging");
 
-        const file = e.dataTransfer?.files?.[0];
-        if (file) {
-          // Assign to input so form data works
-          const dt = new DataTransfer();
-          dt.items.add(file);
-          fileInput.files = dt.files;
-          handleFile(file);
+        const files = e.dataTransfer?.files;
+        if (files && files.length > 0) {
+          handleFiles(files);
         }
       });
     }
@@ -248,28 +287,35 @@
     form?.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const file = fileInput?.files?.[0];
-      if (!file || !workspaceId || !window.workspaceSources) return;
+      const files = selectedFiles;
+      if (!files || files.length === 0 || !workspaceId || !window.workspaceSources) return;
 
       submitBtn.disabled = true;
       submitBtn.textContent = "Mengupload...";
       clearError();
       showProgress(0);
 
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("workspace_id", workspaceId);
-
       try {
-        const data = await xhrUpload(formData);
+        const results = [];
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("workspace_id", workspaceId);
+          
+          const data = await xhrUpload(formData, i, files.length);
+          results.push(data);
+        }
 
         // Refresh list
         await window.workspaceSources.fetchSources();
 
         // Start polling for newly uploaded source
-        if (data?.id) {
-          window.workspaceSources.pollSourceStatus(data.id);
-        }
+        results.forEach(data => {
+          if (data?.id) {
+            window.workspaceSources.pollSourceStatus(data.id);
+          }
+        });
 
         closeModal();
 

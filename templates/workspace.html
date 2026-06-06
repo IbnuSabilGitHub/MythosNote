@@ -455,21 +455,26 @@
                     <iconify-icon icon="material-symbols:upload-file-outline" class="text-3xl text-primary/70 group-hover:text-primary transition"></iconify-icon>
                     <div class="text-center">
                         <p class="text-sm text-stone-300 font-manrope">Klik atau seret file ke sini</p>
-                        <p class="text-xs text-stone-500 mt-0.5 font-manrope">PDF, TXT, Markdown, DOCX — maks. 20 MB</p>
+                        <p class="text-xs text-stone-500 mt-0.5 font-manrope">PDF, TXT, Markdown, DOCX — maks. 20 MB (Maks 5 file)</p>
                     </div>
-                    <input id="source-file-input" type="file" name="file" accept=".pdf,.txt,.md,.docx" class="sr-only" />
+                    <input id="source-file-input" type="file" name="file" accept=".pdf,.txt,.md,.docx" class="sr-only" multiple />
                 </label>
                 <!-- File preview -->
-                <div id="upload-file-preview" class="hidden items-center gap-3 px-3 py-2.5 bg-neutral-950/60 rounded-lg border border-neutral-800">
-                    <iconify-icon id="upload-file-icon" icon="tabler:file" class="text-primary text-lg shrink-0"></iconify-icon>
-                    <div class="flex-1 min-w-0">
-                        <p id="upload-file-name" class="text-sm text-zinc-200 font-manrope truncate"></p>
-                        <p id="upload-file-size" class="text-xs text-stone-500 font-manrope"></p>
-                    </div>
-                    <button type="button" id="btn-clear-file" class="text-stone-500 hover:text-red-400 transition" aria-label="Hapus file">
-                        <iconify-icon icon="tabler:x" class="text-sm"></iconify-icon>
-                    </button>
+                <div id="upload-file-preview-container" class="hidden flex-col gap-2 max-h-48 overflow-y-auto pr-1">
+                    <!-- JS will inject file items here -->
                 </div>
+                <template id="upload-file-item-template">
+                    <div class="flex items-center gap-3 px-3 py-2.5 bg-neutral-950/60 rounded-lg border border-neutral-800">
+                        <iconify-icon class="file-icon text-primary text-lg shrink-0" icon="tabler:file"></iconify-icon>
+                        <div class="flex-1 min-w-0">
+                            <p class="file-name text-sm text-zinc-200 font-manrope truncate"></p>
+                            <p class="file-size text-xs text-stone-500 font-manrope"></p>
+                        </div>
+                        <button type="button" class="btn-remove-file text-stone-500 hover:text-red-400 transition" aria-label="Hapus file">
+                            <iconify-icon icon="tabler:x" class="text-sm"></iconify-icon>
+                        </button>
+                    </div>
+                </template>
                 <!-- Upload progress -->
                 <div id="upload-progress-wrap" class="hidden flex-col gap-1">
                     <div class="flex items-center justify-between">

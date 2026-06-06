@@ -5,6 +5,19 @@ Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a 
 
 
 
+## [1.2.68] - 2026-06-07
+### Summary
+Fitur multi-upload file di modal tambah sumber (maks 5 file) dan reposisi tombol Salin Markdown ke kanan bawah.
+
+### Added
+- `templates/workspace.html`: Template item preview (`upload-file-item-template`) untuk multi-upload file.
+
+### Changed
+- `config/settings.py`: Gunakan `StaticFilesStorage` jika `DEBUG` aktif untuk mempermudah development statik tanpa collectstatic.
+- `static/js/workspace/chat.js`: Reposisi tombol copy markdown/pesan chatbot ke kanan bawah (`bottom-3 right-3`).
+- `static/js/workspace/upload-modal.js`: Ubah upload single file menjadi upload multiple (maks 5 file) dengan list preview dinamis dan XHR progress.
+- `templates/workspace.html`: Dukungan atribut `multiple` pada input file serta layout list preview upload.
+
 ## [1.2.67] - 2026-06-06
 ### Summary
 Refaktor readability dan perbaikan helpers di 7 modul (`chat`, `sources`, `generate`, `core`, `accounts`).

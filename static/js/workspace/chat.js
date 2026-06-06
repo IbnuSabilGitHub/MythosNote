@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const renderedMarkdown = marked.parse(text);
 
-// eslint-disable-next-line no-unsanitized/property
+        // eslint-disable-next-line no-unsanitized/property
         msgDiv.innerHTML = `
             <div class="w-8 h-9 pt-1 inline-flex flex-col justify-start items-start shrink-0">
                 <div class="w-8 h-8 bg-neutral-900 rounded-xl outline -outline-offset-1 outline-neutral-800 inline-flex justify-center items-center">
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
             <div class="max-w-[85%] px-4 pt-3.5 pb-4 bg-neutral-900/70 rounded-2xl border border-neutral-800 inline-flex flex-col justify-start items-start gap-4 relative group/msg">
-                <div class="absolute top-3 right-3 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                <div class="absolute bottom-3 right-3 opacity-0 group-hover/msg:opacity-100 transition-opacity">
                     <button type="button" class="btn-copy-msg p-1.5 rounded-lg bg-neutral-950/60 border border-neutral-800 hover:bg-neutral-800 text-stone-400 hover:text-primary transition cursor-pointer focus:outline-none" title="Salin Markdown">
                         <iconify-icon icon="tabler:copy" class="text-sm"></iconify-icon>
                     </button>
