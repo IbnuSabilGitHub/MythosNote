@@ -19,9 +19,16 @@ _MERMAID_FENCE_RE = re.compile(
 
 def _strip_outer_fence(text: str) -> str:
     text = text.strip()
-    match = _FENCE_RE.match(text)
+    match = re.search(r"```(?:json)?\s*(.*?)\s*```", text, re.DOTALL | re.IGNORECASE)
     if match:
-        return match.group(1).strip()
+        text = match.group(1).strip()
+    
+    # Ambil PASTI dari { pertama sampai } terakhir
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        return text[start:end+1]
+        
     return text
 
 
@@ -33,9 +40,33 @@ def process_output(action: str, raw: str) -> tuple[str | None, str]:
 
     cleaned = _strip_outer_fence(raw)
     
+    if action == "summary":
+        try:
+            data = json.loads(cleaned)
+            if isinstance(data, dict):
+                return str(data.get("title", "Ringkasan Dokumen")), str(data.get("content", raw))
+        except json.JSONDecodeError:
+            pass
+            
+        # Fallback raw markdown if not valid JSON
+        content_match = re.search(r'"content"\s*:\s*"(.*?)"(?:\s*\}|,\s*"[^"]+"\s*:|\s*$)', cleaned, re.DOTALL)
+        if content_match:
+            content_val = content_match.group(1).replace("\\n", "\n").replace('\\"', '"')
+            title_match = re.search(r'"title"\s*:\s*"([^"]+)"', cleaned)
+            title = title_match.group(1) if title_match else "Ringkasan Dokumen"
+            return title, content_val
+
+        lines = cleaned.strip().split("\n", 1)
+        title = "Ringkasan Dokumen"
+        if lines and lines[0].startswith("#"):
+            title = lines[0].strip("# ").strip()
+        return title, cleaned
+        
+
     try:
         data = json.loads(cleaned)
     except json.JSONDecodeError as exc:
+        print(f"FAILED TO DECODE JSON. RAW:\\n{repr(raw)}\\nCLEANED:\\n{repr(cleaned)}")
         raise ProcessOutputError(f"Output {action} bukan JSON valid.") from exc
 
     if not isinstance(data, dict):
@@ -49,10 +80,6 @@ def process_output(action: str, raw: str) -> tuple[str | None, str]:
     if content is None:
         raise ProcessOutputError(f"Output {action} tidak memiliki field 'content'.")
 
-    if action == "summary":
-        if not isinstance(content, str):
-            raise ProcessOutputError("Content summary harus berupa string.")
-        return title, content
 
     if action == "quiz":
         if not isinstance(content, dict) or "questions" not in content:

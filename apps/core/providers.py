@@ -122,7 +122,7 @@ class BaseChatProvider(ABC):
 class OpenRouterChatProvider(BaseChatProvider):
     """OpenRouter chat completion provider using REST API."""
 
-    DEFAULT_MODEL = "deepseek/deepseek-chat"
+    DEFAULT_MODEL = "deepseek/deepseek-v4-flash"
 
     def __init__(self) -> None:
         self.api_key = getattr(settings, "OPENROUTER_API_KEY", "")
