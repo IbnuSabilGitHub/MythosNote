@@ -21,8 +21,7 @@
     <!-- Decorative floating cards (desktop only) -->
     <div class="absolute inset-0 hidden lg:block">
       <!-- AI Summary Card -->
-      <div data-aos="fade-up" data-aos-duration="1200" data-aos-delay="100"
-        class="absolute left-45 top-43 w-79 -rotate-3">
+      <div class="absolute left-45 top-43 w-79 -rotate-3">
         <div
           class="rounded-lg border border-outline-variant bg-surface-container-high p-5 shadow-[0px_25px_50px_-12px_rgba(0,0,0,0.35)] backdrop-blur-md">
           <div class="flex items-center gap-3 pb-2">
@@ -37,8 +36,7 @@
       </div>
 
       <!-- Education System Card -->
-      <div data-aos="fade-up" data-aos-duration="1200" data-aos-delay="200"
-        class="absolute right-38 top-54 w-76 rotate-5">
+      <div class="absolute right-38 top-54 w-76 rotate-5">
         <div class="rounded-xl border border-primary/30 bg-surface-container-highest/80 px-6 py-3 backdrop-blur-md">
           <div class="flex items-center gap-4">
             <iconify-icon icon="tabler:affiliate" class="text-primary text-xl"></iconify-icon>
@@ -48,8 +46,7 @@
       </div>
 
       <!-- Quote Card -->
-      <div data-aos="fade-up" data-aos-duration="1200" data-aos-delay="300"
-        class="absolute bottom-32 left-63 w-90 rotate-2">
+      <div class="absolute bottom-32 left-63 w-90 rotate-2">
         <div
           class="flex gap-4 rounded border border-outline-variant bg-surface-container p-4 shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.2)]">
           <div class="h-8 w-12 overflow-hidden rounded-xl opacity-80 flex items-center justify-center">
@@ -65,8 +62,7 @@
       </div>
 
       <!-- Terminal Card -->
-      <div data-aos="fade-up" data-aos-duration="1200" data-aos-delay="400"
-        class="absolute bottom-42 right-73 w-64 -rotate-2">
+      <div class="absolute bottom-42 right-73 w-64 -rotate-2">
         <div
           class="rounded-md border border-outline-variant bg-surface-container-lowest p-4 shadow-[0px_25px_50px_-12px_rgba(0,0,0,0.3)]">
           <div class="flex gap-2">
@@ -86,7 +82,7 @@
     <!-- Hero Content -->
     <div class="relative mx-auto flex max-w-230 flex-col items-center gap-6 text-center">
       <!-- Badge -->
-      <div data-aos="fade-in" data-aos-duration="800"
+      <div
         class="inline-flex items-center gap-2 rounded-xl border border-outline-variant/50 bg-surface-container-low px-3 sm:px-4 py-1 sm:py-1.5">
         <img class="h-3 w-4" src="{% static 'svg/deepseek-logo.svg' %}" alt="DeepSeek AI Logo" />
         <span
@@ -94,21 +90,18 @@
       </div>
 
       <!-- Main Heading -->
-      <h1 data-aos="fade-up" data-aos-duration="1000" data-aos-delay="100"
-        class="font-newsreader text-3xl font-bold text-on-surface sm:text-4xl lg:text-5xl xl:text-[4.5rem] lg:leading-18">
+      <h1 class="font-newsreader text-3xl font-bold text-on-surface sm:text-4xl lg:text-5xl xl:text-[4.5rem] lg:leading-18">
         Ubah dokumen Anda menjadi
         <span class="block font-newsreader text-primary italic">pemahaman terstruktur.</span>
       </h1>
 
       <!-- Description -->
-      <p data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200"
-        class="max-w-180 text-sm font-bold text-on-surface-variant sm:text-base lg:text-lg leading-relaxed">
+      <p class="max-w-180 text-sm font-bold text-on-surface-variant sm:text-base lg:text-lg leading-relaxed">
         Unggah file teks, markdown, atau PDF Anda. MythosNote akan membaca, memahami, dan melakukan generate ringkasan, peta pikiran, kuis, serta tabel konsep dalam hitungan detik. Seluruh data Anda terisolasi dan aman.
       </p>
 
       <!-- CTA Buttons -->
-      <div data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300"
-        class="flex flex-col items-center gap-3 pt-4 sm:gap-4 sm:flex-row">
+      <div class="flex flex-col items-center gap-3 pt-4 sm:gap-4 sm:flex-row">
         {% if request.user.is_authenticated %}
         <a href="{% url 'project' %}"
           class="inline-flex items-center gap-2 rounded-lg bg-primary px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-on-primary transition hover:bg-primary-container">
