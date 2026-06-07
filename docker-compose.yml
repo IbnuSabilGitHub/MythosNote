@@ -29,7 +29,7 @@ services:
     # Development:
     # command: sh -c "python3 manage.py migrate && python3 manage.py runserver 0.0.0.0:8000"
     # Production:
-    command: sh -c "python3 manage.py collectstatic --noinput --ignore input.css && python3 manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
+    command: sh -c "python3 manage.py collectstatic --noinput --ignore input.css && python3 manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120 --limit-request-field_size 16384"
     env_file:
       - .env
     environment:
@@ -37,7 +37,7 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD:-mythosnote_redis_pass}@redis:6379/0
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
     ports:
-      - "80:8000"
+      - "8000:8000"
     dns:
       - 8.8.8.8
       - 1.1.1.1
