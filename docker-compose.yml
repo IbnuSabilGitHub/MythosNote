@@ -37,7 +37,7 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD:-mythosnote_redis_pass}@redis:6379/0
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
     ports:
-      - "8000:8000"
+      - "80:8000"
     dns:
       - 8.8.8.8
       - 1.1.1.1
