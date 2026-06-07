@@ -97,6 +97,17 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Mermaid.js (Diagrams) - Loaded only on mindmap -->
+<script integrity="sha384-R63zfMfSwJF4xCR11wXii+QUsbiBIdiDzDbtxia72oGWfkT7WHJfmD/I/eeHPJyT" crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js" defer></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    if (window.mermaid) {
+      mermaid.initialize({ startOnLoad: true, theme: "dark" });
+      mermaid.contentLoaded();
+    }
+  });
+</script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
 <script type="module" src="{% static 'js/generate/mindmap.js' %}"></script>
 {% endblock %}

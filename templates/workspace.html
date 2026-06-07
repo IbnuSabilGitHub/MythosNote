@@ -576,5 +576,19 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Marked.js (Markdown rendering) - Loaded only on workspace -->
+<script integrity="sha384-H+hy9ULve6xfxRkWIh/YOtvDdpXgV2fmAGQkIDTxIgZwNoaoBal14Di2YTMR6MzR" crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js" defer></script>
+
+<!-- Mermaid.js (Diagrams) - Loaded only on workspace -->
+<script integrity="sha384-R63zfMfSwJF4xCR11wXii+QUsbiBIdiDzDbtxia72oGWfkT7WHJfmD/I/eeHPJyT" crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js" defer></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    if (window.mermaid) {
+      mermaid.initialize({ startOnLoad: true, theme: "dark" });
+      mermaid.contentLoaded();
+    }
+  });
+</script>
+
 <script type="module" src="{% static 'js/entries/workspace.js' %}"></script>
 {% endblock %}

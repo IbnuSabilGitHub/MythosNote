@@ -363,15 +363,18 @@
 
 {% block extra_js %}
 <!-- AOS JS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js" integrity="sha384-n1AULnKdMJlK1oQCLNDL9qZsDgXtH6jRYFCpBtWFc+a9Yve0KSoMn575rk755NJZ" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js" integrity="sha384-n1AULnKdMJlK1oQCLNDL9qZsDgXtH6jRYFCpBtWFc+a9Yve0KSoMn575rk755NJZ" crossorigin="anonymous" defer></script>
 <script>
-  // Initialize AOS
-  AOS.init({
-    duration: 1000,
-    easing: 'ease-in-out-quad',
-    once: true,
-    mirror: false,
-    offset: 100
+  document.addEventListener("DOMContentLoaded", () => {
+    if (window.AOS) {
+      AOS.init({
+        duration: 1000,
+        easing: 'ease-in-out-quad',
+        once: true,
+        mirror: false,
+        offset: 100
+      });
+    }
   });
 </script>
 {% endblock %}
