@@ -78,7 +78,7 @@
 </div>
 
 <!-- Invisible data store for JS -->
-{{ job.result|json_script:"quiz-data" }}
+{{ result_data|json_script:"quiz-data" }}
 
 <script>
     const csrfToken = "{{ csrf_token }}";

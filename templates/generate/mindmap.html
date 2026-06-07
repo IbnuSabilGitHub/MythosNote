@@ -58,7 +58,7 @@
 </div>
 
 <!-- Invisible data store for JS -->
-{{ job.result|json_script:"mindmap-data" }}
+{{ result_data|json_script:"mindmap-data" }}
 
 <script>
     const csrfToken = "{{ csrf_token }}";

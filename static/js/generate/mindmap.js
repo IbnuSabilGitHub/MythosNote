@@ -25,6 +25,10 @@ document.addEventListener("DOMContentLoaded", () => {
             rawData = rawData.replace(/^```\n/, "").replace(/\n```$/, "");
         }
         jsonData = JSON.parse(rawData);
+        // Handle double-encoded JSON: json_script on a string yields a JSON string
+        if (typeof jsonData === "string") {
+            jsonData = JSON.parse(jsonData);
+        }
     } catch (err) {
         console.error("Failed to parse mindmap JSON:", err);
         renderArea.innerHTML = `<div class="text-red-400 p-4 border border-red-800 rounded bg-red-900/20 max-w-lg text-center">Failed to render mindmap. Invalid JSON data.</div>`;

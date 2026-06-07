@@ -16,6 +16,10 @@ document.addEventListener("DOMContentLoaded", () => {
             rawData = rawData.replace(/^```\n/, "").replace(/\n```$/, "");
         }
         quizData = JSON.parse(rawData);
+        // Handle double-encoded JSON: json_script on a string yields a JSON string
+        if (typeof quizData === "string") {
+            quizData = JSON.parse(quizData);
+        }
     } catch (err) {
         console.error("Failed to parse quiz data:", err);
         document.getElementById("quiz-question-text").textContent = "Gagal memuat data kuis.";

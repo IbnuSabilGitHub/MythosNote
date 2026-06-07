@@ -8,6 +8,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
+import json
+import re
 
 from apps.accounts.decorators import verified_email_required
 from apps.accounts.utils import check_and_increment_generate
@@ -120,7 +122,31 @@ def _workspace_generate_render_view(request, job_id, action):
     """Shared render helper untuk quiz dan mindmap."""
     template = _GENERATE_RENDER_MAP[action]
     job = get_object_or_404(GenerateJob.objects.filter(user=request.user), id=job_id, action=action)
-    return render(request, template, {"job": job, "workspace": job.workspace, "show_navbar": False})
+    
+    result_data = {}
+    if job.result:
+        try:
+            cleaned = job.result.strip()
+            # Remove markdown fencing if it exists in older DB entries
+            match = re.search(r"^```(?:json)?\s*\n?(.*?)\n?```\s*$", cleaned, re.DOTALL | re.IGNORECASE)
+            if match:
+                cleaned = match.group(1).strip()
+                
+            parsed = json.loads(cleaned)
+            # Handle double-encoded JSON strings
+            if isinstance(parsed, str):
+                parsed = parsed.strip()
+                match = re.search(r"^```(?:json)?\s*\n?(.*?)\n?```\s*$", parsed, re.DOTALL | re.IGNORECASE)
+                if match:
+                    parsed = match.group(1).strip()
+                parsed = json.loads(parsed)
+                
+            if isinstance(parsed, dict):
+                result_data = parsed
+        except Exception:
+            pass
+            
+    return render(request, template, {"job": job, "result_data": result_data, "workspace": job.workspace, "show_navbar": False})
 
 
 @verified_email_required
