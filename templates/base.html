@@ -145,11 +145,68 @@
           href="{% url 'signup' %}">
           Mulai Sekarang
         </a>
+
+        <!-- Hamburger Button (mobile only) -->
+        {% if navbar_type == 'home' %}
+        <button id="mobileMenuBtn" type="button" aria-label="Buka menu" aria-expanded="false"
+          class="flex h-10 w-10 items-center justify-center rounded-lg text-outline transition hover:text-primary md:hidden">
+          <iconify-icon icon="tabler:menu-2" class="text-2xl" id="menuIconOpen"></iconify-icon>
+          <iconify-icon icon="tabler:x" class="text-2xl hidden" id="menuIconClose"></iconify-icon>
+        </button>
+        {% endif %}
         {% endif %}
       </div>
 
     </div>
+
+    <!-- Mobile Menu Drawer -->
+    {% if navbar_type == 'home' and not request.user.is_authenticated %}
+    <div id="mobileMenu" class="hidden border-t border-surface-container-high bg-background/95 backdrop-blur-md md:hidden">
+      <div class="flex flex-col gap-1 px-6 py-4">
+        <a class="rounded-lg px-4 py-3 text-sm font-bold text-outline transition hover:bg-surface-container hover:text-primary"
+          href="#features" data-mobile-link>Fitur</a>
+        <a class="rounded-lg px-4 py-3 text-sm font-bold text-outline transition hover:bg-surface-container hover:text-primary"
+          href="#how" data-mobile-link>Cara Kerja</a>
+        <a class="rounded-lg px-4 py-3 text-sm font-bold text-outline transition hover:bg-surface-container hover:text-primary"
+          href="#start" data-mobile-link>Mulai Gratis</a>
+        <hr class="my-2 border-surface-container-high">
+        <a class="rounded-lg px-4 py-3 text-sm font-bold text-outline transition hover:bg-surface-container hover:text-primary"
+          href="{% url 'signin' %}">Masuk</a>
+      </div>
+    </div>
+    {% endif %}
   </nav>
+
+  <!-- Mobile Menu Script -->
+  {% if navbar_type == 'home' and not request.user.is_authenticated %}
+  <script>
+    (function() {
+      const btn = document.getElementById('mobileMenuBtn');
+      const menu = document.getElementById('mobileMenu');
+      const iconOpen = document.getElementById('menuIconOpen');
+      const iconClose = document.getElementById('menuIconClose');
+      if (!btn || !menu) return;
+
+      btn.addEventListener('click', function() {
+        const isOpen = !menu.classList.contains('hidden');
+        menu.classList.toggle('hidden');
+        iconOpen.classList.toggle('hidden');
+        iconClose.classList.toggle('hidden');
+        btn.setAttribute('aria-expanded', !isOpen);
+      });
+
+      // Close menu when clicking a nav link
+      menu.querySelectorAll('[data-mobile-link]').forEach(function(link) {
+        link.addEventListener('click', function() {
+          menu.classList.add('hidden');
+          iconOpen.classList.remove('hidden');
+          iconClose.classList.add('hidden');
+          btn.setAttribute('aria-expanded', 'false');
+        });
+      });
+    })();
+  </script>
+  {% endif %}
   {% endif %}
 
   <!-- Main Content -->
