@@ -11,8 +11,7 @@
     </form>
     <div id="g_id_onload" data-client_id="{{ GOOGLE_OAUTH_CLIENT_ID|escape }}" data-callback="handleGoogleCredential"
         data-auto_prompt="false"></div>
-    <div class="g_id_signin" data-type="standard" data-theme="filled_black" data-size="large" data-width="384"
-        data-text="continue_with"></div>
+    <div id="google-button-container" class="w-full flex justify-center"></div>
 </div>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -21,6 +20,41 @@
         document.getElementById("google-oauth-credential").value = response.credential;
         document.getElementById("google-oauth-form").submit();
     }
+
+    function renderGoogleButton() {
+        const container = document.getElementById("google-button-container");
+        if (container && window.google && window.google.accounts) {
+            // Get parent container width or fallback to 320, clamp between 200 and 384
+            const parentWidth = container.parentElement.offsetWidth || 320;
+            const btnWidth = Math.max(200, Math.min(parentWidth, 384));
+            
+            container.innerHTML = "";
+            window.google.accounts.id.renderButton(container, {
+                type: "standard",
+                theme: "filled_black",
+                size: "large",
+                width: btnWidth,
+                text: "continue_with"
+            });
+        }
+    }
+
+    // Wait for the Google script to load, then render
+    window.addEventListener('load', function() {
+        const interval = setInterval(function() {
+            if (window.google && window.google.accounts && window.google.accounts.id) {
+                clearInterval(interval);
+                renderGoogleButton();
+            }
+        }, 100);
+    });
+
+    // Handle screen resize
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(renderGoogleButton, 200);
+    });
 </script>
 {% else %}
 <div class="self-stretch rounded-sm border border-stone-700 bg-neutral-900 px-4 py-3 text-center">
