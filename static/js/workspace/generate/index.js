@@ -221,8 +221,13 @@ class WorkspaceGenerate {
     if (!this.modal) return;
 
     if (!TERMINAL.has(job.status)) {
-      showToast("Hasil masih diproses.", "info");
+      const now = Date.now();
+      if (!this.lastToastTime || now - this.lastToastTime > 3000) {
+        showToast("Hasil masih diproses.", "info");
+        this.lastToastTime = now;
+      }
       this.startPolling(job.id);
+      return;
     }
 
     let current = job;

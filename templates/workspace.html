@@ -11,12 +11,12 @@
     data-ai-provider="{{ ai_provider }}"
     class="hidden"></div>
 <div
-    class="workspace-shell w-full h-dvh overflow-hidden text-stone-200 inline-flex flex-col justify-start items-start font-sans pb-16 lg:pb-0">
+    class="workspace-shell w-full h-dvh overflow-hidden text-stone-200 flex flex-col justify-start items-start font-sans pb-16 lg:pb-0">
     <!-- Header workspace -->
     <div
         class="self-stretch h-14 px-4 sm:px-6 bg-neutral-950/90 border-b border-neutral-800/70 inline-flex justify-between items-center shrink-0 backdrop-blur relative z-30">
         <div class="flex-1 min-w-0 flex justify-start items-center gap-2 sm:gap-4">
-            <div class="flex-none inline-flex flex-col justify-start items-start">
+            <div class="flex-none flex flex-col justify-start items-start">
                 <a href="{% url 'home' %}" class="inline-flex items-center gap-2 sm:gap-3 focus:outline-none focus:ring-2 focus:ring-primary/40 rounded-md">
                     <img src="{% static 'svg/mythosnote-logo.svg' %}" alt="MythosNote Logo" class="h-7 w-auto" />
                     <span class="hidden sm:inline font-newsreader text-2xl italic text-primary-container">MythosNote</span>
@@ -131,9 +131,9 @@
             </div>
         </div>
     </div>
-    <div class="self-stretch flex-1 inline-flex flex-col lg:flex-row justify-start items-start overflow-hidden">
+    <div class="self-stretch flex-1 flex flex-col lg:flex-row justify-start items-start overflow-hidden">
         <div data-sources-shell data-mobile-panel="sources"
-            class="workspace-panel w-full lg:w-72 self-stretch border-r lg:border-r-neutral-800/70 border-neutral-800/70 flex flex-col justify-start items-start shrink-0">
+            class="workspace-panel w-full lg:w-72 self-stretch min-h-0 border-r lg:border-r-neutral-800/70 border-neutral-800/70 flex flex-col justify-start items-start shrink-0">
             <!-- Toggle panel sumber (desktop) -->
             <div data-sources-header
                 class="workspace-panel-header hidden lg:flex w-full p-2 border-b border-neutral-800/70 justify-between items-center">
@@ -210,13 +210,13 @@
             </div>
             <!-- Daftar sumber — filled dynamically by sources.js -->
             <div id="source-list-container" data-sources-panel
-                class="flex self-stretch flex-1 p-4 flex-col justify-start items-start gap-2 overflow-y-auto">
+                class="flex self-stretch flex-1 min-h-0 p-4 flex-col justify-start items-start gap-2 overflow-y-auto">
                 <!-- JS renders source items here -->
             </div>
         </div>
 
         <!-- Panel chat (tengah) -->
-        <div data-mobile-panel="chat" class="flex-1 self-stretch min-w-0 relative bg-neutral-950/70 flex flex-col">
+        <div data-mobile-panel="chat" class="flex-1 self-stretch min-w-0 min-h-0 relative bg-neutral-950/70 flex flex-col">
             <!-- Chat header -->
             <div
                 class="w-full h-14 px-4 sm:px-6 bg-neutral-950/80 border-b border-neutral-800/70 backdrop-blur inline-flex justify-between items-center shrink-0 sticky top-0 z-10">
@@ -242,7 +242,7 @@
             </div>
             <!-- Messages -->
             <div id="chat-messages-container"
-                class="flex-1 w-full p-4 sm:p-6 pt-4 flex flex-col justify-start items-center gap-6 sm:gap-8 overflow-y-auto"
+                class="flex-1 w-full min-h-0 p-4 sm:p-6 pt-4 flex flex-col justify-start items-center gap-6 sm:gap-8 overflow-y-auto"
                 aria-live="polite">
                 <!-- Chat messages will be dynamically injected here by chat.js -->
             </div>
@@ -275,7 +275,7 @@
 
         <!-- Panel generate (kanan) -->
         <div data-generate-shell data-mobile-panel="generate"
-            class="workspace-panel hidden lg:inline-flex w-full lg:w-80 self-stretch border-t lg:border-t-0 lg:border-l border-neutral-800/70 flex-col justify-start items-start shrink-0">
+            class="workspace-panel hidden lg:flex w-full lg:w-80 self-stretch min-h-0 border-t lg:border-t-0 lg:border-l border-neutral-800/70 flex-col justify-start items-start shrink-0">
             <div data-generate-header
                 class="workspace-panel-header hidden lg:flex w-full p-2 border-b border-neutral-800/70 justify-between items-center">
                 <div data-generate-label
@@ -350,7 +350,7 @@
                 </div>
             </div>
             <div data-generate-panel
-                class="self-stretch flex-1 flex flex-col justify-start items-start overflow-y-auto">
+                class="self-stretch flex-1 min-h-0 flex flex-col justify-start items-start overflow-y-auto">
                 <div class="self-stretch px-4 pt-4 pb-2 flex flex-col justify-start items-start">
                     <div class="self-stretch flex flex-col justify-start items-start">
                         <div
