@@ -38,6 +38,9 @@ COPY . .
 # Copy compiled CSS from frontend stage (overwrite the one from host)
 COPY --from=frontend /app/static/css/output.css ./static/css/output.css
 
+# Hapus input.css (source Tailwind) biar ga gagal di collectstatic
+RUN rm static/css/input.css
+
 EXPOSE 8000
 
 CMD ["sh", "-c", "python3 manage.py collectstatic --noinput && python3 manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"]
