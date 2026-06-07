@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const aiProvider = (workspaceData.dataset.aiProvider || 'gemini').toLowerCase();
     
     function getAiAvatarHtml() {
-        if (aiProvider === 'deepseek') {
+        if (aiProvider === 'deepseek' || aiProvider === 'openrouter') {
             return `<img class="h-5 w-5 shrink-0" src="/static/svg/deepseek-logo.svg" alt="DeepSeek AI Logo" />`;
         }
         return `<iconify-icon icon="simple-icons:googlegemini" class="text-base text-primary shrink-0"></iconify-icon>`;
