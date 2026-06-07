@@ -5,7 +5,20 @@ Semua perubahan penting di MythosNote dicatat di sini. Format mengikuti [Keep a 
 
 
 
+## [1.2.70] - 2026-06-07
+### Summary
+Patch keamanan kritis: mitigasi Stored Cross-Site Scripting (XSS) pada halaman Generate Quiz dan Generate Mindmap.
+
+### Security
+- `templates/generate/quiz.html`: Ganti `{{ job.result|safe }}` dengan `{{ job.result|json_script:"quiz-data" }}` untuk mencegah injeksi HTML/script dari konten database. Filter `|json_script` melakukan HTML-escaping otomatis pada karakter `<`, `>`, dan `&` sehingga payload `</script><script>` tidak dapat keluar dari blok JSON.
+- `templates/generate/mindmap.html`: Ganti `{{ job.result|safe }}` dengan `{{ job.result|json_script:"mindmap-data" }}` dengan alasan yang sama.
+- `doc/SECURITY_MITIGATION.md`: Tambah dokumentasi teknis detail tentang kerentanan, bukti eksploitasi, dan langkah mitigasi.
+
+### Fixed
+- Bug XSS (Stored) yang memungkinkan penyerang mengeksekusi JavaScript arbitrer di browser pengguna lain dengan cara menyisipkan payload ke kolom `job.result` di database.
+
 ## [1.2.69] - 2026-06-07
+
 ### Summary
 Pemindahan widget kuota AI dari dashboard proyek ke halaman pengaturan akun (settings).
 
