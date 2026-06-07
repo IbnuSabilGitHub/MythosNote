@@ -274,7 +274,11 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+STATICFILES_IGNORE_PATTERNS = [
+    'input.css',
+]
+
 import sys
 
 if 'test' in sys.argv or DEBUG:
