@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        pgvector.django.CreateExtension(),
+        pgvector.django.CreateExtension('vector'),
         migrations.CreateModel(
             name='Source',
             fields=[
