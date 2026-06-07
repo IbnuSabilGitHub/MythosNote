@@ -16,11 +16,27 @@ Menyertakan URLconf lain
 """
 from django.contrib import admin
 from django.contrib.admin.views.decorators import staff_member_required
-from django.urls import include, path
+from django.urls import include, path, reverse
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import TemplateView
+from django.contrib.sitemaps.views import sitemap
+from django.contrib.sitemaps import Sitemap
 from . import views
 
+class StaticViewSitemap(Sitemap):
+    priority = 1.0
+    changefreq = 'weekly'
+
+    def items(self):
+        return ['home']
+
+    def location(self, item):
+        return reverse(item)
+
+sitemaps = {
+    'static': StaticViewSitemap,
+}
 
 def _staff_required_urls(urlpatterns):
     """Wrap all views in urlpatterns with staff_member_required."""
@@ -46,6 +62,8 @@ urlpatterns = [
         __import__('django_rq.urls', fromlist=['urlpatterns']).urlpatterns
     ), 'django_rq'), namespace='django-rq')),
     path('404-test/', views.custom_404_view, name='404_test'),
+    path('robots.txt', TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
 ]
 
 handler404 = 'config.views.custom_404_view'

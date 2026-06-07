@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /signin/
+Disallow: /signup/
+Disallow: /project/
+Disallow: /workspace/
+Disallow: /settings/
+Disallow: /django-rq/
+
+Sitemap: https://mythosnote.tech/sitemap.xml
