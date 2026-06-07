@@ -1,0 +1,6 @@
+# Copy this file to docker-compose.override.yml for local development
+# Port 80 requires root — this override uses port 8000 instead
+services:
+  web:
+    ports:
+      - "8000:8000"

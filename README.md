@@ -82,7 +82,13 @@ cp .env.example .env
 ```
 Buka file `.env` dan sesuaikan nilainya (API Key, dll). Pastikan variabel `DATABASE_URL` ditaruh menyesuaikan `POSTGRES_USER` di dalamnya.
 
-### Step 3: Jalankan Docker Compose
+### Step 3: Setup Port untuk Local Development
+Port default di `docker-compose.yml` adalah `80:8000` (untuk production). Di local, port 80 memerlukan akses root dan bisa konflik. Jalankan perintah berikut untuk menggunakan port 8000:
+```bash
+cp docker-compose.override.example.yml docker-compose.override.yml
+```
+
+### Step 4: Jalankan Docker Compose
 ```bash
 docker compose up -d --build
 ```
@@ -92,13 +98,13 @@ Perintah ini akan men-download image, membangun container, dan menjalankan 4 ser
 - worker (Python RQ background worker)
 - web (Django application server)
 
-### Step 4: Buat Admin
+### Step 5: Buat Admin
 Jalankan perintah ini di dalam container web yang sedang berjalan untuk membuat akun admin (Superuser):
 ```bash
 docker compose exec web python manage.py createsuperuser
 ```
 
-Aplikasi sekarang dapat diakses di: `http://localhost:8000`
+Aplikasi sekarang dapat diakses di: `http://localhost:8000` (local) atau `http://localhost` (production)
 
 ---
 
