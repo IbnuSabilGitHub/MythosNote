@@ -153,6 +153,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps',
     'rest_framework',
     'django_rq',
 ]
@@ -273,6 +274,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 import sys
 
 if 'test' in sys.argv or DEBUG:
@@ -354,3 +356,5 @@ SECURE_SSL_REDIRECT = _env_bool('SECURE_SSL_REDIRECT', 'false' if DEBUG else 'tr
 SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '0' if DEBUG else '31536000'))
 SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'false' if DEBUG else 'true')
 SECURE_HSTS_PRELOAD = _env_bool('SECURE_HSTS_PRELOAD', 'false' if DEBUG else 'true')
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

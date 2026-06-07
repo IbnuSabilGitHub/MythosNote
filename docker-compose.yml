@@ -27,9 +27,9 @@ services:
   web:
     build: .
     # Development:
-    command: sh -c "python3 manage.py migrate && python3 manage.py runserver 0.0.0.0:8000"
+    # command: sh -c "python3 manage.py migrate && python3 manage.py runserver 0.0.0.0:8000"
     # Production:
-    # command: sh -c "python3 manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
+    command: sh -c "python3 manage.py collectstatic --noinput && python3 manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
     env_file:
       - .env
     environment:
@@ -42,7 +42,6 @@ services:
       - 8.8.8.8
       - 1.1.1.1
     volumes:
-      - .:/app  # WARNING: Remove in production — exposes source code and .env
       - media_data:/app/media
     depends_on:
       db:
@@ -63,7 +62,6 @@ services:
       - 8.8.8.8
       - 1.1.1.1
     volumes:
-      - .:/app  # WARNING: Remove in production
       - media_data:/app/media
     depends_on:
       db:
