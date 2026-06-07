@@ -12,6 +12,7 @@ Patch keamanan kritis: mitigasi Stored Cross-Site Scripting (XSS) pada halaman G
 ### Security
 - `templates/generate/quiz.html`: Ganti `{{ job.result|safe }}` dengan `{{ job.result|json_script:"quiz-data" }}` untuk mencegah injeksi HTML/script dari konten database. Filter `|json_script` melakukan HTML-escaping otomatis pada karakter `<`, `>`, dan `&` sehingga payload `</script><script>` tidak dapat keluar dari blok JSON.
 - `templates/generate/mindmap.html`: Ganti `{{ job.result|safe }}` dengan `{{ job.result|json_script:"mindmap-data" }}` dengan alasan yang sama.
+- `apps/generate/processors.py`: Tambah validasi `_DANGEROUS_TAGS_RE` di `process_output()` untuk memblokir hasil LLM yang mengandung tag HTML berbahaya sebelum disimpan ke DB (defense-in-depth).
 - `doc/SECURITY_MITIGATION.md`: Tambah dokumentasi teknis detail tentang kerentanan, bukti eksploitasi, dan langkah mitigasi.
 
 ### Fixed

@@ -16,6 +16,12 @@ _MERMAID_FENCE_RE = re.compile(
     re.DOTALL | re.IGNORECASE,
 )
 
+_DANGEROUS_TAGS_RE = re.compile(
+    r"<(/?\s*(?:script|iframe|object|embed|link|style|meta|svg|body|html|head)[^>]*)>|"
+    r"\b(?:on(?:load|error|click|mouseover|keydown|submit))\s*=",
+    re.IGNORECASE,
+)
+
 
 def _strip_outer_fence(text: str) -> str:
     text = text.strip()
@@ -39,6 +45,9 @@ def process_output(action: str, raw: str) -> tuple[str | None, str]:
         raise ProcessOutputError("Model mengembalikan respons kosong.")
 
     cleaned = _strip_outer_fence(raw)
+    
+    if _DANGEROUS_TAGS_RE.search(cleaned):
+        raise ProcessOutputError("Output ditolak karena terdeteksi mengandung tag HTML/Script berbahaya.")
     
     if action == "summary":
         try:
