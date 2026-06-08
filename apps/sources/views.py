@@ -3,6 +3,7 @@
 import mimetypes
 import os
 import uuid
+from urllib.parse import quote
 
 import django_rq
 from django.core.files.storage import default_storage
@@ -208,7 +209,9 @@ class SourceDownloadView(APIView):
 
         file_handle = default_storage.open(source.storage_path, "rb")
         response = FileResponse(file_handle, content_type=source.mime_type)
-        response["Content-Disposition"] = f'attachment; filename="{source.original_filename}"'
+        safe_name = source.original_filename.replace('"', '_').replace('\n', '_').replace('\r', '_')
+        quoted_name = quote(source.original_filename, safe='')
+        response["Content-Disposition"] = f'attachment; filename="{safe_name}"; filename*=UTF-8\'\'{quoted_name}'
         return response
 
 
