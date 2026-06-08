@@ -193,7 +193,7 @@ export async function renderResultBody(container, job) {
   const markdownWrap = document.createElement("div");
   markdownWrap.className = "chat-markdown";
 // eslint-disable-next-line no-unsanitized/property
-  markdownWrap.innerHTML = marked.parse(result);
+  markdownWrap.innerHTML = window.MythosDom.renderMarkdown(result);
   container.appendChild(markdownWrap);
 }
 

@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 '</div>';
         }
 
-        const renderedMarkdown = marked.parse(text);
+        const renderedMarkdown = window.MythosDom.renderMarkdown(text);
 
         // eslint-disable-next-line no-unsanitized/property
         msgDiv.innerHTML = `
