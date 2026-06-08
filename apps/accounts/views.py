@@ -201,6 +201,9 @@ def get_or_create_google_user(payload: Mapping[str, Any]) -> Any:
         if payload["email_verified"]:
             user.profile.email_verified = True
             user.profile.save(update_fields=["email_verified", "updated_at"])
+            if not user.is_active:
+                user.is_active = True
+                user.save(update_fields=["is_active"])
         return user
 
 
