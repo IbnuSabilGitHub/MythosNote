@@ -59,7 +59,7 @@ class WorkspaceGenerate {
       if (!card) return;
       const jobId = card.dataset.generateJobId;
       const job = this.jobsById.get(jobId);
-      if (job) this.openJob(job);
+      if (job) this.openJob(job, true);
     });
 
     const closeModal = () => this.closeModal();
@@ -146,7 +146,7 @@ class WorkspaceGenerate {
       this.emptyEl.classList.add("hidden");
     }
     if (this.activeJobId === job.id && this.modal && !this.modal.classList.contains("hidden")) {
-      this.openJob(job);
+      this.openJob(job, false);
     }
   }
 
@@ -217,14 +217,16 @@ class WorkspaceGenerate {
     }
   }
 
-  async openJob(job) {
+  async openJob(job, isClick = false) {
     if (!this.modal) return;
 
     if (!TERMINAL.has(job.status)) {
-      const now = Date.now();
-      if (!this.lastToastTime || now - this.lastToastTime > 3000) {
-        showToast("Hasil masih diproses.", "info");
-        this.lastToastTime = now;
+      if (isClick) {
+        const now = Date.now();
+        if (!this.lastToastTime || now - this.lastToastTime > 3000) {
+          showToast("Hasil masih diproses.", "info");
+          this.lastToastTime = now;
+        }
       }
       this.startPolling(job.id);
       return;
@@ -238,6 +240,18 @@ class WorkspaceGenerate {
       } catch {
         /* pakai data cache */
       }
+    }
+
+    if (!TERMINAL.has(current.status)) {
+      if (isClick) {
+        const now = Date.now();
+        if (!this.lastToastTime || now - this.lastToastTime > 3000) {
+          showToast("Hasil masih diproses.", "info");
+          this.lastToastTime = now;
+        }
+      }
+      this.startPolling(current.id);
+      return;
     }
 
     if (current.status === "success" && (current.action === "quiz" || current.action === "mindmap")) {
