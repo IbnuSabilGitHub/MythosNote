@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}403 - Verifikasi CSRF Gagal | MythosNote{% endblock %}
+
+{% block content %}
+<div class="min-h-screen w-full bg-surface-container-lowest flex flex-col justify-between items-center relative overflow-hidden select-none">
+    
+    <!-- Background Radial Glow Effects -->
+    <div class="absolute inset-0 bg-radial from-neutral-900/40 via-surface-container-lowest to-surface-container-lowest pointer-events-none z-0"></div>
+    <div class="absolute w-[800px] h-[800px] -top-[100px] left-1/2 -translate-x-1/2 bg-radial from-[#ffc880]/5 to-transparent rounded-full blur-[80px] pointer-events-none z-0"></div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col justify-center items-center px-6 py-20 z-10 w-full max-w-3xl text-center">
+        
+        <!-- Decorated 403 Text Container -->
+        <div class="relative inline-block mb-8 select-none">
+            <!-- Key/Shield Decoration (Top Left) -->
+            <iconify-icon icon="mdi:shield-key-outline" 
+                          class="absolute -top-8 -left-12 text-6xl -rotate-[15deg] blur-[0.5px]"
+                          style="color: rgba(255, 200, 128, 0.2);">
+            </iconify-icon>
+            
+            <!-- Lock/Security Decoration (Bottom Right) -->
+            <iconify-icon icon="ph:lock-laminated-thin" 
+                          class="absolute -bottom-6 -right-12 text-6xl rotate-[10deg] blur-[0.5px]"
+                          style="color: rgba(159, 142, 122, 0.3);">
+            </iconify-icon>
+            
+            <!-- 403 big typography -->
+            <h1 class="font-light font-newsreader leading-none tracking-normal"
+                style="font-size: 160px; line-height: 160px; color: #ffc880; text-shadow: 0px 4px 24px rgba(255, 200, 128, 0.15);">
+                403
+            </h1>
+        </div>
+
+        <!-- Headline -->
+        <h2 class="text-on-surface text-2xl sm:text-3xl font-normal font-newsreader leading-snug max-w-lg mb-6">
+            Verifikasi Keamanan (CSRF) Gagal
+        </h2>
+
+        <!-- Paragraph Description -->
+        <p class="text-on-surface-variant/80 text-sm sm:text-base font-normal font-manrope leading-relaxed max-w-md mb-8">
+            Permintaan Anda dibatalkan demi keamanan. Hal ini biasanya terjadi jika Anda berada di mode penyamaran (incognito) dengan kuki (cookies) dinonaktifkan, atau sesi Anda telah kedaluwarsa.
+        </p>
+
+        <!-- Dynamic Reason from Django (If any, usually empty in prod but useful for debug) -->
+        {% if reason and debug %}
+        <div class="mb-8 p-3 bg-error-container/20 border border-error/20 rounded-lg max-w-md text-left">
+            <p class="text-xs font-mono text-error/80 break-words">Detail: {{ reason }}</p>
+        </div>
+        {% endif %}
+        <!-- CTA Buttons -->
+        <div class="flex flex-row justify-center items-center gap-4 w-full max-w-md">
+            <button onclick="window.location.reload();" 
+                    class="px-8 py-3 bg-[#ffc880] hover:bg-[#ffc880]/95 text-[#452b00] font-manrope font-semibold text-sm rounded-lg transition-all duration-200 flex justify-center items-center gap-2 shadow-lg cursor-pointer">
+                <iconify-icon icon="tabler:refresh" class="text-lg"></iconify-icon>
+                <span>Muat Ulang Halaman</span>
+            </button>
+            <a href="{% url 'home' %}" 
+               class="px-8 py-3 border border-outline-variant bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-manrope font-normal text-sm rounded-lg transition-all duration-200 flex justify-center items-center gap-2">
+                <iconify-icon icon="tabler:home" class="text-lg"></iconify-icon>
+                <span>Kembali ke Beranda</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Footer matching home.html style -->
+    <footer class="border-t border-surface-container bg-surface-container-lowest w-full z-10">
+        <div class="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-12">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <span class="font-newsreader text-lg italic text-on-surface-variant">MythosNote</span>
+                <div class="flex flex-wrap items-center gap-3 sm:ml-auto sm:justify-end">
+                    <a class="group inline-flex items-center gap-2 rounded-lg border border-outline-variant/40 bg-surface-container px-3 py-2 text-xs font-bold text-on-surface-variant transition hover:border-primary hover:text-on-surface"
+                       href="https://www.instagram.com/_bil.23_?igsh=eDB6dXk2ZTB4dmwz" target="_blank" rel="noopener noreferrer"
+                       aria-label="Instagram - Ibnu Shabill Al Zahari">
+                        <img class="h-4 w-4 opacity-80 transition group-hover:opacity-100"
+                             src="{% static 'svg/instagram-logo.svg' %}" alt="Instagram" />
+                        <span>_bil.23_</span>
+                    </a>
+                    <a class="group inline-flex items-center gap-2 rounded-lg border border-outline-variant/40 bg-surface-container px-3 py-2 text-xs font-bold text-on-surface-variant transition hover:border-primary hover:text-on-surface"
+                       href="https://www.instagram.com/dimmm.f?igsh=MXdqOTZ6OWNxMmtrcQ==" target="_blank" rel="noopener noreferrer"
+                       aria-label="Instagram - Dimas Firmansyah">
+                        <img class="h-4 w-4 opacity-80 transition group-hover:opacity-100"
+                             src="{% static 'svg/instagram-logo.svg' %}" alt="Instagram" />
+                        <span>dimmm.f</span>
+                    </a>
+                    <a class="group inline-flex items-center gap-2 rounded-lg border border-outline-variant/40 bg-surface-container px-3 py-2 text-xs font-bold text-on-surface-variant transition hover:border-primary hover:text-on-surface"
+                       href="https://www.instagram.com/kalrizzz?igsh=MXFheWE3bGU0NW5tcg==" target="_blank"
+                       rel="noopener noreferrer" aria-label="Instagram - Haekal Rizqi Ramadhan">
+                        <img class="h-4 w-4 opacity-80 transition group-hover:opacity-100"
+                             src="{% static 'svg/instagram-logo.svg' %}" alt="Instagram" />
+                        <span>kalrizzz</span>
+                    </a>
+                    <a class="group inline-flex items-center gap-2 rounded-lg border border-outline-variant/40 bg-surface-container px-3 py-2 text-xs font-bold text-on-surface-variant transition hover:border-primary hover:text-on-surface"
+                       href="https://www.instagram.com/syovann?igsh=cTVjNzFubnFhcXJt" target="_blank" rel="noopener noreferrer"
+                       aria-label="Instagram - Syovan Reviyadi">
+                        <img class="h-4 w-4 opacity-80 transition group-hover:opacity-100"
+                             src="{% static 'svg/instagram-logo.svg' %}" alt="Instagram" />
+                        <span>syovann</span>
+                    </a>
+                    <a class="group inline-flex items-center gap-2 rounded-lg border border-outline-variant/40 bg-surface-container px-3 py-2 text-xs font-bold text-on-surface-variant transition hover:border-primary hover:text-on-surface"
+                       href="https://www.instagram.com/rifqifitri?igsh=NDB6OGN3djgzM2pw" target="_blank" rel="noopener noreferrer"
+                       aria-label="Instagram - Rifqi Fitriansyah">
+                        <img class="h-4 w-4 opacity-80 transition group-hover:opacity-100"
+                             src="{% static 'svg/instagram-logo.svg' %}" alt="Instagram" />
+                        <span>rifqifitri</span>
+                    </a>
+                </div>
+            </div>
+            <span class="font-grotesk text-xs text-outline-variant">&copy; {% now "Y" %} Mythos Team. All rights reserved.</span>
+        </div>
+    </footer>
+</div>
+{% endblock %}

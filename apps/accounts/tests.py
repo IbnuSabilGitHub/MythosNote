@@ -279,3 +279,19 @@ class AuthFlowTests(TestCase):
         self.assertTrue(get_user_model().objects.filter(pk=keep_verified.pk).exists())
         self.assertTrue(get_user_model().objects.filter(pk=keep_active.pk).exists())
         self.assertIn("delete-me@gmail.com", output.getvalue())
+
+
+class CSRFErrorPageTests(TestCase):
+    """Tes untuk memverifikasi halaman error kustom CSRF 403."""
+
+    def test_custom_csrf_failure_view(self) -> None:
+        from django.test import Client
+        client = Client(enforce_csrf_checks=True)
+        response = client.post(reverse("signin"), {"email": "test@example.com"})
+        
+        self.assertEqual(response.status_code, 403)
+        self.assertTemplateUsed(response, "403.html")
+        self.assertContains(response, "Verifikasi Keamanan (CSRF) Gagal", status_code=403)
+        self.assertContains(response, "mode penyamaran", status_code=403)
+
+

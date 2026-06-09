@@ -104,5 +104,12 @@ def workspace(request: HttpRequest) -> HttpResponse:
 
 
 def custom_404_view(request: HttpRequest, exception=None) -> HttpResponse:
-    """Render a premium 404 error page."""
+    """Render a 404 error page."""
     return render(request, "404.html", {"show_navbar": False}, status=404)
+
+
+def csrf_failure(request: HttpRequest, reason: str = "") -> HttpResponse:
+    """Render a 403 CSRF failure error page."""
+    return render(request, "403.html", {"reason": reason, "show_navbar": False}, status=403)
+
+

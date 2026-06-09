@@ -62,6 +62,7 @@ urlpatterns = [
         __import__('django_rq.urls', fromlist=['urlpatterns']).urlpatterns
     ), 'django_rq'), namespace='django-rq')),
     path('404-test/', views.custom_404_view, name='404_test'),
+    path('403-test/', views.csrf_failure, name='403_test'),
     path('robots.txt', TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
 ]
