@@ -23,7 +23,12 @@
                 </a>
             </div>
             <div class="flex-none w-px h-4 bg-neutral-800"></div>
-            <div class="flex-1 min-w-0 inline-flex flex-col justify-start items-start">
+            <div class="flex-1 min-w-0 inline-flex items-center gap-1 sm:gap-2">
+                <a href="{% url 'project' %}" class="flex items-center gap-1 text-stone-400 hover:text-primary transition text-xs font-manrope font-semibold shrink-0 p-1.5 -my-1.5 rounded-md hover:bg-neutral-900" title="Kembali ke Dashboard Project">
+                    <iconify-icon icon="tabler:arrow-left" class="text-base sm:text-sm"></iconify-icon>
+                    <span class="hidden sm:inline">Dashboard</span>
+                </a>
+                <span class="text-stone-600 text-xs shrink-0 hidden sm:inline">/</span>
                 <div class="w-full truncate text-stone-300/80 text-xs font-semibold font-manrope uppercase leading-3 tracking-wide" title="{{ active_workspace.name|default:'PROJECT ALPHA'|upper }}">
                     {{ active_workspace.name|default:"PROJECT ALPHA"|upper }}</div>
             </div>
@@ -101,8 +106,16 @@
                     {{ request.user.first_name|default:request.user.email|make_list|first|upper }}
                 </button>
                 <div id="workspaceUserDropdown"
-                    class="z-50 hidden w-44 rounded-lg border border-neutral-800 bg-neutral-900 shadow-lg overflow-hidden"
+                    class="z-50 hidden w-48 rounded-lg border border-neutral-800 bg-neutral-900 shadow-lg overflow-hidden"
                     role="menu" aria-labelledby="workspaceUserMenuButton" aria-hidden="true">
+                    <div class="px-4 py-2.5 border-b border-neutral-800/70">
+                        <p class="text-xs font-semibold text-stone-200 truncate">
+                            {{ request.user.first_name|default:request.user.username }}
+                        </p>
+                        <p class="text-[10px] text-stone-400 truncate mt-0.5">
+                            {{ request.user.email }}
+                        </p>
+                    </div>
                     <ul class="py-1 text-sm font-medium text-stone-200" role="none">
                         <li role="none">
                             <a href="{% url 'project' %}"
