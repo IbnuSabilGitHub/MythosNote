@@ -39,6 +39,11 @@
   <script integrity="sha384-Hj2pe/JEGitdWiVWNPuXWhAdYtdM+ZO+s0KuZHaAk1oAbeAtNas7R6hKlmbInTM4" crossorigin="anonymous" src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js" defer></script>
 
   {% block extra_css %}{% endblock %}
+  <script>
+    if (window.history.replaceState) {
+      window.history.replaceState(null, null, window.location.href);
+    }
+  </script>
 </head>
 
 <body class="bg-background text-on-background antialiased">
