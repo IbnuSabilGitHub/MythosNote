@@ -171,6 +171,54 @@ document.addEventListener("DOMContentLoaded", () => {
         renderArea.classList.remove("cursor-grabbing");
     });
 
+    // Touch Events for Mobile (Pan & Pinch-to-zoom)
+    let initialPinchDist = 0;
+    let startScale = 1;
+    let isTouching = false;
+
+    renderArea.addEventListener("touchstart", (e) => {
+        if (e.target.closest('button')) return;
+        
+        if (e.touches.length === 1) {
+            isTouching = true;
+            startX = e.touches[0].clientX - translateX * scale;
+            startY = e.touches[0].clientY - translateY * scale;
+        } else if (e.touches.length === 2) {
+            isTouching = false;
+            startScale = scale;
+            initialPinchDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+        }
+    });
+
+    renderArea.addEventListener("touchmove", (e) => {
+        if (e.touches.length === 1 && isTouching) {
+            translateX = (e.touches[0].clientX - startX) / scale;
+            translateY = (e.touches[0].clientY - startY) / scale;
+            updateTransform();
+        } else if (e.touches.length === 2) {
+            e.preventDefault();
+            const currentDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            if (initialPinchDist > 0) {
+                const factor = currentDist / initialPinchDist;
+                scale = Math.min(Math.max(MIN_SCALE, startScale * factor), MAX_SCALE);
+                updateTransform();
+            }
+        }
+    }, { passive: false });
+
+    renderArea.addEventListener("touchend", (e) => {
+        isTouching = false;
+        if (e.touches.length < 2) {
+            initialPinchDist = 0;
+        }
+    });
+
     container.addEventListener("wheel", (e) => {
         e.preventDefault();
         const delta = Math.sign(e.deltaY) * -1;
