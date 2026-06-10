@@ -84,6 +84,14 @@
           <div id="userDropdown"
             class="z-50 hidden w-48 rounded-lg border border-outline-variant bg-surface-container shadow-lg overflow-hidden"
             role="menu" aria-labelledby="userMenuButton" aria-hidden="true">
+            <div class="px-4 py-2.5 border-b border-outline-variant">
+              <p class="text-xs font-semibold text-on-surface truncate">
+                {{ request.user.first_name|default:request.user.username }}
+              </p>
+              <p class="text-[10px] text-outline truncate mt-0.5">
+                {{ request.user.email }}
+              </p>
+            </div>
             <ul class="py-1 text-sm font-medium text-body" role="none">
               <li role="none">
                 <a href="{% url 'project' %}"
