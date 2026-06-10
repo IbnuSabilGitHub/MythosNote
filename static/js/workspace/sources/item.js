@@ -100,7 +100,7 @@ export function createSourceItemHTML(source) {
   let errorHTML = "";
   if (isFailed && source.error_message) {
     errorHTML = `
-      <div class="error-reason-wrap self-stretch mt-1.5 text-red-400 text-xs font-normal font-['Manrope'] leading-5 truncate hover:text-red-300 transition" title="${this.escapeHTML(source.error_message)}">
+      <div class="error-reason-wrap self-stretch mt-1.5 text-red-400 text-xs font-normal font-['Manrope'] leading-5 whitespace-normal break-words hover:text-red-300 transition" title="${this.escapeHTML(source.error_message)}">
         Gagal: ${this.escapeHTML(source.error_message)}
       </div>
     `;

@@ -129,7 +129,7 @@ export function updateSourceItemStatus(sourceId, statusOrData) {
       if (flexContainer) {
         errDiv = document.createElement("div");
         errDiv.className =
-          "error-reason-wrap self-stretch mt-1.5 text-red-400 text-xs font-normal font-['Manrope'] leading-5 truncate hover:text-red-300 transition";
+          "error-reason-wrap self-stretch mt-1.5 text-red-400 text-xs font-normal font-['Manrope'] leading-5 whitespace-normal break-words hover:text-red-300 transition";
         flexContainer.appendChild(errDiv);
       }
     }
